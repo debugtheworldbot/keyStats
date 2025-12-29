@@ -1,0 +1,43 @@
+"permission.title" = "需要辅助功能权限";
+"permission.message" = "KeyStats 需要辅助功能权限来监听键盘和鼠标事件。\n\n请按照以下步骤授权：\n1. 点击“打开系统设置”\n2. 在“隐私与安全性”中找到“辅助功能”\n3. 启用 KeyStats 的权限\n\n授权后，应用将自动开始统计。";
+"permission.openSettings" = "打开系统设置";
+"permission.later" = "稍后";
+"button.permission" = "获取权限";
+
+"stats.keyPresses" = "键盘敲击";
+"stats.leftClicks" = "左键点击";
+"stats.rightClicks" = "右键点击";
+"stats.mouseDistance" = "鼠标移动";
+"stats.scrollDistance" = "滚动距离";
+
+"section.keyBreakdown" = "键位统计";
+"section.history" = "历史趋势";
+
+"history.range.today" = "今天";
+"history.range.yesterday" = "昨天";
+"history.range.week" = "本周";
+"history.range.month" = "本月";
+
+"history.metric.keys" = "键盘";
+"history.metric.clicks" = "点击";
+"history.metric.move" = "移动";
+"history.metric.scroll" = "滚轮";
+
+"history.chart.line" = "折线";
+"history.chart.bar" = "柱状";
+
+"history.total" = "总计: %@";
+"history.empty" = "无数据";
+
+"button.reset" = "重置统计";
+"button.quit" = "退出应用";
+
+"keyBreakdown.empty" = "暂无键位数据";
+
+"stats.reset.title" = "确认重置";
+"stats.reset.message" = "确定要重置今日的所有统计数据吗？此操作不可撤销。";
+"stats.reset.confirm" = "重置";
+"stats.reset.cancel" = "取消";
+
+"about.author" = "作者";
+"about.version" = "版本 %@ (%@)";

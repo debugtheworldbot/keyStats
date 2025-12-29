@@ -16,6 +16,7 @@
 		A1000007 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A2000007 /* Main.storyboard */; };
 		A1000008 /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000008 /* MainWindowController.swift */; };
 		A1000009 /* MainWindowViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000009 /* MainWindowViewController.swift */; };
+		A1000010 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = A2000012 /* Localizable.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +29,8 @@
 		A2000007 /* Main.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = Main.storyboard; sourceTree = "<group>"; };
 		A2000008 /* MainWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowController.swift; sourceTree = "<group>"; };
 		A2000009 /* MainWindowViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowViewController.swift; sourceTree = "<group>"; };
+		A2000010 /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Localizable.strings; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		A2000011 /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Localizable.strings; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		A3000001 /* KeyStats.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KeyStats.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A3000002 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A3000003 /* KeyStats.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KeyStats.entitlements; sourceTree = "<group>"; };
@@ -62,6 +65,7 @@
 				A2000005 /* StatsPopoverViewController.swift */,
 				A2000008 /* MainWindowController.swift */,
 				A2000009 /* MainWindowViewController.swift */,
+				A2000012 /* Localizable.strings */,
 				A2000006 /* Assets.xcassets */,
 				A2000007 /* Main.storyboard */,
 				A3000002 /* Info.plist */,
@@ -120,6 +124,7 @@
 			knownRegions = (
 				en,
 				Base,
+				"zh-Hans",
 			);
 			mainGroup = A5000001;
 			productRefGroup = A5000003 /* Products */;
@@ -138,6 +143,7 @@
 			files = (
 				A1000006 /* Assets.xcassets in Resources */,
 				A1000007 /* Main.storyboard in Resources */,
+				A1000010 /* Localizable.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -159,6 +165,18 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		A2000012 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A2000010 /* Localizable.strings */,
+				A2000011 /* Localizable.strings */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		A9000001 /* Debug */ = {

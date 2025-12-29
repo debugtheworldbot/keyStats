@@ -1,0 +1,43 @@
+"permission.title" = "Accessibility Permission Required";
+"permission.message" = "KeyStats needs Accessibility permission to monitor keyboard and mouse events.\n\nPlease follow these steps:\n1. Click \"Open System Settings\"\n2. In \"Privacy & Security\", open \"Accessibility\"\n3. Enable KeyStats\n\nAfter authorization, the app will start counting automatically.";
+"permission.openSettings" = "Open System Settings";
+"permission.later" = "Later";
+"button.permission" = "Grant Permission";
+
+"stats.keyPresses" = "Key Presses";
+"stats.leftClicks" = "Left Clicks";
+"stats.rightClicks" = "Right Clicks";
+"stats.mouseDistance" = "Mouse Distance";
+"stats.scrollDistance" = "Scroll Distance";
+
+"section.keyBreakdown" = "Key Breakdown";
+"section.history" = "History";
+
+"history.range.today" = "Today";
+"history.range.yesterday" = "Yesterday";
+"history.range.week" = "This Week";
+"history.range.month" = "This Month";
+
+"history.metric.keys" = "Keys";
+"history.metric.clicks" = "Clicks";
+"history.metric.move" = "Movement";
+"history.metric.scroll" = "Scroll";
+
+"history.chart.line" = "Line";
+"history.chart.bar" = "Bar";
+
+"history.total" = "Total: %@";
+"history.empty" = "No Data";
+
+"button.reset" = "Reset Stats";
+"button.quit" = "Quit";
+
+"keyBreakdown.empty" = "No key data yet";
+
+"stats.reset.title" = "Confirm Reset";
+"stats.reset.message" = "Reset all today's statistics? This cannot be undone.";
+"stats.reset.confirm" = "Reset";
+"stats.reset.cancel" = "Cancel";
+
+"about.author" = "Author";
+"about.version" = "Version %@ (%@)";

@@ -20,7 +20,7 @@ class MainWindowViewController: NSViewController {
         let versionLabel = makeLabel(text: versionText(), size: 12, weight: .regular)
         versionLabel.textColor = .secondaryLabelColor
         
-        let authorLabel = makeLabel(text: "作者", size: 12, weight: .regular)
+        let authorLabel = makeLabel(text: NSLocalizedString("about.author", comment: ""), size: 12, weight: .regular)
         authorLabel.textColor = .secondaryLabelColor
         
         let linkButton = NSButton(title: "github.com/debugtheworldbot", target: self, action: #selector(openAuthorLink))
@@ -54,7 +54,7 @@ class MainWindowViewController: NSViewController {
     private func versionText() -> String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
-        return "版本 \(version) (\(build))"
+        return String(format: NSLocalizedString("about.version", comment: ""), version, build)
     }
     
     @objc private func openAuthorLink() {

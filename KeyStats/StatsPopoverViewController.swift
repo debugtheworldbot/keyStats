@@ -75,7 +75,7 @@ class StatsPopoverViewController: NSViewController {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(titleLabel)
         
-        permissionButton = NSButton(title: "获取权限", target: self, action: #selector(requestPermission))
+        permissionButton = NSButton(title: NSLocalizedString("button.permission", comment: ""), target: self, action: #selector(requestPermission))
         permissionButton.bezelStyle = .rounded
         permissionButton.controlSize = .regular
         permissionButton.translatesAutoresizingMaskIntoConstraints = false
@@ -88,11 +88,11 @@ class StatsPopoverViewController: NSViewController {
         view.addSubview(separator)
         
         // 统计项
-        keyPressView = StatItemView(icon: "⌨️", title: "键盘敲击", value: "0")
-        leftClickView = StatItemView(icon: "🖱️", title: "左键点击", value: "0")
-        rightClickView = StatItemView(icon: "🖱️", title: "右键点击", value: "0")
-        mouseDistanceView = StatItemView(icon: "↔️", title: "鼠标移动", value: "0 px")
-        scrollDistanceView = StatItemView(icon: "↕️", title: "滚动距离", value: "0 px")
+        keyPressView = StatItemView(icon: "⌨️", title: NSLocalizedString("stats.keyPresses", comment: ""), value: "0")
+        leftClickView = StatItemView(icon: "🖱️", title: NSLocalizedString("stats.leftClicks", comment: ""), value: "0")
+        rightClickView = StatItemView(icon: "🖱️", title: NSLocalizedString("stats.rightClicks", comment: ""), value: "0")
+        mouseDistanceView = StatItemView(icon: "↔️", title: NSLocalizedString("stats.mouseDistance", comment: ""), value: "0 px")
+        scrollDistanceView = StatItemView(icon: "↕️", title: NSLocalizedString("stats.scrollDistance", comment: ""), value: "0 px")
         
         let clickRow = NSStackView(views: [leftClickView, rightClickView])
         clickRow.orientation = .horizontal
@@ -119,7 +119,7 @@ class StatsPopoverViewController: NSViewController {
         view.addSubview(statsStackView)
         
         // 键位统计标题
-        keyBreakdownTitleLabel = createLabel(text: "键位统计", fontSize: 14, weight: .semibold)
+        keyBreakdownTitleLabel = createLabel(text: NSLocalizedString("section.keyBreakdown", comment: ""), fontSize: 14, weight: .semibold)
         keyBreakdownTitleLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(keyBreakdownTitleLabel)
 
@@ -155,12 +155,17 @@ class StatsPopoverViewController: NSViewController {
         }
 
         // 历史趋势标题
-        historyTitleLabel = createLabel(text: "历史趋势", fontSize: 14, weight: .semibold)
+        historyTitleLabel = createLabel(text: NSLocalizedString("section.history", comment: ""), fontSize: 14, weight: .semibold)
         historyTitleLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(historyTitleLabel)
         
         // 时间范围
-        rangeControl = NSSegmentedControl(labels: ["今天", "昨天", "本周", "本月"],
+        rangeControl = NSSegmentedControl(labels: [
+            NSLocalizedString("history.range.today", comment: ""),
+            NSLocalizedString("history.range.yesterday", comment: ""),
+            NSLocalizedString("history.range.week", comment: ""),
+            NSLocalizedString("history.range.month", comment: "")
+        ],
                                           trackingMode: .selectOne,
                                           target: self,
                                           action: #selector(historyControlsChanged))
@@ -169,7 +174,12 @@ class StatsPopoverViewController: NSViewController {
         view.addSubview(rangeControl)
         
         // 指标选择
-        metricControl = NSSegmentedControl(labels: ["键盘", "点击", "移动", "滚轮"],
+        metricControl = NSSegmentedControl(labels: [
+            NSLocalizedString("history.metric.keys", comment: ""),
+            NSLocalizedString("history.metric.clicks", comment: ""),
+            NSLocalizedString("history.metric.move", comment: ""),
+            NSLocalizedString("history.metric.scroll", comment: "")
+        ],
                                            trackingMode: .selectOne,
                                            target: self,
                                            action: #selector(historyControlsChanged))
@@ -178,7 +188,10 @@ class StatsPopoverViewController: NSViewController {
         view.addSubview(metricControl)
         
         // 图表样式
-        chartStyleControl = NSSegmentedControl(labels: ["折线", "柱状"],
+        chartStyleControl = NSSegmentedControl(labels: [
+            NSLocalizedString("history.chart.line", comment: ""),
+            NSLocalizedString("history.chart.bar", comment: "")
+        ],
                                                trackingMode: .selectOne,
                                                target: self,
                                                action: #selector(historyControlsChanged))
@@ -192,7 +205,11 @@ class StatsPopoverViewController: NSViewController {
         view.addSubview(chartView)
         
         // 汇总
-        historySummaryLabel = createLabel(text: "总计: 0", fontSize: 12, weight: .regular)
+        historySummaryLabel = createLabel(
+            text: String(format: NSLocalizedString("history.total", comment: ""), "0"),
+            fontSize: 12,
+            weight: .regular
+        )
         historySummaryLabel.textColor = .secondaryLabelColor
         historySummaryLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(historySummaryLabel)
@@ -210,12 +227,12 @@ class StatsPopoverViewController: NSViewController {
         buttonStack.translatesAutoresizingMaskIntoConstraints = false
         
         // 重置按钮
-        resetButton = NSButton(title: "重置统计", target: self, action: #selector(resetStats))
+        resetButton = NSButton(title: NSLocalizedString("button.reset", comment: ""), target: self, action: #selector(resetStats))
         resetButton.bezelStyle = .rounded
         resetButton.controlSize = .regular
         
         // 退出按钮
-        quitButton = NSButton(title: "退出应用", target: self, action: #selector(quitApp))
+        quitButton = NSButton(title: NSLocalizedString("button.quit", comment: ""), target: self, action: #selector(quitApp))
         quitButton.bezelStyle = .rounded
         quitButton.controlSize = .regular
         
@@ -345,7 +362,7 @@ class StatsPopoverViewController: NSViewController {
             }
         }
         guard hasItems else {
-            let emptyLabel = createLabel(text: "暂无键位数据", fontSize: 12, weight: .regular)
+            let emptyLabel = createLabel(text: NSLocalizedString("keyBreakdown.empty", comment: ""), fontSize: 12, weight: .regular)
             emptyLabel.textColor = .secondaryLabelColor
             emptyLabel.translatesAutoresizingMaskIntoConstraints = false
             if let firstColumn = keyBreakdownColumns.first {
@@ -390,7 +407,7 @@ class StatsPopoverViewController: NSViewController {
         
         let total = series.reduce(0) { $0 + $1.value }
         let formatted = StatsManager.shared.formatHistoryValue(metric: metric, value: total)
-        historySummaryLabel.stringValue = "总计: \(formatted)"
+        historySummaryLabel.stringValue = String(format: NSLocalizedString("history.total", comment: ""), formatted)
     }
     
     private func selectedRange() -> StatsManager.HistoryRange {
@@ -422,11 +439,11 @@ class StatsPopoverViewController: NSViewController {
     
     @objc private func resetStats() {
         let alert = NSAlert()
-        alert.messageText = "确认重置"
-        alert.informativeText = "确定要重置今日的所有统计数据吗？此操作不可撤销。"
+        alert.messageText = NSLocalizedString("stats.reset.title", comment: "")
+        alert.informativeText = NSLocalizedString("stats.reset.message", comment: "")
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "重置")
-        alert.addButton(withTitle: "取消")
+        alert.addButton(withTitle: NSLocalizedString("stats.reset.confirm", comment: ""))
+        alert.addButton(withTitle: NSLocalizedString("stats.reset.cancel", comment: ""))
         
         if alert.runModal() == .alertFirstButtonReturn {
             StatsManager.shared.resetStats()
@@ -586,7 +603,7 @@ class StatsChartView: NSView {
         NSBezierPath(roundedRect: insetBounds, xRadius: 6, yRadius: 6).fill()
         
         guard let maxValue = values.max(), maxValue > 0 else {
-            let text = "无数据"
+            let text = NSLocalizedString("history.empty", comment: "")
             let attributes: [NSAttributedString.Key: Any] = [
                 .font: NSFont.systemFont(ofSize: 12),
                 .foregroundColor: NSColor.secondaryLabelColor

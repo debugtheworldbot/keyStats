@@ -48,23 +48,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     private func showPermissionAlert() {
         let alert = NSAlert()
-        alert.messageText = "需要辅助功能权限"
+        alert.messageText = NSLocalizedString("permission.title", comment: "")
         if let appIcon = NSApp.applicationIconImage {
             alert.icon = makeRoundedAlertIcon(from: appIcon)
         }
-        alert.informativeText = """
-        KeyStats 需要辅助功能权限来监听键盘和鼠标事件。
-        
-        请按照以下步骤授权：
-        1. 点击"打开系统设置"
-        2. 在"隐私与安全性"中找到"辅助功能"
-        3. 启用 KeyStats 的权限
-        
-        授权后，应用将自动开始统计。
-        """
+        alert.informativeText = NSLocalizedString("permission.message", comment: "")
         alert.alertStyle = .informational
-        alert.addButton(withTitle: "打开系统设置")
-        alert.addButton(withTitle: "稍后")
+        alert.addButton(withTitle: NSLocalizedString("permission.openSettings", comment: ""))
+        alert.addButton(withTitle: NSLocalizedString("permission.later", comment: ""))
         
         if alert.runModal() == .alertFirstButtonReturn {
             openAccessibilitySettings()
