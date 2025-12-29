@@ -50,7 +50,7 @@ class MenuBarController {
     
     private func setupPopover() {
         popover = NSPopover()
-        popover.contentSize = NSSize(width: 320, height: 520)
+        popover.contentSize = NSSize(width: 320, height: 640)
         popover.behavior = .transient
         popover.animates = true
         popover.contentViewController = StatsPopoverViewController()
@@ -121,7 +121,7 @@ class MenuBarController {
     }
 
     private func makeStatusTitle(keysText: String, clicksText: String) -> NSAttributedString {
-        let font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium)
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
         let textAttributes: [NSAttributedString.Key: Any] = [.font: font]
         let symbolConfig = NSImage.SymbolConfiguration(pointSize: 13, weight: .medium)
         let result = NSMutableAttributedString()
@@ -187,14 +187,14 @@ class MenuBarStatusView: NSView {
         imageView.translatesAutoresizingMaskIntoConstraints = false
         
         topLabel.font = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .semibold)
-        bottomLabel.font = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .semibold)
+        bottomLabel.font = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .medium)
         topLabel.alignment = .left
         bottomLabel.alignment = .left
         topLabel.textColor = .labelColor
         bottomLabel.textColor = .labelColor
         
         textStack.orientation = .vertical
-        textStack.spacing = 1
+        textStack.spacing = 0
         textStack.alignment = .leading
         textStack.addArrangedSubview(topLabel)
         textStack.addArrangedSubview(bottomLabel)
@@ -219,7 +219,7 @@ class MenuBarStatusView: NSView {
     
     override var intrinsicContentSize: NSSize {
         let size = stack.fittingSize
-        return NSSize(width: size.width + 12, height: max(20, size.height + 4))
+        return NSSize(width: size.width + 12, height: max(20, size.height + 6))
     }
     
     func update(keysText: String, clicksText: String) {

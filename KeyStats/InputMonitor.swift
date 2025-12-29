@@ -106,7 +106,8 @@ class InputMonitor {
         
         switch type {
         case .keyDown:
-            statsManager.incrementKeyPresses()
+            let keyName = keyName(for: event)
+            statsManager.incrementKeyPresses(keyName: keyName)
             
         case .leftMouseDown:
             statsManager.incrementLeftClicks()
@@ -124,6 +125,83 @@ class InputMonitor {
             break
         }
     }
+
+    private func keyName(for event: CGEvent) -> String {
+        let keyCode = Int(event.getIntegerValueField(.keyboardEventKeycode))
+        let baseName = baseKeyName(for: keyCode, event: event)
+        let modifiers = modifierNames(for: event.flags)
+        if modifiers.isEmpty {
+            return baseName
+        }
+        return modifiers.joined(separator: "+") + "+" + baseName
+    }
+
+    private func modifierNames(for flags: CGEventFlags) -> [String] {
+        var names: [String] = []
+        if flags.contains(.maskCommand) { names.append("Cmd") }
+        if flags.contains(.maskShift) { names.append("Shift") }
+        if flags.contains(.maskAlternate) { names.append("Option") }
+        if flags.contains(.maskControl) { names.append("Ctrl") }
+        if flags.contains(.maskSecondaryFn) { names.append("Fn") }
+        return names
+    }
+
+    private func baseKeyName(for keyCode: Int, event: CGEvent) -> String {
+        if let mapped = Self.keyCodeMap[keyCode] {
+            return mapped
+        }
+        if let nsEvent = NSEvent(cgEvent: event),
+           let chars = nsEvent.charactersIgnoringModifiers,
+           !chars.isEmpty {
+            if chars == " " { return "Space" }
+            if chars == "\t" { return "Tab" }
+            if chars == "\r" { return "Return" }
+            let cleaned = chars.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !cleaned.isEmpty {
+                if cleaned.count == 1 {
+                    return cleaned.uppercased()
+                }
+                return cleaned
+            }
+        }
+        return "Key\(keyCode)"
+    }
+
+    private static let keyCodeMap: [Int: String] = [
+        36: "Return",
+        48: "Tab",
+        49: "Space",
+        51: "Delete",
+        53: "Esc",
+        71: "Clear",
+        76: "Enter",
+        96: "F5",
+        97: "F6",
+        98: "F7",
+        99: "F3",
+        100: "F8",
+        101: "F9",
+        103: "F11",
+        105: "F13",
+        106: "F16",
+        107: "F14",
+        109: "F10",
+        111: "F12",
+        113: "F15",
+        114: "Help",
+        115: "Home",
+        116: "PageUp",
+        117: "ForwardDelete",
+        118: "F4",
+        119: "End",
+        120: "F2",
+        121: "PageDown",
+        122: "F1",
+        123: "Left",
+        124: "Right",
+        125: "Down",
+        126: "Up"
+    ]
     
     private func handleMouseMove(event: CGEvent) {
         let currentPosition = event.location

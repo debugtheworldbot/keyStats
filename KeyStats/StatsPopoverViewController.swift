@@ -8,6 +8,10 @@ class StatsPopoverViewController: NSViewController {
     private var titleLabel: NSTextField!
     private var dateLabel: NSTextField!
     private var statsStackView: NSStackView!
+    private var keyBreakdownTitleLabel: NSTextField!
+    private var keyBreakdownScrollView: NSScrollView!
+    private var keyBreakdownContentView: NSView!
+    private var keyBreakdownStackView: NSStackView!
     private var historyTitleLabel: NSTextField!
     private var rangeControl: NSSegmentedControl!
     private var metricControl: NSSegmentedControl!
@@ -30,7 +34,7 @@ class StatsPopoverViewController: NSViewController {
     
     override func loadView() {
         // 创建主视图
-        let mainView = NSView(frame: NSRect(x: 0, y: 0, width: 320, height: 520))
+        let mainView = NSView(frame: NSRect(x: 0, y: 0, width: 320, height: 640))
         mainView.wantsLayer = true
         self.view = mainView
     }
@@ -93,6 +97,29 @@ class StatsPopoverViewController: NSViewController {
         statsStackView.spacing = 8
         statsStackView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(statsStackView)
+
+        // 键位统计标题
+        keyBreakdownTitleLabel = createLabel(text: "键位统计", fontSize: 14, weight: .semibold)
+        keyBreakdownTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(keyBreakdownTitleLabel)
+
+        // 键位统计列表
+        keyBreakdownScrollView = NSScrollView()
+        keyBreakdownScrollView.drawsBackground = false
+        keyBreakdownScrollView.hasVerticalScroller = true
+        keyBreakdownScrollView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(keyBreakdownScrollView)
+
+        keyBreakdownContentView = NSView()
+        keyBreakdownContentView.translatesAutoresizingMaskIntoConstraints = false
+        keyBreakdownScrollView.documentView = keyBreakdownContentView
+
+        keyBreakdownStackView = NSStackView()
+        keyBreakdownStackView.orientation = .vertical
+        keyBreakdownStackView.spacing = 6
+        keyBreakdownStackView.alignment = .leading
+        keyBreakdownStackView.translatesAutoresizingMaskIntoConstraints = false
+        keyBreakdownContentView.addSubview(keyBreakdownStackView)
 
         // 历史趋势标题
         historyTitleLabel = createLabel(text: "历史趋势", fontSize: 14, weight: .semibold)
@@ -183,8 +210,28 @@ class StatsPopoverViewController: NSViewController {
             statsStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             statsStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             
+            // 键位统计
+            keyBreakdownTitleLabel.topAnchor.constraint(equalTo: statsStackView.bottomAnchor, constant: 16),
+            keyBreakdownTitleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+
+            keyBreakdownScrollView.topAnchor.constraint(equalTo: keyBreakdownTitleLabel.bottomAnchor, constant: 8),
+            keyBreakdownScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            keyBreakdownScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            keyBreakdownScrollView.heightAnchor.constraint(equalToConstant: 120),
+
+            keyBreakdownContentView.leadingAnchor.constraint(equalTo: keyBreakdownScrollView.contentView.leadingAnchor),
+            keyBreakdownContentView.trailingAnchor.constraint(equalTo: keyBreakdownScrollView.contentView.trailingAnchor),
+            keyBreakdownContentView.topAnchor.constraint(equalTo: keyBreakdownScrollView.contentView.topAnchor),
+            keyBreakdownContentView.bottomAnchor.constraint(equalTo: keyBreakdownScrollView.contentView.bottomAnchor),
+            keyBreakdownContentView.widthAnchor.constraint(equalTo: keyBreakdownScrollView.widthAnchor),
+
+            keyBreakdownStackView.leadingAnchor.constraint(equalTo: keyBreakdownContentView.leadingAnchor),
+            keyBreakdownStackView.trailingAnchor.constraint(equalTo: keyBreakdownContentView.trailingAnchor),
+            keyBreakdownStackView.topAnchor.constraint(equalTo: keyBreakdownContentView.topAnchor),
+            keyBreakdownStackView.bottomAnchor.constraint(equalTo: keyBreakdownContentView.bottomAnchor),
+
             // 历史趋势
-            historyTitleLabel.topAnchor.constraint(equalTo: statsStackView.bottomAnchor, constant: 16),
+            historyTitleLabel.topAnchor.constraint(equalTo: keyBreakdownScrollView.bottomAnchor, constant: 16),
             historyTitleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             
             rangeControl.topAnchor.constraint(equalTo: historyTitleLabel.bottomAnchor, constant: 8),
@@ -245,6 +292,7 @@ class StatsPopoverViewController: NSViewController {
         rightClickView.updateValue(formatNumber(stats.rightClicks))
         mouseDistanceView.updateValue(stats.formattedMouseDistance)
         scrollDistanceView.updateValue(stats.formattedScrollDistance)
+        updateKeyBreakdown()
         updateHistorySection()
     }
     
@@ -252,6 +300,27 @@ class StatsPopoverViewController: NSViewController {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         return formatter.string(from: NSNumber(value: number)) ?? "\(number)"
+    }
+
+    private func updateKeyBreakdown() {
+        let items = StatsManager.shared.keyPressBreakdownSorted()
+        keyBreakdownStackView.arrangedSubviews.forEach {
+            keyBreakdownStackView.removeArrangedSubview($0)
+            $0.removeFromSuperview()
+        }
+        guard !items.isEmpty else {
+            let emptyLabel = createLabel(text: "暂无键位数据", fontSize: 12, weight: .regular)
+            emptyLabel.textColor = .secondaryLabelColor
+            emptyLabel.translatesAutoresizingMaskIntoConstraints = false
+            keyBreakdownStackView.addArrangedSubview(emptyLabel)
+            emptyLabel.widthAnchor.constraint(equalTo: keyBreakdownStackView.widthAnchor).isActive = true
+            return
+        }
+        for item in items {
+            let row = KeyCountRowView(key: item.key, count: formatNumber(item.count))
+            keyBreakdownStackView.addArrangedSubview(row)
+            row.widthAnchor.constraint(equalTo: keyBreakdownStackView.widthAnchor).isActive = true
+        }
     }
 
     @objc private func historyControlsChanged() {
@@ -376,6 +445,55 @@ class StatItemView: NSView {
     
     func updateValue(_ value: String) {
         valueLabel.stringValue = value
+    }
+}
+
+// MARK: - 键位统计行
+
+class KeyCountRowView: NSView {
+    private var keyLabel: NSTextField!
+    private var countLabel: NSTextField!
+
+    init(key: String, count: String) {
+        super.init(frame: .zero)
+        setupUI(key: key, count: count)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupUI(key: String, count: String) {
+        translatesAutoresizingMaskIntoConstraints = false
+
+        keyLabel = NSTextField(labelWithString: key)
+        keyLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        keyLabel.textColor = .labelColor
+        keyLabel.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(keyLabel)
+
+        countLabel = NSTextField(labelWithString: count)
+        countLabel.font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .semibold)
+        countLabel.textColor = .secondaryLabelColor
+        countLabel.alignment = .right
+        countLabel.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(countLabel)
+
+        NSLayoutConstraint.activate([
+            heightAnchor.constraint(equalToConstant: 20),
+
+            keyLabel.leadingAnchor.constraint(equalTo: leadingAnchor),
+            keyLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+
+            countLabel.trailingAnchor.constraint(equalTo: trailingAnchor),
+            countLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+            countLabel.leadingAnchor.constraint(greaterThanOrEqualTo: keyLabel.trailingAnchor, constant: 8)
+        ])
+    }
+
+    func update(key: String, count: String) {
+        keyLabel.stringValue = key
+        countLabel.stringValue = count
     }
 }
 

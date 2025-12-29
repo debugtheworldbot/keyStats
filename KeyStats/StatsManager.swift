@@ -5,6 +5,7 @@ import Cocoa
 struct DailyStats: Codable {
     var date: Date
     var keyPresses: Int
+    var keyPressCounts: [String: Int]
     var leftClicks: Int
     var rightClicks: Int
     var mouseDistance: Double  // 以像素为单位
@@ -13,6 +14,7 @@ struct DailyStats: Codable {
     init() {
         self.date = Calendar.current.startOfDay(for: Date())
         self.keyPresses = 0
+        self.keyPressCounts = [:]
         self.leftClicks = 0
         self.rightClicks = 0
         self.mouseDistance = 0
@@ -22,6 +24,7 @@ struct DailyStats: Codable {
     init(date: Date) {
         self.date = Calendar.current.startOfDay(for: date)
         self.keyPresses = 0
+        self.keyPressCounts = [:]
         self.leftClicks = 0
         self.rightClicks = 0
         self.mouseDistance = 0
@@ -96,8 +99,11 @@ class StatsManager {
     
     // MARK: - 数据更新方法
     
-    func incrementKeyPresses() {
+    func incrementKeyPresses(keyName: String? = nil) {
         currentStats.keyPresses += 1
+        if let keyName = keyName, !keyName.isEmpty {
+            currentStats.keyPressCounts[keyName, default: 0] += 1
+        }
     }
     
     func incrementLeftClicks() {
@@ -204,6 +210,18 @@ class StatsManager {
         } else {
             return "\(number)"
         }
+    }
+
+    /// 按次数排序的键位统计
+    func keyPressBreakdownSorted() -> [(key: String, count: Int)] {
+        return currentStats.keyPressCounts
+            .sorted {
+                if $0.value != $1.value {
+                    return $0.value > $1.value
+                }
+                return $0.key.localizedCaseInsensitiveCompare($1.key) == .orderedAscending
+            }
+            .map { (key: $0.key, count: $0.value) }
     }
 }
 
