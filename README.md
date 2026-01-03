@@ -1,8 +1,12 @@
 # KeyStats - macOS 键鼠统计菜单栏应用
-<img width="363" height="740" alt="image" src="https://github.com/user-attachments/assets/91490d6f-44bf-49ed-9180-e5490bd34c14" />
+<img width="359" height="745" alt="image" src="https://github.com/user-attachments/assets/e6eb508a-08fb-42bb-951c-f544dfb9d634" />
 
 
 KeyStats 是一款轻量级的 macOS 原生菜单栏应用，用于统计用户每日的键盘敲击次数、鼠标点击次数、鼠标移动距离和滚动距离。
+
+## 安装与使用
+
+### [从 GitHub Release 下载](https://github.com/debugtheworldbot/keyStats/releases)
 
 ## 功能特性
 
@@ -18,23 +22,8 @@ KeyStats 是一款轻量级的 macOS 原生菜单栏应用，用于统计用户�
 ## 系统要求
 
 - macOS 13.0 (Ventura) 或更高版本
-- Xcode 15.0 或更高版本（用于编译）
 
-## 安装与使用
 
-### 方法一：从 GitHub Release 下载（推荐）
-
-1. 打开仓库：https://github.com/debugtheworldbot/keyStats
-2. 进入 Latest Release 页面并下载最新的 `KeyStats.dmg`
-3. 打开 DMG，将 `KeyStats.app` 拖到「应用程序」
-4. 启动 KeyStats
-
-### 方法二：从源码编译
-
-```bash
-cd /path/to/KeyStats
-xcodebuild -project KeyStats.xcodeproj -scheme KeyStats -configuration Release build
-```
 
 ## 首次运行权限设置
 
@@ -121,11 +110,6 @@ KeyStats 仅统计按键和点击的**次数**，**不会记录**：
 ## 许可证
 
 MIT License
-
-## 更新日志
-
-### v1.0.0
-- 初始版本发布
 - 支持键盘敲击、鼠标点击、移动距离、滚动距离统计
 - 菜单栏实时显示
 - 详细统计面板
