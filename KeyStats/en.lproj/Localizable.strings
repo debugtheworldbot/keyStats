@@ -13,10 +13,9 @@
 "section.keyBreakdown" = "Key Breakdown";
 "section.history" = "History";
 
-"history.range.today" = "Today";
 "history.range.yesterday" = "Yesterday";
-"history.range.week" = "This Week";
-"history.range.month" = "This Month";
+"history.range.week" = "Last 7 Days";
+"history.range.month" = "Last 30 Days";
 
 "history.metric.keys" = "Keys";
 "history.metric.clicks" = "Clicks";

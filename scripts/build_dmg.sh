@@ -102,10 +102,12 @@ hdiutil create -volname "$APP_NAME" -srcfolder "$STAGING_DIR" -ov -format UDRW "
 mkdir -p "$MOUNT_DIR"
 hdiutil attach "$TMP_DMG" -nobrowse -readwrite -mountpoint "$MOUNT_DIR"
 
-BACKGROUND_PATH="$MOUNT_DIR/background.png" osascript <<EOF
+BACKGROUND_PATH="$MOUNT_DIR/background.png" MOUNT_DIR="$MOUNT_DIR" osascript <<EOF
 set backgroundAlias to POSIX file "$BACKGROUND_PATH" as alias
+set mountAlias to POSIX file "$MOUNT_DIR" as alias
 tell application "Finder"
-    tell disk "$APP_NAME"
+    set dmgDisk to disk of mountAlias
+    tell dmgDisk
         open
         set current view of container window to icon view
         set toolbar visible of container window to false

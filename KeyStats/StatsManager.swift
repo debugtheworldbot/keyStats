@@ -321,11 +321,7 @@ extension StatsManager {
                 startDate = today
             }
         case .month:
-            if let interval = calendar.dateInterval(of: .month, for: today) {
-                startDate = interval.start
-            } else {
-                startDate = today
-            }
+            startDate = calendar.date(byAdding: .day, value: -29, to: today) ?? today
         }
         
         var dates: [Date] = []

@@ -13,10 +13,9 @@
 "section.keyBreakdown" = "键位统计";
 "section.history" = "历史趋势";
 
-"history.range.today" = "今天";
 "history.range.yesterday" = "昨天";
-"history.range.week" = "本周";
-"history.range.month" = "本月";
+"history.range.week" = "过去7天";
+"history.range.month" = "过去30天";
 
 "history.metric.keys" = "键盘";
 "history.metric.clicks" = "点击";

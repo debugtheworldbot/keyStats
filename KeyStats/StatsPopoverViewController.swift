@@ -405,7 +405,9 @@ class StatsPopoverViewController: NSViewController {
         let style = selectedChartStyle()
         
         let series = StatsManager.shared.historySeries(range: range, metric: metric)
-        chartView.values = series.map { $0.value }
+        chartView.series = series
+        chartView.metric = metric
+        chartView.range = range
         chartView.style = style
         
         let total = series.reduce(0) { $0 + $1.value }
@@ -738,7 +740,18 @@ class StatsChartView: NSView {
         case bar
     }
     
-    var values: [Double] = [] {
+    var series: [(date: Date, value: Double)] = [] {
+        didSet {
+            hoverIndex = nil
+            needsDisplay = true
+        }
+    }
+    
+    var metric: StatsManager.HistoryMetric = .keyPresses {
+        didSet { needsDisplay = true }
+    }
+    
+    var range: StatsManager.HistoryRange = .week {
         didSet { needsDisplay = true }
     }
     
@@ -746,54 +759,155 @@ class StatsChartView: NSView {
         didSet { needsDisplay = true }
     }
     
+    private var hoverIndex: Int? {
+        didSet {
+            if hoverIndex != oldValue {
+                needsDisplay = true
+            }
+        }
+    }
+    
+    private var trackingArea: NSTrackingArea?
+    
+    private lazy var dayDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.setLocalizedDateFormatFromTemplate("M/d")
+        return formatter
+    }()
+    
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        window?.acceptsMouseMovedEvents = true
+    }
+    
+    override func updateTrackingAreas() {
+        if let trackingArea = trackingArea {
+            removeTrackingArea(trackingArea)
+        }
+        let options: NSTrackingArea.Options = [.activeInKeyWindow, .mouseMoved, .mouseEnteredAndExited, .inVisibleRect]
+        let area = NSTrackingArea(rect: bounds, options: options, owner: self, userInfo: nil)
+        addTrackingArea(area)
+        trackingArea = area
+        super.updateTrackingAreas()
+    }
+    
+    override func mouseMoved(with event: NSEvent) {
+        let location = convert(event.locationInWindow, from: nil)
+        updateHoverIndex(for: location)
+    }
+    
+    override func mouseExited(with event: NSEvent) {
+        hoverIndex = nil
+    }
+    
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         
-        let insetBounds = bounds.insetBy(dx: 6, dy: 6)
+        let backgroundRect = bounds.insetBy(dx: 6, dy: 6)
+        let plotRect = plotRect(in: backgroundRect)
         let gridColor = NSColor.separatorColor.withAlphaComponent(0.35)
+        let axisColor = NSColor.separatorColor.withAlphaComponent(0.6)
         
         NSColor.controlBackgroundColor.withAlphaComponent(0.15).setFill()
-        NSBezierPath(roundedRect: insetBounds, xRadius: 6, yRadius: 6).fill()
+        NSBezierPath(roundedRect: backgroundRect, xRadius: 6, yRadius: 6).fill()
         
-        guard let maxValue = values.max(), maxValue > 0 else {
+        guard let maxValue = series.map({ $0.value }).max(), maxValue > 0 else {
             let text = NSLocalizedString("history.empty", comment: "")
             let attributes: [NSAttributedString.Key: Any] = [
                 .font: NSFont.systemFont(ofSize: 12),
                 .foregroundColor: NSColor.secondaryLabelColor
             ]
             let size = text.size(withAttributes: attributes)
-            let point = NSPoint(x: bounds.midX - size.width / 2, y: bounds.midY - size.height / 2)
+            let point = NSPoint(x: backgroundRect.midX - size.width / 2, y: backgroundRect.midY - size.height / 2)
             text.draw(at: point, withAttributes: attributes)
             return
         }
         
-        // Grid
-        for i in 1...3 {
-            let y = insetBounds.minY + insetBounds.height * CGFloat(i) / 4
-            let path = NSBezierPath()
-            path.move(to: NSPoint(x: insetBounds.minX, y: y))
-            path.line(to: NSPoint(x: insetBounds.maxX, y: y))
-            gridColor.setStroke()
-            path.lineWidth = 1
-            path.stroke()
-        }
+        drawGrid(in: plotRect, color: gridColor)
+        drawAxes(in: plotRect, color: axisColor)
+        drawAxisLabels(in: plotRect, maxValue: maxValue)
         
         switch style {
         case .line:
-            drawLineChart(in: insetBounds, maxValue: maxValue)
+            drawLineChart(in: plotRect, maxValue: maxValue)
         case .bar:
-            drawBarChart(in: insetBounds, maxValue: maxValue)
+            drawBarChart(in: plotRect, maxValue: maxValue)
+        }
+        
+        drawHover(in: plotRect, maxValue: maxValue, backgroundRect: backgroundRect)
+    }
+    
+    private func drawGrid(in rect: NSRect, color: NSColor) {
+        for i in 1...3 {
+            let y = rect.minY + rect.height * CGFloat(i) / 4
+            let path = NSBezierPath()
+            path.move(to: NSPoint(x: rect.minX, y: y))
+            path.line(to: NSPoint(x: rect.maxX, y: y))
+            color.setStroke()
+            path.lineWidth = 1
+            path.stroke()
+        }
+    }
+    
+    private func drawAxes(in rect: NSRect, color: NSColor) {
+        let path = NSBezierPath()
+        path.move(to: NSPoint(x: rect.minX, y: rect.minY))
+        path.line(to: NSPoint(x: rect.minX, y: rect.maxY))
+        path.move(to: NSPoint(x: rect.minX, y: rect.minY))
+        path.line(to: NSPoint(x: rect.maxX, y: rect.minY))
+        color.setStroke()
+        path.lineWidth = 1
+        path.stroke()
+    }
+    
+    private func drawAxisLabels(in rect: NSRect, maxValue: Double) {
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 10),
+            .foregroundColor: NSColor.secondaryLabelColor
+        ]
+        
+        drawLabel(formatValue(0), at: NSPoint(x: rect.minX - 4, y: rect.minY), alignment: .right, attributes: attributes)
+        drawLabel(formatValue(maxValue / 2), at: NSPoint(x: rect.minX - 4, y: rect.midY), alignment: .right, attributes: attributes)
+        drawLabel(formatValue(maxValue), at: NSPoint(x: rect.minX - 4, y: rect.maxY), alignment: .right, attributes: attributes)
+        
+        guard !series.isEmpty else { return }
+        let labels = series.map { dateLabel(for: $0.date) }
+        let maxLabelWidth = labels
+            .map { $0.size(withAttributes: attributes).width }
+            .max() ?? 0
+        let minSpacing: CGFloat = 6
+        let maxLabels = max(2, Int(rect.width / max(1, maxLabelWidth + minSpacing)))
+        let count = labels.count
+        let step: Int
+        if count <= 7 {
+            step = 2
+        } else if maxLabels >= count {
+            step = 1
+        } else {
+            step = Int(ceil(Double(count - 1) / Double(maxLabels - 1)))
+        }
+        let xPositions = xPositions(in: rect)
+        let y = rect.minY - 14
+        var indices = Array(stride(from: 0, to: count, by: step))
+        if indices.last != count - 1 {
+            indices.append(count - 1)
+        }
+        for index in indices {
+            let text = labels[index]
+            let x = xPositions[index]
+            drawClampedLabel(text, center: NSPoint(x: x, y: y), within: rect, attributes: attributes)
         }
     }
     
     private func drawLineChart(in rect: NSRect, maxValue: Double) {
-        let count = max(values.count, 1)
-        let stepX = count > 1 ? rect.width / CGFloat(count - 1) : 0
+        let count = series.count
+        guard count > 0 else { return }
+        let xPositions = xPositions(in: rect)
         let path = NSBezierPath()
         
-        for (index, value) in values.enumerated() {
-            let x = rect.minX + CGFloat(index) * stepX
-            let y = rect.minY + (CGFloat(value) / CGFloat(maxValue)) * rect.height
+        for (index, item) in series.enumerated() {
+            let x = xPositions[index]
+            let y = yPosition(for: item.value, in: rect, maxValue: maxValue)
             let point = NSPoint(x: x, y: y)
             if index == 0 {
                 path.move(to: point)
@@ -806,9 +920,9 @@ class StatsChartView: NSView {
         path.lineWidth = 2
         path.stroke()
         
-        for (index, value) in values.enumerated() {
-            let x = rect.minX + CGFloat(index) * stepX
-            let y = rect.minY + (CGFloat(value) / CGFloat(maxValue)) * rect.height
+        for (index, item) in series.enumerated() {
+            let x = xPositions[index]
+            let y = yPosition(for: item.value, in: rect, maxValue: maxValue)
             let dotRect = NSRect(x: x - 2.5, y: y - 2.5, width: 5, height: 5)
             let dot = NSBezierPath(ovalIn: dotRect)
             NSColor.systemBlue.setFill()
@@ -817,17 +931,152 @@ class StatsChartView: NSView {
     }
     
     private func drawBarChart(in rect: NSRect, maxValue: Double) {
-        let count = max(values.count, 1)
+        let count = series.count
+        guard count > 0 else { return }
         let stepX = rect.width / CGFloat(count)
         let barWidth = min(stepX * 0.6, 22)
         
-        for (index, value) in values.enumerated() {
-            let height = (CGFloat(value) / CGFloat(maxValue)) * rect.height
+        for (index, item) in series.enumerated() {
+            let height = (CGFloat(item.value) / CGFloat(maxValue)) * rect.height
             let x = rect.minX + CGFloat(index) * stepX + (stepX - barWidth) / 2
             let barRect = NSRect(x: x, y: rect.minY, width: barWidth, height: height)
             let barPath = NSBezierPath(roundedRect: barRect, xRadius: 2, yRadius: 2)
             NSColor.systemBlue.setFill()
             barPath.fill()
         }
+    }
+    
+    private func drawHover(in rect: NSRect, maxValue: Double, backgroundRect: NSRect) {
+        guard let hoverIndex = hoverIndex, hoverIndex >= 0, hoverIndex < series.count else { return }
+        let xPositions = xPositions(in: rect)
+        let value = series[hoverIndex].value
+        let x = xPositions[hoverIndex]
+        let y = yPosition(for: value, in: rect, maxValue: maxValue)
+        
+        let crosshairColor = NSColor.systemBlue.withAlphaComponent(0.25)
+        let crosshairPath = NSBezierPath()
+        crosshairPath.move(to: NSPoint(x: x, y: rect.minY))
+        crosshairPath.line(to: NSPoint(x: x, y: rect.maxY))
+        crosshairPath.move(to: NSPoint(x: rect.minX, y: y))
+        crosshairPath.line(to: NSPoint(x: rect.maxX, y: y))
+        crosshairColor.setStroke()
+        crosshairPath.lineWidth = 1
+        crosshairPath.stroke()
+        
+        let radius: CGFloat = 5
+        let dotRect = NSRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2)
+        let dot = NSBezierPath(ovalIn: dotRect)
+        NSColor.systemBlue.setFill()
+        dot.fill()
+        NSColor.white.withAlphaComponent(0.9).setStroke()
+        dot.lineWidth = 2
+        dot.stroke()
+        
+        let hoverAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 10, weight: .semibold),
+            .foregroundColor: NSColor.labelColor
+        ]
+        
+        drawLabel(formatValue(value), at: NSPoint(x: rect.minX - 4, y: y), alignment: .right, attributes: hoverAttributes)
+        
+        let dateLabel = dateLabel(for: series[hoverIndex].date)
+        drawClampedLabel(dateLabel, center: NSPoint(x: x, y: rect.minY - 14), within: backgroundRect, attributes: hoverAttributes)
+    }
+    
+    private func updateHoverIndex(for location: NSPoint) {
+        guard !series.isEmpty else {
+            hoverIndex = nil
+            return
+        }
+        let backgroundRect = bounds.insetBy(dx: 6, dy: 6)
+        let rect = plotRect(in: backgroundRect)
+        guard rect.contains(location) else {
+            hoverIndex = nil
+            return
+        }
+        let positions = xPositions(in: rect)
+        var nearestIndex = 0
+        var nearestDistance = abs(location.x - positions[0])
+        for (index, x) in positions.enumerated() {
+            let distance = abs(location.x - x)
+            if distance < nearestDistance {
+                nearestDistance = distance
+                nearestIndex = index
+            }
+        }
+        hoverIndex = nearestIndex
+    }
+    
+    private func plotRect(in rect: NSRect) -> NSRect {
+        let leftPadding: CGFloat = 36
+        let rightPadding: CGFloat = 10
+        let topPadding: CGFloat = 10
+        let bottomPadding: CGFloat = 20
+        let width = max(1, rect.width - leftPadding - rightPadding)
+        let height = max(1, rect.height - topPadding - bottomPadding)
+        return NSRect(
+            x: rect.minX + leftPadding,
+            y: rect.minY + bottomPadding,
+            width: width,
+            height: height
+        )
+    }
+    
+    private func xPositions(in rect: NSRect) -> [CGFloat] {
+        let count = series.count
+        guard count > 0 else { return [] }
+        if count == 1 {
+            return [rect.midX]
+        }
+        switch style {
+        case .bar:
+            let stepX = rect.width / CGFloat(count)
+            return (0..<count).map { rect.minX + (CGFloat($0) + 0.5) * stepX }
+        case .line:
+            let stepX = rect.width / CGFloat(count - 1)
+            return (0..<count).map { rect.minX + CGFloat($0) * stepX }
+        }
+    }
+    
+    private func yPosition(for value: Double, in rect: NSRect, maxValue: Double) -> CGFloat {
+        let ratio = maxValue > 0 ? CGFloat(value / maxValue) : 0
+        return rect.minY + ratio * rect.height
+    }
+    
+    private func formatValue(_ value: Double) -> String {
+        return StatsManager.shared.formatHistoryValue(metric: metric, value: value)
+    }
+    
+    private func dateLabel(for date: Date) -> String {
+        return dayDateFormatter.string(from: date)
+    }
+    
+    private enum LabelAlignment {
+        case left
+        case center
+        case right
+    }
+    
+    private func drawLabel(_ text: String, at point: NSPoint, alignment: LabelAlignment, attributes: [NSAttributedString.Key: Any]) {
+        let size = text.size(withAttributes: attributes)
+        var x = point.x
+        switch alignment {
+        case .left:
+            break
+        case .center:
+            x -= size.width / 2
+        case .right:
+            x -= size.width
+        }
+        let y = point.y - size.height / 2
+        text.draw(at: NSPoint(x: x, y: y), withAttributes: attributes)
+    }
+    
+    private func drawClampedLabel(_ text: String, center: NSPoint, within rect: NSRect, attributes: [NSAttributedString.Key: Any]) {
+        let size = text.size(withAttributes: attributes)
+        var x = center.x - size.width / 2
+        x = min(max(x, rect.minX), rect.maxX - size.width)
+        let y = center.y - size.height / 2
+        text.draw(at: NSPoint(x: x, y: y), withAttributes: attributes)
     }
 }
