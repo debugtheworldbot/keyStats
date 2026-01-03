@@ -1,6 +1,8 @@
 import Foundation
 import Cocoa
 
+private let metersPerPixel: Double = 0.000264583
+
 /// 统计数据结构
 struct DailyStats: Codable {
     var date: Date
@@ -37,13 +39,13 @@ struct DailyStats: Codable {
     
     /// 格式化鼠标移动距离
     var formattedMouseDistance: String {
-        if mouseDistance >= 1000000 {
-            return String(format: "%.2f km", mouseDistance / 1000000 * 0.0264583) // 假设 96 DPI
+        let meters = mouseDistance * metersPerPixel
+        if meters >= 1000 {
+            return String(format: "%.2f km", meters / 1000)
         } else if mouseDistance >= 1000 {
-            return String(format: "%.1f m", mouseDistance / 1000 * 0.0264583)
-        } else {
-            return String(format: "%.0f px", mouseDistance)
+            return String(format: "%.1f m", meters)
         }
+        return String(format: "%.0f px", mouseDistance)
     }
     
     /// 格式化滚动距离
@@ -238,12 +240,23 @@ class StatsManager {
 
     /// 获取菜单栏显示的数字部分
     func getMenuBarTextParts() -> (keys: String, clicks: String) {
-        let keys = formatNumber(currentStats.keyPresses)
-        let clicks = formatNumber(currentStats.totalClicks)
+        let keys = formatMenuBarNumber(currentStats.keyPresses)
+        let clicks = formatMenuBarNumber(currentStats.totalClicks)
         return (keys, clicks)
     }
     
-    /// 格式化数字显示
+    /// 菜单栏紧凑显示（多一位小数）
+    private func formatMenuBarNumber(_ number: Int) -> String {
+        if number >= 1000000 {
+            return String(format: "%.2fM", Double(number) / 1000000)
+        } else if number >= 1000 {
+            return String(format: "%.2fk", Double(number) / 1000)
+        } else {
+            return "\(number)"
+        }
+    }
+
+    /// 通用紧凑显示
     private func formatNumber(_ number: Int) -> String {
         if number >= 1000000 {
             return String(format: "%.1fM", Double(number) / 1000000)
@@ -351,13 +364,13 @@ extension StatsManager {
     }
     
     private func formatMouseDistance(_ distance: Double) -> String {
-        if distance >= 1000000 {
-            return String(format: "%.2f km", distance / 1000000 * 0.0264583)
+        let meters = distance * metersPerPixel
+        if meters >= 1000 {
+            return String(format: "%.2f km", meters / 1000)
         } else if distance >= 1000 {
-            return String(format: "%.1f m", distance / 1000 * 0.0264583)
-        } else {
-            return String(format: "%.0f px", distance)
+            return String(format: "%.1f m", meters)
         }
+        return String(format: "%.0f px", distance)
     }
     
     private func formatScrollDistance(_ distance: Double) -> String {
