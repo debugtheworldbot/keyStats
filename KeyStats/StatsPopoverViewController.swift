@@ -160,8 +160,6 @@ class StatsPopoverViewController: NSViewController {
         
         // 时间范围
         rangeControl = NSSegmentedControl(labels: [
-            NSLocalizedString("history.range.today", comment: ""),
-            NSLocalizedString("history.range.yesterday", comment: ""),
             NSLocalizedString("history.range.week", comment: ""),
             NSLocalizedString("history.range.month", comment: "")
         ],
@@ -417,9 +415,7 @@ class StatsPopoverViewController: NSViewController {
     
     private func selectedRange() -> StatsManager.HistoryRange {
         switch rangeControl.selectedSegment {
-        case 0: return .today
-        case 1: return .yesterday
-        case 2: return .week
+        case 0: return .week
         default: return .month
         }
     }
