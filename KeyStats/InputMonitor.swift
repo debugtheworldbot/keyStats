@@ -131,20 +131,25 @@ class InputMonitor {
     private func keyName(for event: CGEvent) -> String {
         let keyCode = Int(event.getIntegerValueField(.keyboardEventKeycode))
         let baseName = baseKeyName(for: keyCode, event: event)
-        let modifiers = modifierNames(for: event.flags)
+        let modifiers = modifierNames(for: event.flags, keyCode: keyCode)
         if modifiers.isEmpty {
             return baseName
         }
         return modifiers.joined(separator: "+") + "+" + baseName
     }
 
-    private func modifierNames(for flags: CGEventFlags) -> [String] {
+    private func modifierNames(for flags: CGEventFlags, keyCode: Int) -> [String] {
         var names: [String] = []
         if flags.contains(.maskCommand) { names.append("Cmd") }
         if flags.contains(.maskShift) { names.append("Shift") }
         if flags.contains(.maskAlternate) { names.append("Option") }
         if flags.contains(.maskControl) { names.append("Ctrl") }
-        if flags.contains(.maskSecondaryFn) { names.append("Fn") }
+        // 方向键(123-126)、Home(115)、End(119)、PageUp(116)、PageDown(121) 等导航键忽略 Fn 标志
+        // 因为在某些键盘上这些键会自动带上 Fn 标志
+        let isNavigationKey = (123...126).contains(keyCode) || [115, 116, 119, 121, 117].contains(keyCode)
+        if flags.contains(.maskSecondaryFn) && !isNavigationKey {
+            names.append("Fn")
+        }
         return names
     }
 
