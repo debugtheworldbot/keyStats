@@ -70,14 +70,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func showPermissionAlert() {
         let alert = NSAlert()
         alert.messageText = NSLocalizedString("permission.title", comment: "")
-        if let appIcon = NSApp.applicationIconImage {
+        // 使用 Assets 中的 AppIcon
+        if let appIcon = NSImage(named: "AppIcon") {
             alert.icon = makeRoundedAlertIcon(from: appIcon)
         }
         alert.informativeText = NSLocalizedString("permission.message", comment: "")
         alert.alertStyle = .informational
         alert.addButton(withTitle: NSLocalizedString("permission.openSettings", comment: ""))
         alert.addButton(withTitle: NSLocalizedString("permission.later", comment: ""))
-        
+
         if alert.runModal() == .alertFirstButtonReturn {
             openAccessibilitySettings()
             _ = InputMonitor.shared.checkAccessibilityPermission()

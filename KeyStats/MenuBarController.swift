@@ -110,31 +110,36 @@ class MenuBarController {
     private func makeStatusTitle(keysText: String, clicksText: String) -> NSAttributedString {
         let font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
         let textAttributes: [NSAttributedString.Key: Any] = [.font: font]
-        let symbolConfig = NSImage.SymbolConfiguration(pointSize: 13, weight: .medium)
         let result = NSMutableAttributedString()
 
         func appendText(_ text: String) {
             result.append(NSAttributedString(string: text, attributes: textAttributes))
         }
 
-        func appendSymbol(_ name: String) {
-            guard let image = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
-                .withSymbolConfiguration(symbolConfig) else {
+        func appendAppIcon() {
+            guard let appIcon = NSImage(named: "AppIcon") else {
                 return
             }
+            let resizedIcon = NSImage(size: NSSize(width: 13, height: 13))
+            resizedIcon.lockFocus()
+            appIcon.draw(in: NSRect(x: 0, y: 0, width: 13, height: 13),
+                        from: NSRect(origin: .zero, size: appIcon.size),
+                        operation: .copy,
+                        fraction: 1.0)
+            resizedIcon.unlockFocus()
+
             let attachment = NSTextAttachment()
-            image.size = NSSize(width: 13, height: 13)
-            attachment.image = image
+            attachment.image = resizedIcon
             attachment.bounds = NSRect(x: 0, y: -1, width: 13, height: 13)
             result.append(NSAttributedString(attachment: attachment))
         }
 
-        appendSymbol("button.horizontal.top.press")
+        appendAppIcon()
         appendText(" ")
         appendText(keysText)
         appendText(" ")
         appendText(clicksText)
-        
+
         return result
     }
 }
@@ -142,7 +147,6 @@ class MenuBarController {
 // MARK: - 菜单栏自定义视图
 
 class MenuBarStatusView: NSView {
-    private static let symbolName = "button.horizontal.top.press.fill"
     private let imageView = NSImageView()
     private let topLabel = NSTextField(labelWithString: "0")
     private let bottomLabel = NSTextField(labelWithString: "0")
@@ -162,13 +166,17 @@ class MenuBarStatusView: NSView {
     }
     
     private func setupUI() {
-        let symbolConfig = NSImage.SymbolConfiguration(pointSize: 18, weight: .medium)
-        if let image = NSImage(systemSymbolName: Self.symbolName, accessibilityDescription: nil)?
-            .withSymbolConfiguration(symbolConfig) {
-            image.size = NSSize(width: 18, height: 18)
-            imageView.image = image
+        // 使用应用图标而不是 SF Symbol
+        if let appIcon = NSImage(named: "AppIcon") {
+            let resizedIcon = NSImage(size: NSSize(width: 18, height: 18))
+            resizedIcon.lockFocus()
+            appIcon.draw(in: NSRect(x: 0, y: 0, width: 18, height: 18),
+                        from: NSRect(origin: .zero, size: appIcon.size),
+                        operation: .copy,
+                        fraction: 1.0)
+            resizedIcon.unlockFocus()
+            imageView.image = resizedIcon
         }
-        imageView.symbolConfiguration = symbolConfig
         imageView.imageScaling = .scaleProportionallyUpOrDown
         imageView.imageAlignment = .alignCenter
         imageView.translatesAutoresizingMaskIntoConstraints = false
