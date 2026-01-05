@@ -1,4 +1,7 @@
 # KeyStats - macOS 键鼠统计菜单栏应用
+
+[English](./README_EN.md) | 简体中文
+
 <img width="359" height="745" alt="image" src="https://github.com/user-attachments/assets/e6eb508a-08fb-42bb-951c-f544dfb9d634" />
 
 
