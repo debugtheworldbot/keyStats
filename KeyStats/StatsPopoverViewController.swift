@@ -35,7 +35,7 @@ class StatsPopoverViewController: NSViewController {
     
     override func loadView() {
         // 创建主视图
-        let mainView = NSView(frame: NSRect(x: 0, y: 0, width: 320, height: 640))
+        let mainView = NSView(frame: NSRect(x: 0, y: 0, width: 360, height: 640))
         mainView.wantsLayer = true
         self.view = mainView
     }
@@ -315,7 +315,7 @@ class StatsPopoverViewController: NSViewController {
     private func makeVerticalSeparator() -> NSView {
         let view = NSView()
         view.wantsLayer = true
-        view.layer?.backgroundColor = NSColor.separatorColor.withAlphaComponent(0.35).cgColor
+        view.layer?.backgroundColor = NSColor.separatorColor.withAlphaComponent(0.15).cgColor
         view.translatesAutoresizingMaskIntoConstraints = false
         view.widthAnchor.constraint(equalToConstant: 1).isActive = true
         return view
@@ -580,6 +580,10 @@ class KeyCountRowView: NSView {
         keyLabel = NSTextField(labelWithAttributedString: formattedKeyLabel(for: key, font: keyFont))
         keyLabel.font = keyFont
         keyLabel.textColor = .labelColor
+        keyLabel.lineBreakMode = .byTruncatingTail
+        keyLabel.maximumNumberOfLines = 1
+        keyLabel.cell?.truncatesLastVisibleLine = true
+        keyLabel.toolTip = key
         keyLabel.translatesAutoresizingMaskIntoConstraints = false
         addSubview(keyLabel)
 
@@ -595,6 +599,7 @@ class KeyCountRowView: NSView {
 
             keyLabel.leadingAnchor.constraint(equalTo: leadingAnchor),
             keyLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+            keyLabel.trailingAnchor.constraint(lessThanOrEqualTo: countLabel.leadingAnchor, constant: -8),
 
             countLabel.trailingAnchor.constraint(equalTo: trailingAnchor),
             countLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -608,6 +613,7 @@ class KeyCountRowView: NSView {
         } else {
             keyLabel.stringValue = key
         }
+        keyLabel.toolTip = key
         countLabel.stringValue = count
     }
 
@@ -620,7 +626,8 @@ class KeyCountRowView: NSView {
 
         for (index, part) in keyParts(from: key).enumerated() {
             if index > 0 {
-                result.append(NSAttributedString(string: " ", attributes: textAttributes))
+                // 使用 hair space 最小化按钮间距
+                result.append(NSAttributedString(string: "\u{200A}", attributes: textAttributes))
             }
             if let badge = makeKeyBadge(for: part, font: font) {
                 let attachment = NSTextAttachment()
