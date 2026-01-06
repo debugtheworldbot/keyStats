@@ -1,128 +1,94 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PROJECT="$ROOT_DIR/KeyStats.xcodeproj"
-SCHEME="KeyStats"
-CONFIGURATION="Release"
+# KeyStats DMG 打包脚本
+
+set -e
+
+# 配置
 APP_NAME="KeyStats"
-APP_LINK_NAME="$(osascript -e 'tell application "Finder" to get name of (path to applications folder)' 2>/dev/null || true)"
-APP_LINK_NAME="$(printf '%s' "$APP_LINK_NAME" | tr -d '\r\n')"
-if [[ -z "$APP_LINK_NAME" ]]; then
-  APP_LINK_NAME="Applications"
+SCHEME="KeyStats"
+PROJECT="KeyStats.xcodeproj"
+CONFIGURATION="Release"
+BUILD_DIR="build"
+DMG_DIR="$BUILD_DIR/dmg"
+
+# 获取脚本所在目录的上级目录（项目根目录）
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+OUTPUT_DIR="$PROJECT_DIR"
+cd "$PROJECT_DIR"
+
+echo "📦 开始打包 $APP_NAME..."
+
+# 清理旧的构建
+echo "🧹 清理旧的构建..."
+rm -rf "$BUILD_DIR"
+mkdir -p "$DMG_DIR" "$OUTPUT_DIR"
+
+# 构建 Release 版本
+echo "🔨 构建 Release 版本..."
+xcodebuild -project "$PROJECT" \
+    -scheme "$SCHEME" \
+    -configuration "$CONFIGURATION" \
+    -derivedDataPath "$BUILD_DIR/DerivedData" \
+    -archivePath "$BUILD_DIR/$APP_NAME.xcarchive" \
+    archive \
+    CODE_SIGN_IDENTITY="-" \
+    | xcpretty || xcodebuild -project "$PROJECT" \
+    -scheme "$SCHEME" \
+    -configuration "$CONFIGURATION" \
+    -derivedDataPath "$BUILD_DIR/DerivedData" \
+    -archivePath "$BUILD_DIR/$APP_NAME.xcarchive" \
+    archive \
+    CODE_SIGN_IDENTITY="-"
+
+# 导出 .app
+echo "📤 导出应用..."
+APP_PATH="$BUILD_DIR/$APP_NAME.xcarchive/Products/Applications/$APP_NAME.app"
+
+if [ ! -d "$APP_PATH" ]; then
+    echo "❌ 构建失败：找不到 $APP_PATH"
+    exit 1
 fi
-DERIVED_DATA="$ROOT_DIR/build/DerivedData"
-BUILD_DIR="$ROOT_DIR/build"
-APP_PATH="$DERIVED_DATA/Build/Products/$CONFIGURATION/$APP_NAME.app"
-STAGING_DIR="$BUILD_DIR/dmg-staging"
-MOUNT_DIR="$BUILD_DIR/dmg-mount"
-TMP_DMG="$BUILD_DIR/$APP_NAME-rw.dmg"
-BACKGROUND_IMAGE="$STAGING_DIR/background.png"
-DMG_PATH="$ROOT_DIR/$APP_NAME.dmg"
 
-cleanup_mount() {
-  if mount | grep -q "$MOUNT_DIR"; then
-    hdiutil detach "$MOUNT_DIR" >/dev/null 2>&1 || hdiutil detach -force "$MOUNT_DIR" >/dev/null 2>&1 || true
-  fi
-}
+# 复制到 DMG 目录
+cp -R "$APP_PATH" "$DMG_DIR/"
 
-trap cleanup_mount EXIT
-
-echo "Building $APP_NAME..."
-xcodebuild \
-  -project "$PROJECT" \
-  -scheme "$SCHEME" \
-  -configuration "$CONFIGURATION" \
-  -derivedDataPath "$DERIVED_DATA" \
-  clean build
-
-if [[ ! -d "$APP_PATH" ]]; then
-  echo "App not found at $APP_PATH" >&2
-  exit 1
+# Ad-hoc 签名（重要：确保辅助功能权限正常工作）
+echo "🔏 签名应用..."
+ENTITLEMENTS="$PROJECT_DIR/KeyStats/KeyStats.entitlements"
+if [ -f "$ENTITLEMENTS" ]; then
+    codesign --force --deep --sign - --entitlements "$ENTITLEMENTS" "$DMG_DIR/$APP_NAME.app"
+else
+    codesign --force --deep --sign - "$DMG_DIR/$APP_NAME.app"
 fi
 
-cleanup_mount
-rm -rf "$STAGING_DIR"
-rm -rf "$MOUNT_DIR"
-rm -f "$TMP_DMG"
-mkdir -p "$STAGING_DIR"
-ditto "$APP_PATH" "$STAGING_DIR/$APP_NAME.app"
+# 创建 Applications 文件夹的符号链接
+ln -s /Applications "$DMG_DIR/Applications"
 
-BACKGROUND_IMAGE="$BACKGROUND_IMAGE" /usr/bin/swift - <<'EOF'
-import AppKit
-import Foundation
+DMG_NAME="${APP_NAME}.dmg"
+DMG_PATH="$OUTPUT_DIR/$DMG_NAME"
 
-let outputPath = ProcessInfo.processInfo.environment["BACKGROUND_IMAGE"] ?? ""
-if outputPath.isEmpty {
-    exit(1)
-}
+# 创建 DMG
+echo "💿 创建 DMG..."
+hdiutil create -volname "$APP_NAME" \
+    -srcfolder "$DMG_DIR" \
+    -ov -format UDZO \
+    "$DMG_PATH"
 
-let width: CGFloat = 720
-let height: CGFloat = 260
-let size = NSSize(width: width, height: height)
-let image = NSImage(size: size)
-image.lockFocus()
+# 清理临时文件
+echo "🧹 清理临时文件..."
+rm -rf "$DMG_DIR"
+rm -rf "$BUILD_DIR/DerivedData"
+rm -rf "$BUILD_DIR/$APP_NAME.xcarchive"
 
-NSColor.clear.set()
-NSRect(origin: .zero, size: size).fill()
+# 完成
+DMG_SIZE=$(du -h "$DMG_PATH" | cut -f1)
+echo ""
+echo "✅ 打包完成！"
+echo "📍 位置: $DMG_PATH"
+echo "📊 大小: $DMG_SIZE"
+echo ""
 
-image.unlockFocus()
-
-guard let tiff = image.tiffRepresentation,
-      let rep = NSBitmapImageRep(data: tiff),
-      let data = rep.representation(using: .png, properties: [:]) else {
-    exit(1)
-}
-
-try data.write(to: URL(fileURLWithPath: outputPath))
-EOF
-
-echo "Creating DMG..."
-ln -s /Applications "$STAGING_DIR/$APP_LINK_NAME"
-
-hdiutil create -volname "$APP_NAME" -srcfolder "$STAGING_DIR" -ov -format UDRW "$TMP_DMG"
-mkdir -p "$MOUNT_DIR"
-hdiutil attach "$TMP_DMG" -nobrowse -readwrite -mountpoint "$MOUNT_DIR"
-
-BACKGROUND_PATH="$MOUNT_DIR/background.png" MOUNT_DIR="$MOUNT_DIR" osascript <<EOF
-set backgroundFile to POSIX file "$BACKGROUND_PATH"
-set mountAlias to POSIX file "$MOUNT_DIR" as alias
-tell application "Finder"
-    set dmgDisk to disk of mountAlias
-    tell dmgDisk
-        open
-        set current view of container window to icon view
-        set toolbar visible of container window to false
-        set statusbar visible of container window to false
-        set the bounds of container window to {100, 100, 820, 360}
-        set iconViewOptions to the icon view options of container window
-        set arrangement of iconViewOptions to not arranged
-        set icon size of iconViewOptions to 128
-        set background picture of iconViewOptions to backgroundFile
-        delay 0.5
-        try
-            set position of item "$APP_NAME.app" of container window to {170, 170}
-        end try
-        try
-            set position of item "$APP_LINK_NAME" of container window to {520, 170}
-        on error
-            try
-                set position of item "Applications" of container window to {380, 170}
-            end try
-        end try
-        close
-        open
-        update without registering applications
-        delay 1
-        close
-    end tell
-end tell
-EOF
-
-chflags hidden "$MOUNT_DIR/background.png"
-
-hdiutil detach "$MOUNT_DIR"
-hdiutil convert "$TMP_DMG" -format UDZO -imagekey zlib-level=9 -ov -o "$DMG_PATH"
-rm -f "$TMP_DMG"
-
-echo "DMG created at $DMG_PATH"
+# 打开输出目录
+open "$OUTPUT_DIR"
