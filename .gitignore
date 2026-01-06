@@ -4,7 +4,7 @@
 Icon
 
 dist
-KeyStats.dmg
+*.dmg
 
 # Xcode
 build/
