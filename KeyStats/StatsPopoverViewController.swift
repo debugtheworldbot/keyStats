@@ -30,6 +30,7 @@ class StatsPopoverViewController: NSViewController {
     private var resetButton: NSButton!
     private var quitButton: NSButton!
     private var permissionButton: NSButton!
+    private var launchAtLoginButton: NSButton!
     
     // MARK: - 生命周期
     
@@ -216,6 +217,10 @@ class StatsPopoverViewController: NSViewController {
         bottomSeparator.boxType = .separator
         bottomSeparator.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(bottomSeparator)
+
+        launchAtLoginButton = NSButton(checkboxWithTitle: NSLocalizedString("button.launchAtLogin", comment: ""),
+                                       target: self,
+                                       action: #selector(toggleLaunchAtLogin))
         
         // 按钮容器
         let buttonStack = NSStackView()
@@ -236,7 +241,24 @@ class StatsPopoverViewController: NSViewController {
         buttonStack.addArrangedSubview(resetButton)
         buttonStack.addArrangedSubview(quitButton)
 
-        view.addSubview(buttonStack)
+        let footerStack = NSStackView()
+        footerStack.orientation = .horizontal
+        footerStack.alignment = .centerY
+        footerStack.spacing = 12
+        footerStack.translatesAutoresizingMaskIntoConstraints = false
+
+        let footerSpacer = NSView()
+        footerSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        footerSpacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        buttonStack.setContentHuggingPriority(.required, for: .horizontal)
+        buttonStack.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        footerStack.addArrangedSubview(launchAtLoginButton)
+        footerStack.addArrangedSubview(footerSpacer)
+        footerStack.addArrangedSubview(buttonStack)
+
+        view.addSubview(footerStack)
         
         // 布局约束
         NSLayoutConstraint.activate([
@@ -296,9 +318,10 @@ class StatsPopoverViewController: NSViewController {
             bottomSeparator.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             
             // 按钮
-            buttonStack.topAnchor.constraint(equalTo: bottomSeparator.bottomAnchor, constant: 12),
-            buttonStack.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            buttonStack.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -16)
+            footerStack.topAnchor.constraint(equalTo: bottomSeparator.bottomAnchor, constant: 12),
+            footerStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            footerStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            footerStack.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -16)
         ])
     }
     
@@ -337,6 +360,7 @@ class StatsPopoverViewController: NSViewController {
         updateKeyBreakdown()
         updateHistorySection()
         updatePermissionButtonVisibility()
+        updateLaunchAtLoginState()
     }
 
     private func startLiveUpdates() {
@@ -403,6 +427,10 @@ class StatsPopoverViewController: NSViewController {
 
     private func updatePermissionButtonVisibility() {
         permissionButton.isHidden = InputMonitor.shared.hasAccessibilityPermission()
+    }
+
+    private func updateLaunchAtLoginState() {
+        launchAtLoginButton.state = LaunchAtLoginManager.shared.isEnabled ? .on : .off
     }
 
     private func focusPrimaryControl() {
@@ -473,6 +501,26 @@ class StatsPopoverViewController: NSViewController {
     
     @objc private func quitApp() {
         NSApplication.shared.terminate(nil)
+    }
+
+    @objc private func toggleLaunchAtLogin() {
+        let shouldEnable = launchAtLoginButton.state == .on
+        do {
+            try LaunchAtLoginManager.shared.setEnabled(shouldEnable)
+            updateLaunchAtLoginState()
+        } catch {
+            updateLaunchAtLoginState()
+            showLaunchAtLoginError()
+        }
+    }
+
+    private func showLaunchAtLoginError() {
+        let alert = NSAlert()
+        alert.messageText = NSLocalizedString("launchAtLogin.error.title", comment: "")
+        alert.informativeText = NSLocalizedString("launchAtLogin.error.message", comment: "")
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: NSLocalizedString("button.ok", comment: ""))
+        alert.runModal()
     }
 
     private func openAccessibilitySettings() {
