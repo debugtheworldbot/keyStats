@@ -3,6 +3,12 @@
 "permission.openSettings" = "打开系统设置";
 "permission.later" = "稍后";
 "button.permission" = "获取权限";
+"button.launchAtLogin" = "开机启动";
+"button.ok" = "确定";
+"launchAtLogin.prompt.title" = "是否开机启动？";
+"launchAtLogin.prompt.message" = "是否希望 KeyStats 在登录后自动启动？";
+"launchAtLogin.prompt.enable" = "启用";
+"launchAtLogin.prompt.later" = "稍后";
 
 "stats.keyPresses" = "键盘敲击";
 "stats.leftClicks" = "左键点击";
@@ -37,6 +43,9 @@
 "stats.reset.message" = "确定要重置今日的所有统计数据吗？此操作不可撤销。";
 "stats.reset.confirm" = "重置";
 "stats.reset.cancel" = "取消";
+
+"launchAtLogin.error.title" = "无法更新开机启动";
+"launchAtLogin.error.message" = "请前往“系统设置 > 通用 > 登录项”中启用 KeyStats。";
 
 "about.author" = "作者";
 "about.version" = "版本 %@ (%@)";

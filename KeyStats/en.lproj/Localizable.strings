@@ -3,6 +3,12 @@
 "permission.openSettings" = "Open System Settings";
 "permission.later" = "Later";
 "button.permission" = "Grant Permission";
+"button.launchAtLogin" = "Open at Login";
+"button.ok" = "OK";
+"launchAtLogin.prompt.title" = "Start at Login?";
+"launchAtLogin.prompt.message" = "Would you like KeyStats to open automatically when you log in?";
+"launchAtLogin.prompt.enable" = "Enable";
+"launchAtLogin.prompt.later" = "Not Now";
 
 "stats.keyPresses" = "Key Presses";
 "stats.leftClicks" = "Left Clicks";
@@ -37,6 +43,9 @@
 "stats.reset.message" = "Reset all today's statistics? This cannot be undone.";
 "stats.reset.confirm" = "Reset";
 "stats.reset.cancel" = "Cancel";
+
+"launchAtLogin.error.title" = "Couldn’t Update Login Item";
+"launchAtLogin.error.message" = "Please enable KeyStats in System Settings > General > Login Items.";
 
 "about.author" = "Author";
 "about.version" = "Version %@ (%@)";

@@ -7,6 +7,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var permissionCheckTimer: Timer?
     private var permissionCheckCount = 0
     private let maxPermissionChecks = 150 // 5分钟后停止（2秒间隔 × 150次）
+    private let launchAtLoginPromptedKey = "launchAtLoginPrompted"
     
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         // 初始化菜单栏控制器
@@ -34,6 +35,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if InputMonitor.shared.hasAccessibilityPermission() {
             // 已有权限，直接开始监听
             InputMonitor.shared.startMonitoring()
+            promptLaunchAtLoginIfNeeded()
         } else {
             // 请求权限并显示提示
             showPermissionAlert()
@@ -53,6 +55,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     timer.invalidate()
                     self.permissionCheckTimer = nil
                     InputMonitor.shared.startMonitoring()
+                    self.promptLaunchAtLoginIfNeeded()
                     print("权限已授予，开始监听")
                     return
                 }
@@ -82,6 +85,41 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             openAccessibilitySettings()
             _ = InputMonitor.shared.checkAccessibilityPermission()
         }
+    }
+
+    private func promptLaunchAtLoginIfNeeded() {
+        guard InputMonitor.shared.hasAccessibilityPermission() else { return }
+        let defaults = UserDefaults.standard
+        guard !defaults.bool(forKey: launchAtLoginPromptedKey) else { return }
+        defaults.set(true, forKey: launchAtLoginPromptedKey)
+
+        if LaunchAtLoginManager.shared.isEnabled {
+            return
+        }
+
+        let alert = NSAlert()
+        alert.messageText = NSLocalizedString("launchAtLogin.prompt.title", comment: "")
+        alert.informativeText = NSLocalizedString("launchAtLogin.prompt.message", comment: "")
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: NSLocalizedString("launchAtLogin.prompt.enable", comment: ""))
+        alert.addButton(withTitle: NSLocalizedString("launchAtLogin.prompt.later", comment: ""))
+
+        if alert.runModal() == .alertFirstButtonReturn {
+            do {
+                try LaunchAtLoginManager.shared.setEnabled(true)
+            } catch {
+                showLaunchAtLoginError()
+            }
+        }
+    }
+
+    private func showLaunchAtLoginError() {
+        let alert = NSAlert()
+        alert.messageText = NSLocalizedString("launchAtLogin.error.title", comment: "")
+        alert.informativeText = NSLocalizedString("launchAtLogin.error.message", comment: "")
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: NSLocalizedString("button.ok", comment: ""))
+        alert.runModal()
     }
     
     private func openAccessibilitySettings() {
