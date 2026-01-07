@@ -117,7 +117,7 @@ class MenuBarController {
         }
 
         func appendAppIcon() {
-            guard let appIcon = NSImage(named: "AppIcon") else {
+            guard let appIcon = NSImage(named: "MenuIcon") else {
                 return
             }
             let resizedIcon = NSImage(size: NSSize(width: 13, height: 13))
@@ -166,8 +166,8 @@ class MenuBarStatusView: NSView {
     }
     
     private func setupUI() {
-        // 使用应用图标而不是 SF Symbol
-        if let appIcon = NSImage(named: "AppIcon") {
+        // 使用菜单栏图标而不是 SF Symbol
+        if let appIcon = NSImage(named: "MenuIcon") {
             let resizedIcon = NSImage(size: NSSize(width: 18, height: 18))
             resizedIcon.lockFocus()
             appIcon.draw(in: NSRect(x: 0, y: 0, width: 18, height: 18),
