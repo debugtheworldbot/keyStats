@@ -2,10 +2,12 @@
 
 English | [简体中文](./README.md)
 
-<img width="359" height="745" alt="image" src="https://github.com/user-attachments/assets/e6eb508a-08fb-42bb-951c-f544dfb9d634" />
+<img width="128" height="128" alt="ICON-iOS-Default-256x256@2x" src="https://github.com/user-attachments/assets/842780ed-c7a1-4c1b-a901-1f1d8babe51a" />
 
 
 KeyStats is a lightweight macOS native menu bar application that tracks daily keyboard keystrokes, mouse clicks, mouse movement distance, and scroll distance.
+
+<img width="300" height="581" alt="image" src="https://github.com/user-attachments/assets/c5146f66-0aa3-49ce-9184-2c75301bf398" />
 
 ## Installation & Usage
 
