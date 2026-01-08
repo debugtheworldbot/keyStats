@@ -70,7 +70,6 @@ class StatsManager {
     private var saveTimer: Timer?
     private var statsUpdateTimer: Timer?
     private var midnightCheckTimer: Timer?
-    private var lastResetDate: Date
     private let saveInterval: TimeInterval = 2.0
     private let statsUpdateDebounceInterval: TimeInterval = 0.3
     private var isReadyForUpdates = false
@@ -92,12 +91,9 @@ class StatsManager {
         dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
 
-        // 初始化 lastResetDate 为今天开始
-        let calendar = Calendar.current
-        lastResetDate = calendar.startOfDay(for: Date())
-
         // 先初始化 currentStats 为默认值
-        currentStats = DailyStats()
+        let calendar = Calendar.current
+        currentStats = DailyStats(date: calendar.startOfDay(for: Date()))
         history = loadHistory()
         
         // 然后尝试加载保存的数据（使用静态方法）
@@ -240,21 +236,27 @@ class StatsManager {
     // MARK: - 午夜重置
 
     private func setupMidnightReset() {
-        // 计算到下一个午夜的精确时间
+        scheduleNextMidnightReset()
+    }
+
+    private func scheduleNextMidnightReset() {
+        midnightCheckTimer?.invalidate()
+
+        // 使用日历计算下一次午夜，避免睡眠/时区变化导致的漂移
         let calendar = Calendar.current
         let now = Date()
-
-        guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: now),
-              let nextMidnight = calendar.date(bySettingHour: 0, minute: 0, second: 0, of: tomorrow) else {
+        guard let nextMidnight = calendar.nextDate(
+            after: now,
+            matching: DateComponents(hour: 0, minute: 0, second: 0),
+            matchingPolicy: .nextTime
+        ) else {
             print("⚠️ 无法计算午夜时间")
             return
         }
 
         let timeToMidnight = nextMidnight.timeIntervalSince(now)
-
         print("📅 设置午夜重置：将在 \(Int(timeToMidnight)) 秒后（\(nextMidnight)）执行重置")
 
-        // 首次在准确的午夜时刻触发
         midnightCheckTimer = Timer.scheduledTimer(withTimeInterval: timeToMidnight, repeats: false) { [weak self] _ in
             self?.performMidnightReset()
         }
@@ -269,36 +271,28 @@ class StatsManager {
         let now = Date()
         print("🌙 午夜重置触发：\(now)")
 
-        // 更新最后重置日期
-        lastResetDate = Calendar.current.startOfDay(for: now)
-
-        // 执行重置
-        resetStats()
-
-        // 设置下一次午夜重置（24小时后）
-        // 使用重复定时器，每24小时触发一次
-        midnightCheckTimer?.invalidate()
-        midnightCheckTimer = Timer.scheduledTimer(withTimeInterval: 86400, repeats: true) { [weak self] _ in
-            self?.performMidnightReset()
+        if !Calendar.current.isDate(currentStats.date, inSameDayAs: now) {
+            resetStats(for: now)
         }
 
-        // 确保 timer 在所有 RunLoop 模式下都能运行
-        if let timer = midnightCheckTimer {
-            RunLoop.current.add(timer, forMode: .common)
-        }
+        scheduleNextMidnightReset()
     }
     
     func resetStats() {
-        currentStats = DailyStats()
-        notifyMenuBarUpdate()
-        notifyStatsUpdate()
+        resetStats(for: Date())
     }
 
     private func ensureCurrentDay() {
-        let today = Calendar.current.startOfDay(for: Date())
-        if !Calendar.current.isDate(currentStats.date, inSameDayAs: today) {
-            currentStats = DailyStats(date: today)
+        let now = Date()
+        if !Calendar.current.isDate(currentStats.date, inSameDayAs: now) {
+            resetStats(for: now)
         }
+    }
+
+    private func resetStats(for date: Date) {
+        currentStats = DailyStats(date: date)
+        notifyMenuBarUpdate()
+        notifyStatsUpdate()
     }
     
     // MARK: - 格式化显示
