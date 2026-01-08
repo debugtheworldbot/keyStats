@@ -34,5 +34,13 @@
 	<string>Main</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>SUFeedURL</key>
+	<string>https://github.com/debugtheworldbot/keyStats/releases/latest/download/appcast.xml</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUScheduledCheckInterval</key>
+	<integer>86400</integer>
+	<key>SUPublicEDKey</key>
+	<string>3GDkFkOpTBszdxr1xvLI2JGGyAkktDepZAKDxS0vmr0=</string>
 </dict>
 </plist>

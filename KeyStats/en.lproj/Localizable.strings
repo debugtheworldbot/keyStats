@@ -35,6 +35,7 @@
 "history.empty" = "No Data";
 
 "button.reset" = "Reset Stats";
+"button.checkUpdates" = "Check Updates";
 "button.quit" = "Quit";
 
 "keyBreakdown.empty" = "No key data yet";

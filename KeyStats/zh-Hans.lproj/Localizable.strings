@@ -35,6 +35,7 @@
 "history.empty" = "无数据";
 
 "button.reset" = "重置统计";
+"button.checkUpdates" = "检查更新";
 "button.quit" = "退出应用";
 
 "keyBreakdown.empty" = "暂无键位数据";

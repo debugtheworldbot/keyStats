@@ -13,6 +13,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // 初始化菜单栏控制器
         menuBarController = MenuBarController()
         applyAppIcon()
+        _ = UpdateManager.shared
         
         // 检查并请求辅助功能权限
         checkAndRequestPermission()

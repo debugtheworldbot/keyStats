@@ -29,6 +29,7 @@ class StatsPopoverViewController: NSViewController {
     // 底部按钮
     private var resetButton: NSButton!
     private var quitButton: NSButton!
+    private var checkUpdatesButton: NSButton!
     private var permissionButton: NSButton!
     private var launchAtLoginButton: NSButton!
     
@@ -232,12 +233,17 @@ class StatsPopoverViewController: NSViewController {
         resetButton = NSButton(title: NSLocalizedString("button.reset", comment: ""), target: self, action: #selector(resetStats))
         resetButton.bezelStyle = .rounded
         resetButton.controlSize = .regular
+
+        checkUpdatesButton = NSButton(title: NSLocalizedString("button.checkUpdates", comment: ""), target: self, action: #selector(checkForUpdates))
+        checkUpdatesButton.bezelStyle = .rounded
+        checkUpdatesButton.controlSize = .regular
         
         // 退出按钮
         quitButton = NSButton(title: NSLocalizedString("button.quit", comment: ""), target: self, action: #selector(quitApp))
         quitButton.bezelStyle = .rounded
         quitButton.controlSize = .regular
         
+        buttonStack.addArrangedSubview(checkUpdatesButton)
         buttonStack.addArrangedSubview(resetButton)
         buttonStack.addArrangedSubview(quitButton)
 
@@ -497,6 +503,10 @@ class StatsPopoverViewController: NSViewController {
         _ = InputMonitor.shared.checkAccessibilityPermission()
         openAccessibilitySettings()
         updatePermissionButtonVisibility()
+    }
+
+    @objc private func checkForUpdates() {
+        UpdateManager.shared.checkForUpdates()
     }
     
     @objc private func quitApp() {
