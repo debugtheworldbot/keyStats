@@ -31,6 +31,8 @@ class StatsPopoverViewController: NSViewController {
     private var quitButton: NSButton!
     private var permissionButton: NSButton!
     private var launchAtLoginButton: NSButton!
+    private var showKeyPressesButton: NSButton!
+    private var showMouseClicksButton: NSButton!
     
     // MARK: - 生命周期
     
@@ -218,9 +220,24 @@ class StatsPopoverViewController: NSViewController {
         bottomSeparator.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(bottomSeparator)
 
+        // 设置选项
+        showKeyPressesButton = NSButton(checkboxWithTitle: NSLocalizedString("setting.showKeyPresses", comment: ""),
+                                        target: self,
+                                        action: #selector(toggleShowKeyPresses))
+        
+        showMouseClicksButton = NSButton(checkboxWithTitle: NSLocalizedString("setting.showMouseClicks", comment: ""),
+                                         target: self,
+                                         action: #selector(toggleShowMouseClicks))
+
         launchAtLoginButton = NSButton(checkboxWithTitle: NSLocalizedString("button.launchAtLogin", comment: ""),
                                        target: self,
                                        action: #selector(toggleLaunchAtLogin))
+        
+        let settingsStack = NSStackView(views: [showKeyPressesButton, showMouseClicksButton, launchAtLoginButton])
+        settingsStack.orientation = .vertical
+        settingsStack.alignment = .leading
+        settingsStack.spacing = 6
+        settingsStack.translatesAutoresizingMaskIntoConstraints = false
         
         // 按钮容器
         let buttonStack = NSStackView()
@@ -243,7 +260,7 @@ class StatsPopoverViewController: NSViewController {
 
         let footerStack = NSStackView()
         footerStack.orientation = .horizontal
-        footerStack.alignment = .centerY
+        footerStack.alignment = .bottom
         footerStack.spacing = 12
         footerStack.translatesAutoresizingMaskIntoConstraints = false
 
@@ -254,7 +271,7 @@ class StatsPopoverViewController: NSViewController {
         buttonStack.setContentHuggingPriority(.required, for: .horizontal)
         buttonStack.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        footerStack.addArrangedSubview(launchAtLoginButton)
+        footerStack.addArrangedSubview(settingsStack)
         footerStack.addArrangedSubview(footerSpacer)
         footerStack.addArrangedSubview(buttonStack)
 
@@ -431,6 +448,8 @@ class StatsPopoverViewController: NSViewController {
 
     private func updateLaunchAtLoginState() {
         launchAtLoginButton.state = LaunchAtLoginManager.shared.isEnabled ? .on : .off
+        showKeyPressesButton.state = StatsManager.shared.showKeyPressesInMenuBar ? .on : .off
+        showMouseClicksButton.state = StatsManager.shared.showMouseClicksInMenuBar ? .on : .off
     }
 
     private func focusPrimaryControl() {
@@ -503,6 +522,14 @@ class StatsPopoverViewController: NSViewController {
         NSApplication.shared.terminate(nil)
     }
 
+    @objc private func toggleShowKeyPresses() {
+        StatsManager.shared.showKeyPressesInMenuBar = (showKeyPressesButton.state == .on)
+    }
+    
+    @objc private func toggleShowMouseClicks() {
+        StatsManager.shared.showMouseClicksInMenuBar = (showMouseClicksButton.state == .on)
+    }
+    
     @objc private func toggleLaunchAtLogin() {
         let shouldEnable = launchAtLoginButton.state == .on
         do {
