@@ -11,7 +11,22 @@ KeyStats is a lightweight macOS native menu bar application that tracks daily ke
 
 ## Installation & Usage
 
-### [Download from GitHub Releases](https://github.com/debugtheworldbot/keyStats/releases)
+### Option 1: Install via Homebrew
+
+```bash
+# Tap the repository
+brew tap debugtheworldbot/keystats
+
+# Install the app
+brew install keystats
+```
+
+Update the app:
+```bash
+brew upgrade keystats
+```
+
+### Option 2: [Download from GitHub Releases](https://github.com/debugtheworldbot/keyStats/releases)
 
 ## Features
 

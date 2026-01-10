@@ -16,7 +16,22 @@ KeyStats 是一款轻量级的 macOS 原生菜单栏应用，用于统计用户�
 
 ## 安装与使用
 
-### [从 GitHub Release 下载](https://github.com/debugtheworldbot/keyStats/releases)
+### 方式一：使用 Homebrew 安装
+
+```bash
+# 订阅 tap
+brew tap debugtheworldbot/keystats
+
+# 安装应用
+brew install keystats
+```
+
+更新应用：
+```bash
+brew upgrade keystats
+```
+
+### 方式二：[从 GitHub Release 下载](https://github.com/debugtheworldbot/keyStats/releases)
 
 ## 功能特性
 

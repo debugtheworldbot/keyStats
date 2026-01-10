@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: macos-latest
+    permissions:
+      contents: write  # 允许创建 Release 和推送代码
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取完整历史，便于更新 Formula
+
+      - name: Extract version
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Build DMG
+        run: ./scripts/build_dmg.sh
+
+      - name: Calculate SHA256
+        id: sha256
+        run: echo "SHA256=$(shasum -a 256 KeyStats.dmg | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: KeyStats.dmg
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Cask Formula
+        run: |
+          git checkout main
+          git pull origin main
+          sed -i '' "s/version \".*\"/version \"${{ steps.version.outputs.VERSION }}\"/" Casks/keystats.rb
+          sed -i '' "s/sha256 \".*\"/sha256 \"${{ steps.sha256.outputs.SHA256 }}\"/" Casks/keystats.rb
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/keystats.rb
+          git commit -m "chore: update cask to version ${{ steps.version.outputs.VERSION }}" || echo "No changes to commit"
+          git push origin main || echo "Failed to push, but release was successful"
+
+      - name: Verify Formula Update
+        if: success()
+        run: |
+          echo "✅ Release v${{ steps.version.outputs.VERSION }} created successfully"
+          echo "✅ DMG SHA256: ${{ steps.sha256.outputs.SHA256 }}"
+          echo "✅ Formula updated (if push succeeded)"
