@@ -136,10 +136,16 @@ class MenuBarController {
         }
 
         appendAppIcon()
-        appendText(" ")
-        appendText(keysText)
-        appendText(" ")
-        appendText(clicksText)
+        
+        if !keysText.isEmpty {
+            appendText(" ")
+            appendText(keysText)
+        }
+        
+        if !clicksText.isEmpty {
+            appendText(" ")
+            appendText(clicksText)
+        }
 
         return result
     }
@@ -222,7 +228,14 @@ class MenuBarStatusView: NSView {
     
     func update(keysText: String, clicksText: String) {
         topLabel.stringValue = keysText
+        topLabel.isHidden = keysText.isEmpty
+        
         bottomLabel.stringValue = clicksText
+        bottomLabel.isHidden = clicksText.isEmpty
+        
+        // 如果只有一个显示，使其居中或者调整布局，这里简化处理，
+        // 依靠 StackView 自动处理隐藏视图的布局
+        
         invalidateIntrinsicContentSize()
         needsLayout = true
     }

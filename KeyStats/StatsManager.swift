@@ -65,6 +65,8 @@ class StatsManager {
     private let userDefaults = UserDefaults.standard
     private let statsKey = "dailyStats"
     private let historyKey = "dailyStatsHistory"
+    private let showKeyPressesKey = "showKeyPressesInMenuBar"
+    private let showMouseClicksKey = "showMouseClicksInMenuBar"
     private let dateFormatter: DateFormatter
     private var history: [String: DailyStats] = [:]
     private var saveTimer: Timer?
@@ -75,6 +77,22 @@ class StatsManager {
     private var isReadyForUpdates = false
     var menuBarUpdateHandler: (() -> Void)?
     var statsUpdateHandler: (() -> Void)?
+    
+    /// 设置：是否在菜单栏显示按键数
+    var showKeyPressesInMenuBar: Bool {
+        didSet {
+            userDefaults.set(showKeyPressesInMenuBar, forKey: showKeyPressesKey)
+            notifyMenuBarUpdate()
+        }
+    }
+    
+    /// 设置：是否在菜单栏显示点击数
+    var showMouseClicksInMenuBar: Bool {
+        didSet {
+            userDefaults.set(showMouseClicksInMenuBar, forKey: showMouseClicksKey)
+            notifyMenuBarUpdate()
+        }
+    }
     
     /// 当前统计数据
     private(set) var currentStats: DailyStats {
@@ -90,6 +108,10 @@ class StatsManager {
     private init() {
         dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
+
+        // 加载设置（默认为 true）
+        showKeyPressesInMenuBar = userDefaults.object(forKey: showKeyPressesKey) as? Bool ?? true
+        showMouseClicksInMenuBar = userDefaults.object(forKey: showMouseClicksKey) as? Bool ?? true
 
         // 先初始化 currentStats 为默认值
         let calendar = Calendar.current
@@ -305,8 +327,8 @@ class StatsManager {
 
     /// 获取菜单栏显示的数字部分
     func getMenuBarTextParts() -> (keys: String, clicks: String) {
-        let keys = formatMenuBarNumber(currentStats.keyPresses)
-        let clicks = formatMenuBarNumber(currentStats.totalClicks)
+        let keys = showKeyPressesInMenuBar ? formatMenuBarNumber(currentStats.keyPresses) : ""
+        let clicks = showMouseClicksInMenuBar ? formatMenuBarNumber(currentStats.totalClicks) : ""
         return (keys, clicks)
     }
     

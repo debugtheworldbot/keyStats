@@ -4,6 +4,8 @@
 "permission.later" = "稍后";
 "button.permission" = "获取权限";
 "button.launchAtLogin" = "开机启动";
+"setting.showKeyPresses" = "在菜单栏显示按键数";
+"setting.showMouseClicks" = "在菜单栏显示点击数";
 "button.ok" = "确定";
 "launchAtLogin.prompt.title" = "是否开机启动？";
 "launchAtLogin.prompt.message" = "是否希望 KeyStats 在登录后自动启动？";
