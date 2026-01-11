@@ -34,13 +34,17 @@ xcodebuild -project "$PROJECT" \
     -archivePath "$BUILD_DIR/$APP_NAME.xcarchive" \
     archive \
     CODE_SIGN_IDENTITY="-" \
+    ARCHS="arm64 x86_64" \
+    ONLY_ACTIVE_ARCH=NO \
     | xcpretty || xcodebuild -project "$PROJECT" \
     -scheme "$SCHEME" \
     -configuration "$CONFIGURATION" \
     -derivedDataPath "$BUILD_DIR/DerivedData" \
     -archivePath "$BUILD_DIR/$APP_NAME.xcarchive" \
     archive \
-    CODE_SIGN_IDENTITY="-"
+    CODE_SIGN_IDENTITY="-" \
+    ARCHS="arm64 x86_64" \
+    ONLY_ACTIVE_ARCH=NO
 
 # 导出 .app
 echo "📤 导出应用..."
