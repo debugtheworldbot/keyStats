@@ -67,6 +67,9 @@ class StatsManager {
     private let historyKey = "dailyStatsHistory"
     private let showKeyPressesKey = "showKeyPressesInMenuBar"
     private let showMouseClicksKey = "showMouseClicksInMenuBar"
+    private let keyPressNotifyThresholdKey = "keyPressNotifyThreshold"
+    private let clickNotifyThresholdKey = "clickNotifyThreshold"
+    private let notificationsEnabledKey = "notificationsEnabled"
     private let dateFormatter: DateFormatter
     private var history: [String: DailyStats] = [:]
     private var saveTimer: Timer?
@@ -93,6 +96,35 @@ class StatsManager {
             notifyMenuBarUpdate()
         }
     }
+
+    /// 设置：是否开启统计通知
+    var notificationsEnabled: Bool {
+        didSet {
+            userDefaults.set(notificationsEnabled, forKey: notificationsEnabledKey)
+            if notificationsEnabled {
+                updateNotificationBaselines()
+            }
+        }
+    }
+
+    /// 设置：按键通知阈值
+    var keyPressNotifyThreshold: Int {
+        didSet {
+            userDefaults.set(keyPressNotifyThreshold, forKey: keyPressNotifyThresholdKey)
+            updateKeyPressNotificationBaseline()
+        }
+    }
+
+    /// 设置：点击通知阈值
+    var clickNotifyThreshold: Int {
+        didSet {
+            userDefaults.set(clickNotifyThreshold, forKey: clickNotifyThresholdKey)
+            updateClickNotificationBaseline()
+        }
+    }
+
+    private var lastNotifiedKeyPresses: Int = 0
+    private var lastNotifiedClicks: Int = 0
     
     /// 当前统计数据
     private(set) var currentStats: DailyStats {
@@ -112,6 +144,9 @@ class StatsManager {
         // 加载设置（默认为 true）
         showKeyPressesInMenuBar = userDefaults.object(forKey: showKeyPressesKey) as? Bool ?? true
         showMouseClicksInMenuBar = userDefaults.object(forKey: showMouseClicksKey) as? Bool ?? true
+        notificationsEnabled = userDefaults.object(forKey: notificationsEnabledKey) as? Bool ?? false
+        keyPressNotifyThreshold = userDefaults.object(forKey: keyPressNotifyThresholdKey) as? Int ?? 1000
+        clickNotifyThreshold = userDefaults.object(forKey: clickNotifyThresholdKey) as? Int ?? 1000
 
         // 先初始化 currentStats 为默认值
         let calendar = Calendar.current
@@ -124,6 +159,8 @@ class StatsManager {
                 currentStats = savedStats
             }
         }
+
+        updateNotificationBaselines()
         
         isReadyForUpdates = true
         saveStats()
@@ -141,6 +178,7 @@ class StatsManager {
         }
         notifyMenuBarUpdate()
         notifyStatsUpdate()
+        notifyKeyPressThresholdIfNeeded()
     }
     
     func incrementLeftClicks() {
@@ -148,6 +186,7 @@ class StatsManager {
         currentStats.leftClicks += 1
         notifyMenuBarUpdate()
         notifyStatsUpdate()
+        notifyClickThresholdIfNeeded()
     }
     
     func incrementRightClicks() {
@@ -155,6 +194,7 @@ class StatsManager {
         currentStats.rightClicks += 1
         notifyMenuBarUpdate()
         notifyStatsUpdate()
+        notifyClickThresholdIfNeeded()
     }
     
     func addMouseDistance(_ distance: Double) {
@@ -167,6 +207,48 @@ class StatsManager {
         ensureCurrentDay()
         currentStats.scrollDistance += abs(distance)
         scheduleDebouncedStatsUpdate()
+    }
+
+    // MARK: - 通知阈值
+
+    private func updateNotificationBaselines() {
+        updateKeyPressNotificationBaseline()
+        updateClickNotificationBaseline()
+    }
+
+    private func updateKeyPressNotificationBaseline() {
+        lastNotifiedKeyPresses = normalizedBaseline(currentStats.keyPresses, threshold: keyPressNotifyThreshold)
+    }
+
+    private func updateClickNotificationBaseline() {
+        lastNotifiedClicks = normalizedBaseline(currentStats.totalClicks, threshold: clickNotifyThreshold)
+    }
+
+    private func normalizedBaseline(_ count: Int, threshold: Int) -> Int {
+        guard threshold > 0 else { return 0 }
+        return (count / threshold) * threshold
+    }
+
+    private func notifyKeyPressThresholdIfNeeded() {
+        guard notificationsEnabled else { return }
+        let threshold = keyPressNotifyThreshold
+        guard threshold > 0 else { return }
+        let count = currentStats.keyPresses
+        guard count % threshold == 0 else { return }
+        guard count != lastNotifiedKeyPresses else { return }
+        lastNotifiedKeyPresses = count
+        NotificationManager.shared.sendThresholdNotification(metric: .keyPresses, count: count, threshold: threshold)
+    }
+
+    private func notifyClickThresholdIfNeeded() {
+        guard notificationsEnabled else { return }
+        let threshold = clickNotifyThreshold
+        guard threshold > 0 else { return }
+        let count = currentStats.totalClicks
+        guard count % threshold == 0 else { return }
+        guard count != lastNotifiedClicks else { return }
+        lastNotifiedClicks = count
+        NotificationManager.shared.sendThresholdNotification(metric: .clicks, count: count, threshold: threshold)
     }
     
     // MARK: - 数据持久化
@@ -313,6 +395,7 @@ class StatsManager {
 
     private func resetStats(for date: Date) {
         currentStats = DailyStats(date: date)
+        updateNotificationBaselines()
         notifyMenuBarUpdate()
         notifyStatsUpdate()
     }

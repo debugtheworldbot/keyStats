@@ -9,7 +9,15 @@
 "button.back" = "返回";
 "setting.showKeyPresses" = "在菜单栏显示按键数";
 "setting.showMouseClicks" = "在菜单栏显示点击数";
+"setting.notificationsEnabled" = "开启统计通知";
+"setting.notifyKeyThreshold" = "按键通知阈值";
+"setting.notifyClickThreshold" = "点击通知阈值";
+"setting.notifyUnit" = "次";
 "button.ok" = "确定";
+
+"notification.threshold.title" = "统计提醒";
+"notification.threshold.body.keys" = "今日按键数已达到 %@ 次";
+"notification.threshold.body.clicks" = "今日点击数已达到 %@ 次";
 "launchAtLogin.prompt.title" = "是否开机启动？";
 "launchAtLogin.prompt.message" = "是否希望 KeyStats 在登录后自动启动？";
 "launchAtLogin.prompt.enable" = "启用";

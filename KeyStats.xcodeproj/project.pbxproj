@@ -21,6 +21,7 @@
 		A1000012 /* SettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000014 /* SettingsViewController.swift */; };
 		A1000013 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000015 /* SettingsWindowController.swift */; };
 		A1000014 /* HoverIconButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000016 /* HoverIconButton.swift */; };
+		A1000015 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000017 /* NotificationManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +40,7 @@
 		A2000014 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		A2000015 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 		A2000016 /* HoverIconButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoverIconButton.swift; sourceTree = "<group>"; };
+		A2000017 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		A3000001 /* KeyStats.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KeyStats.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A3000002 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A3000003 /* KeyStats.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KeyStats.entitlements; sourceTree = "<group>"; };
@@ -74,6 +76,7 @@
 				A2000008 /* MainWindowController.swift */,
 				A2000009 /* MainWindowViewController.swift */,
 				A2000016 /* HoverIconButton.swift */,
+				A2000017 /* NotificationManager.swift */,
 				A2000014 /* SettingsViewController.swift */,
 				A2000015 /* SettingsWindowController.swift */,
 				A2000013 /* LaunchAtLoginManager.swift */,
@@ -177,6 +180,7 @@
 				A1000012 /* SettingsViewController.swift in Sources */,
 				A1000013 /* SettingsWindowController.swift in Sources */,
 				A1000014 /* HoverIconButton.swift in Sources */,
+				A1000015 /* NotificationManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

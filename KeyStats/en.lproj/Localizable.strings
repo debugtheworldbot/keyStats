@@ -9,7 +9,15 @@
 "button.back" = "Back";
 "setting.showKeyPresses" = "Show Key Presses in Menu Bar";
 "setting.showMouseClicks" = "Show Mouse Clicks in Menu Bar";
+"setting.notificationsEnabled" = "Enable Statistic Notifications";
+"setting.notifyKeyThreshold" = "Key Press Notification Threshold";
+"setting.notifyClickThreshold" = "Click Notification Threshold";
+"setting.notifyUnit" = "times";
 "button.ok" = "OK";
+
+"notification.threshold.title" = "KeyStats Reminder";
+"notification.threshold.body.keys" = "Key presses reached %@ today.";
+"notification.threshold.body.clicks" = "Clicks reached %@ today.";
 "launchAtLogin.prompt.title" = "Start at Login?";
 "launchAtLogin.prompt.message" = "Would you like KeyStats to open automatically when you log in?";
 "launchAtLogin.prompt.enable" = "Enable";

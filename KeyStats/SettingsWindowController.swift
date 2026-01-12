@@ -8,7 +8,7 @@ final class SettingsWindowController: NSWindowController {
         let window = NSWindow(contentViewController: viewController)
         window.styleMask = [.titled, .closable]
         window.title = NSLocalizedString("settings.windowTitle", comment: "")
-        window.setContentSize(NSSize(width: 360, height: 240))
+        window.setContentSize(NSSize(width: 360, height: 320))
         window.isReleasedWhenClosed = false
         window.center()
         super.init(window: window)
