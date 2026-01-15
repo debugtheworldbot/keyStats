@@ -129,6 +129,25 @@ struct AllTimeStats {
             return String(format: "%.0f px", totalScrollDistance)
         }
     }
+
+    static func initial() -> AllTimeStats {
+        return AllTimeStats(
+            totalKeyPresses: 0,
+            totalLeftClicks: 0,
+            totalRightClicks: 0,
+            totalMouseDistance: 0,
+            totalScrollDistance: 0,
+            keyPressCounts: [:],
+            firstDate: nil,
+            lastDate: nil,
+            activeDays: 0,
+            maxDailyKeyPresses: 0,
+            maxDailyKeyPressesDate: nil,
+            maxDailyClicks: 0,
+            maxDailyClicksDate: nil,
+            mostActiveWeekday: nil
+        )
+    }
 }
 
 /// 统计数据管理器 - 单例模式
