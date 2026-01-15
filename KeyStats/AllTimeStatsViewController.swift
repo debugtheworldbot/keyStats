@@ -231,7 +231,11 @@ class AllTimeStatsViewController: NSViewController {
     }
     
     private func updateInsights(_ stats: AllTimeStats) {
-        insightsGrid.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        let oldRows = insightsGrid.arrangedSubviews
+        for row in oldRows {
+            insightsGrid.removeArrangedSubview(row)
+            row.removeFromSuperview()
+        }
         
         guard stats.activeDays > 0 else {
             let emptyLabel = NSTextField(labelWithString: NSLocalizedString("allTimeStats.noData", comment: ""))
@@ -281,8 +285,15 @@ class AllTimeStatsViewController: NSViewController {
         avgRow.spacing = 16
         avgRow.translatesAutoresizingMaskIntoConstraints = false
         
-        let avgKeys = Int((Double(stats.totalKeyPresses) / Double(stats.activeDays)).rounded())
-        let avgClicks = Int((Double(stats.totalClicks) / Double(stats.activeDays)).rounded())
+        let avgKeys: Int
+        let avgClicks: Int
+        if stats.activeDays > 0 {
+            avgKeys = Int((Double(stats.totalKeyPresses) / Double(stats.activeDays)).rounded())
+            avgClicks = Int((Double(stats.totalClicks) / Double(stats.activeDays)).rounded())
+        } else {
+            avgKeys = 0
+            avgClicks = 0
+        }
         
         let avgKeysItem = InsightItemView(
             title: NSLocalizedString("allTimeStats.avgKeyPressesPerDay", comment: ""),
@@ -357,7 +368,7 @@ class AllTimeStatsViewController: NSViewController {
         let everestItem = InsightItemView(
             title: NSLocalizedString("allTimeStats.everestScroll", comment: ""),
             value: String(format: "%.2f", everests),
-            subtitle: "Everests",
+            subtitle: NSLocalizedString("insights.subtitle.everests", comment: ""),
             icon: "🏔️",
             tooltip: String(format: NSLocalizedString("insights.tooltip.everest", comment: ""), everests)
         )
@@ -405,7 +416,7 @@ class AllTimeStatsViewController: NSViewController {
         let styleItem = InsightItemView(
             title: NSLocalizedString("insights.inputStyle", comment: ""),
             value: styleText,
-            subtitle: String(format: "Ratio: %.1f", ratio),
+            subtitle: String(format: NSLocalizedString("insights.subtitle.ratioFormat", comment: ""), ratio),
             icon: styleIcon,
             tooltip: NSLocalizedString("insights.tooltip.inputStyle", comment: "")
         )
@@ -424,7 +435,11 @@ class AllTimeStatsViewController: NSViewController {
 
     private func updateTopKeys(_ counts: [String: Int]) {
         // 清除旧视图
-        keyListContainer.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        let oldRows = keyListContainer.arrangedSubviews
+        for row in oldRows {
+            keyListContainer.removeArrangedSubview(row)
+            row.removeFromSuperview()
+        }
         
         let sortedKeys = counts.sorted { $0.value > $1.value }.prefix(10) // 显示前10个
         

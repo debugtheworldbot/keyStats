@@ -8,7 +8,7 @@ private func baseKeyComponent(_ keyName: String) -> String {
     let trimmed = keyName.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmed.isEmpty else { return "" }
     if let last = trimmed.split(separator: "+").last {
-        return String(last)
+        return String(last).trimmingCharacters(in: .whitespacesAndNewlines)
     }
     return trimmed
 }
@@ -539,6 +539,9 @@ class StatsManager {
         var stats = currentStats
         stats.date = normalizedDate
         history[key] = stats
+        cachedHistoryStats = nil
+        cachedWeekdayStats = nil
+        cachedForDateKey = nil
         saveHistory()
     }
     
