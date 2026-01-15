@@ -55,6 +55,8 @@ KeyStats requires **Accessibility permissions** to monitor keyboard and mouse ev
 5. Once authorized, the app will automatically start tracking
 
 > **Note**: Without granting permissions, the app will not be able to track any data.
+>
+> **Reinstall/upgrade tip**: Because the app is not signed, macOS will not automatically update Accessibility authorization after each reinstall. Remove the existing KeyStats entry in "Privacy & Security" > "Accessibility", then return to the app and click the "Get Permission" button to request access again.
 
 ## Usage Instructions
 
