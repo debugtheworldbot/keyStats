@@ -4,6 +4,15 @@ import UserNotifications
 
 private let metersPerPixel: Double = 0.000264583
 
+private func baseKeyComponent(_ keyName: String) -> String {
+    let trimmed = keyName.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else { return "" }
+    if let last = trimmed.split(separator: "+").last {
+        return String(last)
+    }
+    return trimmed
+}
+
 /// 统计数据结构
 struct DailyStats: Codable {
     var date: Date
@@ -37,13 +46,25 @@ struct DailyStats: Codable {
     var totalClicks: Int {
         return leftClicks + rightClicks
     }
+
+    var hasAnyActivity: Bool {
+        return keyPresses > 0 ||
+            leftClicks > 0 ||
+            rightClicks > 0 ||
+            mouseDistance > 0 ||
+            scrollDistance > 0 ||
+            !keyPressCounts.isEmpty
+    }
     
     /// 纠错率 (Delete + ForwardDelete / Total Keys)
     var correctionRate: Double {
         guard keyPresses > 0 else { return 0 }
-        let deleteCount = keyPressCounts["Delete"] ?? 0
-        let forwardDeleteCount = keyPressCounts["ForwardDelete"] ?? 0
-        return Double(deleteCount + forwardDeleteCount) / Double(keyPresses)
+        let deleteLikeCount = keyPressCounts.reduce(0) { partial, entry in
+            let base = baseKeyComponent(entry.key)
+            guard base == "Delete" || base == "ForwardDelete" else { return partial }
+            return partial + entry.value
+        }
+        return Double(deleteLikeCount) / Double(keyPresses)
     }
     
     /// 键鼠比 (Keys / Clicks)
@@ -98,9 +119,12 @@ struct AllTimeStats {
     /// 纠错率 (Delete + ForwardDelete / Total Keys)
     var correctionRate: Double {
         guard totalKeyPresses > 0 else { return 0 }
-        let deleteCount = keyPressCounts["Delete"] ?? 0
-        let forwardDeleteCount = keyPressCounts["ForwardDelete"] ?? 0
-        return Double(deleteCount + forwardDeleteCount) / Double(totalKeyPresses)
+        let deleteLikeCount = keyPressCounts.reduce(0) { partial, entry in
+            let base = baseKeyComponent(entry.key)
+            guard base == "Delete" || base == "ForwardDelete" else { return partial }
+            return partial + entry.value
+        }
+        return Double(deleteLikeCount) / Double(totalKeyPresses)
     }
     
     /// 键鼠比 (Keys / Clicks)
@@ -834,6 +858,7 @@ extension StatsManager {
     }
     
     private func aggregate(daily: DailyStats, into total: inout AllTimeStats, weekdays: inout [Int: (total: Int, count: Int)]) {
+        guard daily.hasAnyActivity else { return }
         total.totalKeyPresses += daily.keyPresses
         total.totalLeftClicks += daily.leftClicks
         total.totalRightClicks += daily.rightClicks
