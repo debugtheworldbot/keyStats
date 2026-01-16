@@ -1,0 +1,156 @@
+<Window x:Class="KeyStats.Views.StatsPopupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:KeyStats.Views.Controls"
+        xmlns:viewmodels="clr-namespace:KeyStats.ViewModels"
+        Title="KeyStats"
+        Width="320" Height="680"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        Topmost="True"
+        ResizeMode="NoResize"
+        Deactivated="Window_Deactivated">
+
+    <Window.DataContext>
+        <viewmodels:StatsPopupViewModel/>
+    </Window.DataContext>
+
+    <Border Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"
+            BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}"
+            BorderThickness="1"
+            CornerRadius="8">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="20" ShadowDepth="2" Opacity="0.3"/>
+        </Border.Effect>
+
+        <Grid Margin="16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Title -->
+            <TextBlock Grid.Row="0" Text="KeyStats"
+                       FontSize="18" FontWeight="Bold"
+                       HorizontalAlignment="Center" Margin="0,0,0,12"/>
+
+            <Separator Grid.Row="1" Margin="0,0,0,12"/>
+
+            <!-- Stats Section -->
+            <StackPanel Grid.Row="2">
+                <!-- Key Presses -->
+                <controls:StatItemControl Icon="⌨️" Title="Key Presses" Value="{Binding KeyPresses}" Margin="0,0,0,8"/>
+
+                <!-- Click Row -->
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <controls:StatItemControl Grid.Column="0" Icon="🖱️" Title="Left Clicks" Value="{Binding LeftClicks}" Margin="0,0,8,0"/>
+                    <controls:StatItemControl Grid.Column="1" Icon="🖱️" Title="Right Clicks" Value="{Binding RightClicks}" Margin="8,0,0,0"/>
+                </Grid>
+
+                <!-- Distance Row -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <controls:StatItemControl Grid.Column="0" Icon="↔️" Title="Mouse Move" Value="{Binding MouseDistance}" Margin="0,0,8,0"/>
+                    <controls:StatItemControl Grid.Column="1" Icon="↕️" Title="Scroll" Value="{Binding ScrollDistance}" Margin="8,0,0,0"/>
+                </Grid>
+            </StackPanel>
+
+            <!-- Key Breakdown Section -->
+            <StackPanel Grid.Row="3">
+                <TextBlock Text="Key Breakdown" Style="{StaticResource SectionTitle}"/>
+                <controls:KeyBreakdownControl
+                    Column1Items="{Binding Column1Items}"
+                    Column2Items="{Binding Column2Items}"
+                    Column3Items="{Binding Column3Items}"/>
+            </StackPanel>
+
+            <!-- History Section -->
+            <StackPanel Grid.Row="4">
+                <TextBlock Text="History" Style="{StaticResource SectionTitle}"/>
+
+                <!-- Range Selection -->
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <RadioButton Grid.Column="0" Content="Week" GroupName="Range"
+                                 IsChecked="{Binding SelectedRangeIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=0}"/>
+                    <RadioButton Grid.Column="1" Content="Month" GroupName="Range"
+                                 IsChecked="{Binding SelectedRangeIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=1}"/>
+                </Grid>
+
+                <!-- Metric Selection -->
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <RadioButton Grid.Column="0" Content="Keys" GroupName="Metric" FontSize="11"
+                                 IsChecked="{Binding SelectedMetricIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=0}"/>
+                    <RadioButton Grid.Column="1" Content="Clicks" GroupName="Metric" FontSize="11"
+                                 IsChecked="{Binding SelectedMetricIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=1}"/>
+                    <RadioButton Grid.Column="2" Content="Move" GroupName="Metric" FontSize="11"
+                                 IsChecked="{Binding SelectedMetricIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=2}"/>
+                    <RadioButton Grid.Column="3" Content="Scroll" GroupName="Metric" FontSize="11"
+                                 IsChecked="{Binding SelectedMetricIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=3}"/>
+                </Grid>
+
+                <!-- Chart Style Selection -->
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <RadioButton Grid.Column="0" Content="Line" GroupName="ChartStyle"
+                                 IsChecked="{Binding SelectedChartStyleIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=0}"/>
+                    <RadioButton Grid.Column="1" Content="Bar" GroupName="ChartStyle"
+                                 IsChecked="{Binding SelectedChartStyleIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=1}"/>
+                </Grid>
+            </StackPanel>
+
+            <!-- Chart -->
+            <controls:StatsChartControl Grid.Row="5"
+                                        ChartData="{Binding ChartData}"
+                                        ChartStyle="{Binding SelectedChartStyleIndex}"
+                                        Margin="0,0,0,6"/>
+
+            <!-- Summary -->
+            <TextBlock Grid.Row="6" Text="{Binding HistorySummary}"
+                       Style="{StaticResource SecondaryText}" Margin="0,0,0,12"/>
+
+            <Separator Grid.Row="7" Margin="0,0,0,12"/>
+
+            <!-- Footer Buttons -->
+            <Grid Grid.Row="7" Margin="0,12,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Button Grid.Column="0" Content="⚙️" Command="{Binding OpenSettingsCommand}"
+                        ToolTip="Settings" Width="32" MinWidth="32" Padding="4"/>
+
+                <Button Grid.Column="2" Content="Quit" Command="{Binding QuitCommand}"/>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

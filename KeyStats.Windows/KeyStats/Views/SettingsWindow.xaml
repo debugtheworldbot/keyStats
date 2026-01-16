@@ -1,0 +1,90 @@
+<Window x:Class="KeyStats.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:viewmodels="clr-namespace:KeyStats.ViewModels"
+        Title="KeyStats Settings"
+        Width="400" Height="400"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        ShowInTaskbar="True">
+
+    <Window.DataContext>
+        <viewmodels:SettingsViewModel/>
+    </Window.DataContext>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- App Icon and Title -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
+            <TextBlock Text="⌨️" FontSize="32" VerticalAlignment="Center" Margin="0,0,12,0"/>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="KeyStats" FontSize="18" FontWeight="Bold"/>
+                <TextBlock Text="Settings" Style="{StaticResource SecondaryText}"/>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Settings -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Display Options -->
+                <TextBlock Text="Tray Display" Style="{StaticResource SectionTitle}" Margin="0,0,0,8"/>
+                <CheckBox Content="Show key presses count" IsChecked="{Binding ShowKeyPresses}" Margin="0,4"/>
+                <CheckBox Content="Show click count" IsChecked="{Binding ShowMouseClicks}" Margin="0,4"/>
+
+                <!-- Startup -->
+                <TextBlock Text="Startup" Style="{StaticResource SectionTitle}"/>
+                <CheckBox Content="Launch at Windows startup" IsChecked="{Binding LaunchAtStartup}" Margin="0,4"/>
+
+                <!-- Dynamic Icon Color -->
+                <TextBlock Text="Dynamic Icon" Style="{StaticResource SectionTitle}"/>
+                <CheckBox Content="Enable dynamic icon color based on typing speed"
+                          IsChecked="{Binding EnableDynamicIconColor}" Margin="0,4"/>
+
+                <StackPanel Orientation="Horizontal" Margin="20,8,0,0"
+                            Visibility="{Binding ShowDynamicIconColorStyleOptions, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Text="Color style:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <ComboBox SelectedIndex="{Binding DynamicIconColorStyleIndex}" Width="100">
+                        <ComboBoxItem Content="Icon"/>
+                        <ComboBoxItem Content="Dot"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <!-- Notifications -->
+                <TextBlock Text="Notifications" Style="{StaticResource SectionTitle}"/>
+                <CheckBox Content="Enable milestone notifications"
+                          IsChecked="{Binding NotificationsEnabled}" Margin="0,4"/>
+
+                <StackPanel Visibility="{Binding ShowThresholdOptions, Converter={StaticResource BoolToVisibilityConverter}}"
+                            Margin="20,8,0,0">
+                    <!-- Key Press Threshold -->
+                    <StackPanel Orientation="Horizontal" Margin="0,4">
+                        <TextBlock Text="Key press threshold:" VerticalAlignment="Center" Width="130"/>
+                        <TextBox Text="{Binding KeyPressThreshold, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="80" TextAlignment="Right" Margin="0,0,4,0"/>
+                        <Button Content="−" Width="24" Padding="0" Command="{Binding DecrementKeyThresholdCommand}"/>
+                        <Button Content="+" Width="24" Padding="0" Margin="2,0,0,0" Command="{Binding IncrementKeyThresholdCommand}"/>
+                    </StackPanel>
+
+                    <!-- Click Threshold -->
+                    <StackPanel Orientation="Horizontal" Margin="0,4">
+                        <TextBlock Text="Click threshold:" VerticalAlignment="Center" Width="130"/>
+                        <TextBox Text="{Binding ClickThreshold, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="80" TextAlignment="Right" Margin="0,0,4,0"/>
+                        <Button Content="−" Width="24" Padding="0" Command="{Binding DecrementClickThresholdCommand}"/>
+                        <Button Content="+" Width="24" Padding="0" Margin="2,0,0,0" Command="{Binding IncrementClickThresholdCommand}"/>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Reset Button -->
+        <Button Grid.Row="2" Content="Reset Today's Statistics"
+                Command="{Binding ResetStatsCommand}"
+                HorizontalAlignment="Left" Margin="0,20,0,0"/>
+    </Grid>
+</Window>
