@@ -46,15 +46,35 @@ public class InputMonitorService : IDisposable
                 moduleHandle,
                 0);
 
+            if (_keyboardHookId == IntPtr.Zero)
+            {
+                var error = Marshal.GetLastWin32Error();
+                Debug.WriteLine($"Failed to install keyboard hook. Error code: {error}");
+                throw new System.ComponentModel.Win32Exception(error, "Failed to install keyboard hook");
+            }
+
             _mouseHookId = NativeInterop.SetWindowsHookEx(
                 NativeInterop.WH_MOUSE_LL,
                 _mouseProc,
                 moduleHandle,
                 0);
+
+            if (_mouseHookId == IntPtr.Zero)
+            {
+                var error = Marshal.GetLastWin32Error();
+                Debug.WriteLine($"Failed to install mouse hook. Error code: {error}");
+                // Clean up keyboard hook before throwing
+                if (_keyboardHookId != IntPtr.Zero)
+                {
+                    NativeInterop.UnhookWindowsHookEx(_keyboardHookId);
+                    _keyboardHookId = IntPtr.Zero;
+                }
+                throw new System.ComponentModel.Win32Exception(error, "Failed to install mouse hook");
+            }
         }
 
         _isMonitoring = true;
-        Debug.WriteLine("Input monitoring started");
+        Debug.WriteLine("Input monitoring started successfully");
     }
 
     public void StopMonitoring()

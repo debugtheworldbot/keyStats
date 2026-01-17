@@ -57,7 +57,10 @@ public static class IconGenerator
 
         // Convert to icon
         var iconHandle = bitmap.GetHicon();
-        return Icon.FromHandle(iconHandle);
+        var icon = Icon.FromHandle(iconHandle);
+        // Clean up GDI handle - Icon.FromHandle creates a copy
+        NativeInterop.DestroyIcon(iconHandle);
+        return icon;
     }
 
     private static int GetSystemTrayIconSize()

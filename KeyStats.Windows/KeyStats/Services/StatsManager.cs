@@ -269,15 +269,21 @@ public class StatsManager : IDisposable
 
     private void ScheduleSave()
     {
-        if (_pendingSave) return;
-        _pendingSave = true;
+        lock (_lock)
+        {
+            if (_pendingSave) return;
+            _pendingSave = true;
+        }
 
         _saveTimer?.Stop();
         _saveTimer = new Timer(_saveInterval);
         _saveTimer.Elapsed += (_, _) =>
         {
             _saveTimer?.Stop();
-            _pendingSave = false;
+            lock (_lock)
+            {
+                _pendingSave = false;
+            }
             SaveStats();
         };
         _saveTimer.Start();
@@ -285,15 +291,21 @@ public class StatsManager : IDisposable
 
     private void ScheduleDebouncedStatsUpdate()
     {
-        if (_pendingStatsUpdate) return;
-        _pendingStatsUpdate = true;
+        lock (_lock)
+        {
+            if (_pendingStatsUpdate) return;
+            _pendingStatsUpdate = true;
+        }
 
         _statsUpdateTimer?.Stop();
         _statsUpdateTimer = new Timer(_statsUpdateDebounceInterval);
         _statsUpdateTimer.Elapsed += (_, _) =>
         {
             _statsUpdateTimer?.Stop();
-            _pendingStatsUpdate = false;
+            lock (_lock)
+            {
+                _pendingStatsUpdate = false;
+            }
             NotifyStatsUpdate();
         };
         _statsUpdateTimer.Start();
@@ -362,7 +374,7 @@ public class StatsManager : IDisposable
             KeyPressCounts = new Dictionary<string, int>(CurrentStats.KeyPressCounts)
         };
         History[key] = statsCopy;
-        SaveHistory();
+        // SaveHistory is called by the timer callback, no need to call it here
     }
 
     private void SaveHistory()
@@ -387,7 +399,10 @@ public class StatsManager : IDisposable
             if (File.Exists(_historyFilePath))
             {
                 var json = File.ReadAllText(_historyFilePath);
-                return JsonSerializer.Deserialize<Dictionary<string, DailyStats>>(json) ?? new();
+                var history = JsonSerializer.Deserialize<Dictionary<string, DailyStats>>(json) ?? new();
+                // Clean up old entries (older than 30 days)
+                PruneOldHistory(history);
+                return history;
             }
         }
         catch (Exception ex)
@@ -395,6 +410,24 @@ public class StatsManager : IDisposable
             System.Diagnostics.Debug.WriteLine($"Error loading history: {ex.Message}");
         }
         return new();
+    }
+
+    private void PruneOldHistory(Dictionary<string, DailyStats> history)
+    {
+        var cutoffDate = DateTime.Today.AddDays(-30);
+        var keysToRemove = history.Keys
+            .Where(key => DateTime.TryParse(key, out var date) && date < cutoffDate)
+            .ToList();
+
+        foreach (var key in keysToRemove)
+        {
+            history.Remove(key);
+        }
+
+        if (keysToRemove.Count > 0)
+        {
+            System.Diagnostics.Debug.WriteLine($"Pruned {keysToRemove.Count} old history entries");
+        }
     }
 
     public void SaveSettings()
@@ -460,6 +493,8 @@ public class StatsManager : IDisposable
         {
             ResetStats(now);
         }
+        // Also prune old history entries during midnight reset
+        PruneOldHistory(History);
         ScheduleNextMidnightReset();
     }
 

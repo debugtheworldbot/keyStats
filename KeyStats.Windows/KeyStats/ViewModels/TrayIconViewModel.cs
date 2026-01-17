@@ -11,6 +11,7 @@ using KeyStats.Services;
 using KeyStats.Views;
 using DrawingIcon = System.Drawing.Icon;
 using PixelFormat = System.Drawing.Imaging.PixelFormat;
+using static KeyStats.Helpers.NativeInterop;
 
 namespace KeyStats.ViewModels;
 
@@ -59,12 +60,15 @@ public class TrayIconViewModel : ViewModelBase
 
     private void UpdateTrayIcon()
     {
+        // Dispose old icon to prevent memory leak
+        _trayIcon?.Dispose();
+
         // 使用静态图标文件
         try
         {
             var assembly = Assembly.GetExecutingAssembly();
             var resourceName = "KeyStats.Resources.Icons.tray-icon.png";
-            
+
             using var stream = assembly.GetManifestResourceStream(resourceName);
             if (stream != null)
             {
@@ -73,7 +77,10 @@ public class TrayIconViewModel : ViewModelBase
                 int iconSize = GetSystemTrayIconSize();
                 // 使用高质量缩放算法
                 using var resizedBitmap = ResizeBitmapHighQuality(originalBitmap, iconSize, iconSize);
-                TrayIcon = Icon.FromHandle(resizedBitmap.GetHicon());
+                var hIcon = resizedBitmap.GetHicon();
+                TrayIcon = Icon.FromHandle(hIcon);
+                // Clean up GDI handle
+                NativeInterop.DestroyIcon(hIcon);
                 return;
             }
         }
@@ -93,7 +100,10 @@ public class TrayIconViewModel : ViewModelBase
                 int iconSize = GetSystemTrayIconSize();
                 // 使用高质量缩放算法
                 using var resizedBitmap = ResizeBitmapHighQuality(originalBitmap, iconSize, iconSize);
-                TrayIcon = Icon.FromHandle(resizedBitmap.GetHicon());
+                var hIcon = resizedBitmap.GetHicon();
+                TrayIcon = Icon.FromHandle(hIcon);
+                // Clean up GDI handle
+                NativeInterop.DestroyIcon(hIcon);
                 return;
             }
         }
