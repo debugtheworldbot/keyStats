@@ -40,7 +40,7 @@ public partial class App : System.Windows.Application
             var mutex = new System.Threading.Mutex(true, "KeyStats_SingleInstance", out bool createdNew);
             if (!createdNew)
             {
-                MessageBox.Show("KeyStats is already running.", "KeyStats", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("按键统计已在运行中。", "按键统计", MessageBoxButton.OK, MessageBoxImage.Information);
                 Shutdown();
                 return;
             }
@@ -89,7 +89,7 @@ public partial class App : System.Windows.Application
         catch (Exception ex)
         {
             Console.WriteLine($"Error during startup: {ex}");
-            MessageBox.Show($"Startup error: {ex.Message}", "KeyStats Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show($"启动错误: {ex.Message}", "按键统计错误", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown();
         }
     }
@@ -98,17 +98,17 @@ public partial class App : System.Windows.Application
     {
         var menu = new System.Windows.Controls.ContextMenu();
 
-        var showStatsItem = new System.Windows.Controls.MenuItem { Header = "Show Statistics" };
+        var showStatsItem = new System.Windows.Controls.MenuItem { Header = "显示统计" };
         showStatsItem.Click += (s, e) => _trayIconViewModel?.ShowStatsCommand.Execute(null);
         menu.Items.Add(showStatsItem);
 
-        var settingsItem = new System.Windows.Controls.MenuItem { Header = "Settings" };
+        var settingsItem = new System.Windows.Controls.MenuItem { Header = "设置" };
         settingsItem.Click += (s, e) => _trayIconViewModel?.ShowSettingsCommand.Execute(null);
         menu.Items.Add(settingsItem);
 
         menu.Items.Add(new System.Windows.Controls.Separator());
 
-        var quitItem = new System.Windows.Controls.MenuItem { Header = "Quit" };
+        var quitItem = new System.Windows.Controls.MenuItem { Header = "退出" };
         quitItem.Click += (s, e) => _trayIconViewModel?.QuitCommand.Execute(null);
         menu.Items.Add(quitItem);
 

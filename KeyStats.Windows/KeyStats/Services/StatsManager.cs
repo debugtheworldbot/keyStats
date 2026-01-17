@@ -352,7 +352,17 @@ public class StatsManager : IDisposable
     private void RecordCurrentStatsToHistory()
     {
         var key = CurrentStats.Date.ToString("yyyy-MM-dd");
-        History[key] = CurrentStats;
+        // 创建 CurrentStats 的副本，避免引用共享导致的数据丢失
+        var statsCopy = new DailyStats(CurrentStats.Date)
+        {
+            KeyPresses = CurrentStats.KeyPresses,
+            LeftClicks = CurrentStats.LeftClicks,
+            RightClicks = CurrentStats.RightClicks,
+            MouseDistance = CurrentStats.MouseDistance,
+            ScrollDistance = CurrentStats.ScrollDistance,
+            KeyPressCounts = new Dictionary<string, int>(CurrentStats.KeyPressCounts)
+        };
+        History[key] = statsCopy;
         SaveHistory();
     }
 
@@ -525,7 +535,7 @@ public class StatsManager : IDisposable
 
     public string GetTooltipText()
     {
-        return $"Keys: {CurrentStats.KeyPresses:N0} | Clicks: {CurrentStats.TotalClicks:N0}";
+        return $"按键: {CurrentStats.KeyPresses:N0} | 点击: {CurrentStats.TotalClicks:N0}";
     }
 
     private string FormatMenuBarNumber(int number)

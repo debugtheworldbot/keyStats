@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:KeyStats.Views.Controls"
         xmlns:viewmodels="clr-namespace:KeyStats.ViewModels"
-        Title="KeyStats"
-        Width="320" Height="680"
+        Title="按键统计"
+        Width="360" Height="680"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -38,7 +38,7 @@
             </Grid.RowDefinitions>
 
             <!-- Title -->
-            <TextBlock Grid.Row="0" Text="KeyStats"
+            <TextBlock Grid.Row="0" Text="按键统计"
                        FontSize="18" FontWeight="Bold"
                        HorizontalAlignment="Center" Margin="0,0,0,12"/>
 
@@ -47,7 +47,7 @@
             <!-- Stats Section -->
             <StackPanel Grid.Row="2">
                 <!-- Key Presses -->
-                <controls:StatItemControl Icon="⌨️" Title="Key Presses" Value="{Binding KeyPresses}" Margin="0,0,0,8"/>
+                <controls:StatItemControl Icon="⌨️" Title="按键次数" Value="{Binding KeyPresses}" Margin="0,0,0,8"/>
 
                 <!-- Click Row -->
                 <Grid Margin="0,0,0,8">
@@ -55,8 +55,8 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <controls:StatItemControl Grid.Column="0" Icon="🖱️" Title="Left Clicks" Value="{Binding LeftClicks}" Margin="0,0,8,0"/>
-                    <controls:StatItemControl Grid.Column="1" Icon="🖱️" Title="Right Clicks" Value="{Binding RightClicks}" Margin="8,0,0,0"/>
+                    <controls:StatItemControl Grid.Column="0" Icon="🖱️" Title="左键点击" Value="{Binding LeftClicks}" Margin="0,0,8,0"/>
+                    <controls:StatItemControl Grid.Column="1" Icon="🖱️" Title="右键点击" Value="{Binding RightClicks}" Margin="8,0,0,0"/>
                 </Grid>
 
                 <!-- Distance Row -->
@@ -65,14 +65,14 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <controls:StatItemControl Grid.Column="0" Icon="↔️" Title="Mouse Move" Value="{Binding MouseDistance}" Margin="0,0,8,0"/>
-                    <controls:StatItemControl Grid.Column="1" Icon="↕️" Title="Scroll" Value="{Binding ScrollDistance}" Margin="8,0,0,0"/>
+                    <controls:StatItemControl Grid.Column="0" Icon="↔️" Title="鼠标移动" Value="{Binding MouseDistance}" Margin="0,0,8,0"/>
+                    <controls:StatItemControl Grid.Column="1" Icon="↕️" Title="滚轮滚动" Value="{Binding ScrollDistance}" Margin="8,0,0,0"/>
                 </Grid>
             </StackPanel>
 
             <!-- Key Breakdown Section -->
             <StackPanel Grid.Row="3">
-                <TextBlock Text="Key Breakdown" Style="{StaticResource SectionTitle}"/>
+                <TextBlock Text="按键分布" Style="{StaticResource SectionTitle}"/>
                 <controls:KeyBreakdownControl
                     Column1Items="{Binding Column1Items}"
                     Column2Items="{Binding Column2Items}"
@@ -81,7 +81,7 @@
 
             <!-- History Section -->
             <StackPanel Grid.Row="4">
-                <TextBlock Text="History" Style="{StaticResource SectionTitle}"/>
+                <TextBlock Text="历史记录" Style="{StaticResource SectionTitle}"/>
 
                 <!-- Range Selection -->
                 <Grid Margin="0,0,0,8">
@@ -89,9 +89,9 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <RadioButton Grid.Column="0" Content="Week" GroupName="Range"
+                    <RadioButton Grid.Column="0" Content="本周" GroupName="Range"
                                  IsChecked="{Binding SelectedRangeIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=0}"/>
-                    <RadioButton Grid.Column="1" Content="Month" GroupName="Range"
+                    <RadioButton Grid.Column="1" Content="本月" GroupName="Range"
                                  IsChecked="{Binding SelectedRangeIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=1}"/>
                 </Grid>
 
@@ -103,13 +103,13 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <RadioButton Grid.Column="0" Content="Keys" GroupName="Metric" FontSize="11"
+                    <RadioButton Grid.Column="0" Content="按键" GroupName="Metric" FontSize="11"
                                  IsChecked="{Binding SelectedMetricIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=0}"/>
-                    <RadioButton Grid.Column="1" Content="Clicks" GroupName="Metric" FontSize="11"
+                    <RadioButton Grid.Column="1" Content="点击" GroupName="Metric" FontSize="11"
                                  IsChecked="{Binding SelectedMetricIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=1}"/>
-                    <RadioButton Grid.Column="2" Content="Move" GroupName="Metric" FontSize="11"
+                    <RadioButton Grid.Column="2" Content="移动" GroupName="Metric" FontSize="11"
                                  IsChecked="{Binding SelectedMetricIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=2}"/>
-                    <RadioButton Grid.Column="3" Content="Scroll" GroupName="Metric" FontSize="11"
+                    <RadioButton Grid.Column="3" Content="滚动" GroupName="Metric" FontSize="11"
                                  IsChecked="{Binding SelectedMetricIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=3}"/>
                 </Grid>
 
@@ -119,9 +119,9 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <RadioButton Grid.Column="0" Content="Line" GroupName="ChartStyle"
+                    <RadioButton Grid.Column="0" Content="折线图" GroupName="ChartStyle"
                                  IsChecked="{Binding SelectedChartStyleIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=0}"/>
-                    <RadioButton Grid.Column="1" Content="Bar" GroupName="ChartStyle"
+                    <RadioButton Grid.Column="1" Content="柱状图" GroupName="ChartStyle"
                                  IsChecked="{Binding SelectedChartStyleIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=1}"/>
                 </Grid>
             </StackPanel>
@@ -147,9 +147,9 @@
                 </Grid.ColumnDefinitions>
 
                 <Button Grid.Column="0" Content="⚙️" Command="{Binding OpenSettingsCommand}"
-                        ToolTip="Settings" Width="32" MinWidth="32" Padding="4"/>
+                        ToolTip="设置" Width="32" MinWidth="32" Padding="4"/>
 
-                <Button Grid.Column="2" Content="Quit" Command="{Binding QuitCommand}"/>
+                <Button Grid.Column="2" Content="退出" Command="{Binding QuitCommand}"/>
             </Grid>
         </Grid>
     </Border>

@@ -20,15 +20,15 @@ public class NotificationService
         var formattedCount = count.ToString("N0");
         var body = metric switch
         {
-            Metric.KeyPresses => $"Today's key presses reached {formattedCount}!",
-            Metric.Clicks => $"Today's clicks reached {formattedCount}!",
+            Metric.KeyPresses => $"今日按键次数已达到 {formattedCount}！",
+            Metric.Clicks => $"今日点击次数已达到 {formattedCount}！",
             _ => ""
         };
 
         try
         {
             new ToastContentBuilder()
-                .AddText("KeyStats")
+                .AddText("按键统计")
                 .AddText(body)
                 .Show();
         }

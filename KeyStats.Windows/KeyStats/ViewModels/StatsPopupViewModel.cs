@@ -28,7 +28,7 @@ public class StatsPopupViewModel : ViewModelBase
     private int _selectedRangeIndex;
     private int _selectedMetricIndex;
     private int _selectedChartStyleIndex;
-    private string _historySummary = "Total: 0";
+    private string _historySummary = "总计: 0";
 
     public string KeyPresses
     {
@@ -206,7 +206,7 @@ public class StatsPopupViewModel : ViewModelBase
 
         var total = series.Sum(x => x.Value);
         var formatted = StatsManager.Instance.FormatHistoryValue(metric, total);
-        HistorySummary = $"Total: {formatted}";
+        HistorySummary = $"总计: {formatted}";
 
         OnPropertyChanged(nameof(ChartData));
     }
