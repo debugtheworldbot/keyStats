@@ -1,3 +1,5 @@
+publish/
+dist/
 # Visual Studio / Windows
 .vs/
 *.user

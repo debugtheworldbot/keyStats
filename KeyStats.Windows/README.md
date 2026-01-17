@@ -41,6 +41,30 @@ dotnet run --project KeyStats
 
 ### Publish for Distribution
 
+#### 使用打包脚本（推荐）
+
+```powershell
+# PowerShell
+.\build.ps1
+
+# 或指定参数
+.\build.ps1 -Configuration Release -PublishType SelfContained -Runtime win-x64
+
+# 批处理文件（Windows）
+build.bat Release SelfContained
+```
+
+**参数说明：**
+- `Configuration`: `Release` 或 `Debug`（默认：Release）
+- `PublishType`: `SelfContained`（自包含，无需 .NET 运行时）或 `FrameworkDependent`（需要 .NET 运行时，默认：SelfContained）
+- `Runtime`: `win-x64`、`win-x86` 或 `win-arm64`（默认：win-x64）
+
+**输出：**
+- 发布文件：`publish/` 目录
+- 打包文件：`dist/KeyStats-Windows-<版本>-<运行时>-<类型>.zip`
+
+#### 手动发布
+
 ```bash
 # Self-contained single-file executable
 dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
