@@ -156,7 +156,7 @@ public class InputMonitorService : IDisposable
         // mouseData contains the scroll delta in the high-order word
         var delta = NativeInterop.HiWord((int)mouseData);
         var scrollDistance = Math.Abs(delta) / 120.0 * 10.0; // Normalize and scale
-        MouseScrolled?.Invoke(scrollDistance * 10); // Match macOS scaling factor
+        MouseScrolled?.Invoke(scrollDistance);
     }
 
     public void ResetLastMousePosition()

@@ -279,7 +279,6 @@ public class StatsManager : IDisposable
             _saveTimer?.Stop();
             _pendingSave = false;
             SaveStats();
-            SaveHistory();
         };
         _saveTimer.Start();
     }
@@ -667,7 +666,6 @@ public class StatsManager : IDisposable
         _midnightTimer?.Stop();
         _inputRateTimer?.Stop();
         SaveStats();
-        SaveHistory();
         SaveSettings();
     }
 
