@@ -8,7 +8,7 @@ using KeyStats.ViewModels;
 
 namespace KeyStats.Views.Controls;
 
-public partial class StatsChartControl : UserControl
+public partial class StatsChartControl : System.Windows.Controls.UserControl
 {
     public static readonly DependencyProperty ChartDataProperty =
         DependencyProperty.Register(nameof(ChartData), typeof(IEnumerable), typeof(StatsChartControl),
@@ -279,7 +279,7 @@ public partial class StatsChartControl : UserControl
         }
     }
 
-    private TextBlock CreateLabel(string text, Brush foreground, double fontSize)
+    private TextBlock CreateLabel(string text, System.Windows.Media.Brush foreground, double fontSize)
     {
         return new TextBlock
         {

@@ -7,21 +7,29 @@ namespace KeyStats.Views;
 public partial class StatsPopupWindow : Window
 {
     private readonly StatsPopupViewModel _viewModel;
+    private bool _isFullyLoaded;
 
     public StatsPopupWindow()
     {
+        Console.WriteLine("StatsPopupWindow constructor...");
         InitializeComponent();
+        Console.WriteLine("InitializeComponent done");
 
         _viewModel = (StatsPopupViewModel)DataContext;
         _viewModel.RequestClose += () => Close();
 
         Loaded += OnLoaded;
         Closed += OnClosed;
+        Console.WriteLine("StatsPopupWindow constructor done");
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        Console.WriteLine("Window loaded, positioning...");
         PositionNearTray();
+        _isFullyLoaded = true;
+        Console.WriteLine($"Window positioned at {Left}, {Top}");
+        Activate();
     }
 
     private void OnClosed(object? sender, EventArgs e)
@@ -31,7 +39,11 @@ public partial class StatsPopupWindow : Window
 
     private void Window_Deactivated(object sender, EventArgs e)
     {
-        Close();
+        Console.WriteLine($"Window_Deactivated called, _isFullyLoaded={_isFullyLoaded}");
+        if (_isFullyLoaded)
+        {
+            Close();
+        }
     }
 
     private void PositionNearTray()

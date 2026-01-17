@@ -1,0 +1,12 @@
+D:\keyStats\KeyStats.Windows\KeyStats\obj\Debug\net8.0-windows\KeyStats.csproj.AssemblyReference.cache
+D:\keyStats\KeyStats.Windows\KeyStats\obj\Debug\net8.0-windows\Views\Controls\StatItemControl.baml
+D:\keyStats\KeyStats.Windows\KeyStats\obj\Debug\net8.0-windows\Views\Controls\StatsChartControl.baml
+D:\keyStats\KeyStats.Windows\KeyStats\obj\Debug\net8.0-windows\Views\Controls\KeyBreakdownControl.g.cs
+D:\keyStats\KeyStats.Windows\KeyStats\obj\Debug\net8.0-windows\Views\Controls\StatItemControl.g.cs
+D:\keyStats\KeyStats.Windows\KeyStats\obj\Debug\net8.0-windows\Views\Controls\StatsChartControl.g.cs
+D:\keyStats\KeyStats.Windows\KeyStats\obj\Debug\net8.0-windows\Views\SettingsWindow.g.cs
+D:\keyStats\KeyStats.Windows\KeyStats\obj\Debug\net8.0-windows\Views\StatsPopupWindow.g.cs
+D:\keyStats\KeyStats.Windows\KeyStats\obj\Debug\net8.0-windows\App.g.cs
+D:\keyStats\KeyStats.Windows\KeyStats\obj\Debug\net8.0-windows\GeneratedInternalTypeHelper.g.cs
+D:\keyStats\KeyStats.Windows\KeyStats\obj\Debug\net8.0-windows\KeyStats_MarkupCompile.cache
+D:\keyStats\KeyStats.Windows\KeyStats\obj\Debug\net8.0-windows\KeyStats_MarkupCompile.lref

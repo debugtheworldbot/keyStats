@@ -4,7 +4,7 @@ using System.Windows.Controls;
 
 namespace KeyStats.Views.Controls;
 
-public partial class KeyBreakdownControl : UserControl
+public partial class KeyBreakdownControl : System.Windows.Controls.UserControl
 {
     public static readonly DependencyProperty Column1ItemsProperty =
         DependencyProperty.Register(nameof(Column1Items), typeof(IEnumerable), typeof(KeyBreakdownControl),

@@ -1,9 +1,10 @@
+using System.IO;
 using System.Text.Json;
 using System.Timers;
 using KeyStats.Helpers;
 using KeyStats.Models;
 using Timer = System.Timers.Timer;
-using Color = System.Drawing.Color;
+using DrawingColor = System.Drawing.Color;
 
 namespace KeyStats.Services;
 
@@ -44,7 +45,7 @@ public class StatsManager : IDisposable
     public Dictionary<string, DailyStats> History { get; private set; } = new();
 
     public double CurrentInputRatePerSecond { get; private set; }
-    public Color? CurrentIconTintColor { get; private set; }
+    public DrawingColor? CurrentIconTintColor { get; private set; }
 
     public event Action? TrayUpdateRequested;
     public event Action? StatsUpdateRequested;
@@ -231,7 +232,7 @@ public class StatsManager : IDisposable
             ? IconGenerator.GetRateColor(CurrentInputRatePerSecond)
             : null;
 
-        if (CurrentIconTintColor == Color.Empty)
+        if (CurrentIconTintColor == DrawingColor.Empty)
         {
             CurrentIconTintColor = null;
         }
@@ -299,7 +300,7 @@ public class StatsManager : IDisposable
         _statsUpdateTimer.Start();
     }
 
-    private void NotifyTrayUpdate()
+    public void NotifyTrayUpdate()
     {
         TrayUpdateRequested?.Invoke();
     }

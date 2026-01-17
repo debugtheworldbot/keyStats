@@ -25,7 +25,7 @@ public class SettingsViewModel : ViewModelBase
             {
                 StatsManager.Instance.Settings.ShowKeyPressesInTray = value;
                 StatsManager.Instance.SaveSettings();
-                StatsManager.Instance.TrayUpdateRequested?.Invoke();
+                StatsManager.Instance.NotifyTrayUpdate();
             }
         }
     }
@@ -39,7 +39,7 @@ public class SettingsViewModel : ViewModelBase
             {
                 StatsManager.Instance.Settings.ShowMouseClicksInTray = value;
                 StatsManager.Instance.SaveSettings();
-                StatsManager.Instance.TrayUpdateRequested?.Invoke();
+                StatsManager.Instance.NotifyTrayUpdate();
             }
         }
     }
@@ -89,7 +89,7 @@ public class SettingsViewModel : ViewModelBase
                     ? DynamicIconColorStyle.Icon
                     : DynamicIconColorStyle.Dot;
                 StatsManager.Instance.SaveSettings();
-                StatsManager.Instance.TrayUpdateRequested?.Invoke();
+                StatsManager.Instance.NotifyTrayUpdate();
             }
         }
     }

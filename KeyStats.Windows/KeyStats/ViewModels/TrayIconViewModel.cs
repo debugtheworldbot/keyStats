@@ -4,17 +4,18 @@ using System.Windows.Media;
 using KeyStats.Helpers;
 using KeyStats.Services;
 using KeyStats.Views;
+using DrawingIcon = System.Drawing.Icon;
 
 namespace KeyStats.ViewModels;
 
 public class TrayIconViewModel : ViewModelBase
 {
-    private ImageSource? _trayIcon;
+    private DrawingIcon? _trayIcon;
     private string _tooltipText = "KeyStats";
     private StatsPopupWindow? _popupWindow;
     private SettingsWindow? _settingsWindow;
 
-    public ImageSource? TrayIcon
+    public DrawingIcon? TrayIcon
     {
         get => _trayIcon;
         set => SetProperty(ref _trayIcon, value);
@@ -56,7 +57,23 @@ public class TrayIconViewModel : ViewModelBase
     private void UpdateTrayIcon()
     {
         var color = StatsManager.Instance.CurrentIconTintColor;
-        TrayIcon = IconGenerator.CreateTrayIconImageSource(color);
+        var settings = StatsManager.Instance.Settings;
+        var stats = StatsManager.Instance.CurrentStats;
+
+        // Get text to display on icon
+        string? keysText = null;
+        string? clicksText = null;
+
+        if (settings.ShowKeyPressesInTray)
+        {
+            keysText = stats.KeyPresses.ToString();
+        }
+        if (settings.ShowMouseClicksInTray)
+        {
+            clicksText = stats.TotalClicks.ToString();
+        }
+
+        TrayIcon = IconGenerator.CreateTrayIcon(color, keysText, clicksText);
     }
 
     private void UpdateTooltip()
@@ -66,28 +83,51 @@ public class TrayIconViewModel : ViewModelBase
 
     private void TogglePopup()
     {
-        if (_popupWindow != null && _popupWindow.IsVisible)
+        Console.WriteLine("=== TogglePopup called ===");
+        try
         {
-            _popupWindow.Close();
-            _popupWindow = null;
+            if (_popupWindow != null && _popupWindow.IsVisible)
+            {
+                Console.WriteLine("Closing existing window");
+                _popupWindow.Close();
+                _popupWindow = null;
+            }
+            else
+            {
+                Console.WriteLine("Calling ShowStats...");
+                ShowStats();
+            }
         }
-        else
+        catch (Exception ex)
         {
-            ShowStats();
+            Console.WriteLine($"TogglePopup error: {ex}");
         }
     }
 
     private void ShowStats()
     {
-        if (_popupWindow != null)
+        try
         {
-            _popupWindow.Activate();
-            return;
-        }
+            Console.WriteLine("ShowStats called...");
+            if (_popupWindow != null)
+            {
+                _popupWindow.Activate();
+                return;
+            }
 
-        _popupWindow = new StatsPopupWindow();
-        _popupWindow.Closed += (_, _) => _popupWindow = null;
-        _popupWindow.Show();
+            Console.WriteLine("Creating StatsPopupWindow...");
+            _popupWindow = new StatsPopupWindow();
+            _popupWindow.Closed += (_, _) => _popupWindow = null;
+            Console.WriteLine("Showing window...");
+            _popupWindow.Show();
+            Console.WriteLine("Window shown.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("=== ERROR IN SHOWSTATS ===");
+            Console.WriteLine(ex.ToString());
+            Console.WriteLine("=== END ERROR ===");
+        }
     }
 
     private void ShowSettings()

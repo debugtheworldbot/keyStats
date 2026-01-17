@@ -3,7 +3,7 @@ using System.Windows.Controls;
 
 namespace KeyStats.Views.Controls;
 
-public partial class StatItemControl : UserControl
+public partial class StatItemControl : System.Windows.Controls.UserControl
 {
     public static readonly DependencyProperty IconProperty =
         DependencyProperty.Register(nameof(Icon), typeof(string), typeof(StatItemControl),
