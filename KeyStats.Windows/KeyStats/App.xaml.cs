@@ -106,6 +106,27 @@ public partial class App : System.Windows.Application
         showStatsItem.Click += (s, e) => _trayIconViewModel?.ShowStatsCommand.Execute(null);
         menu.Items.Add(showStatsItem);
 
+        var startupItem = new System.Windows.Controls.MenuItem
+        {
+            Header = "开机启动",
+            IsCheckable = true,
+            IsChecked = StartupManager.Instance.IsEnabled
+        };
+        startupItem.Click += (s, e) =>
+        {
+            var menuItem = (System.Windows.Controls.MenuItem)s!;
+            try
+            {
+                StartupManager.Instance.SetEnabled(menuItem.IsChecked);
+            }
+            catch
+            {
+                // Revert checkbox if failed
+                menuItem.IsChecked = !menuItem.IsChecked;
+            }
+        };
+        menu.Items.Add(startupItem);
+
         menu.Items.Add(new System.Windows.Controls.Separator());
 
         var quitItem = new System.Windows.Controls.MenuItem { Header = "退出" };

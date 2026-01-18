@@ -12,36 +12,102 @@
             <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
             <helpers:InverseBoolConverter x:Key="InverseBoolConverter"/>
 
+            <!-- Windows 11 Colors -->
+            <Color x:Key="AccentColor">#0067C0</Color>
+            <Color x:Key="AccentLightColor">#60CDFF</Color>
+            <Color x:Key="TextPrimaryColor">#1A1A1A</Color>
+            <Color x:Key="TextSecondaryColor">#5C5C5C</Color>
+            <Color x:Key="TextTertiaryColor">#8A8A8A</Color>
+            <Color x:Key="SurfaceColor">#FAFAFA</Color>
+            <Color x:Key="CardColor">#FFFFFF</Color>
+            <Color x:Key="DividerColor">#E5E5E5</Color>
+            <Color x:Key="SubtleFillColor">#09000000</Color>
+            <Color x:Key="SubtleHoverColor">#12000000</Color>
+
+            <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+            <SolidColorBrush x:Key="AccentLightBrush" Color="{StaticResource AccentLightColor}"/>
+            <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}"/>
+            <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}"/>
+            <SolidColorBrush x:Key="TextTertiaryBrush" Color="{StaticResource TextTertiaryColor}"/>
+            <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}"/>
+            <SolidColorBrush x:Key="CardBrush" Color="{StaticResource CardColor}"/>
+            <SolidColorBrush x:Key="DividerBrush" Color="{StaticResource DividerColor}"/>
+            <SolidColorBrush x:Key="SubtleFillBrush" Color="{StaticResource SubtleFillColor}"/>
+            <SolidColorBrush x:Key="SubtleHoverBrush" Color="{StaticResource SubtleHoverColor}"/>
+            <SolidColorBrush x:Key="ChartLineBrush" Color="{StaticResource AccentColor}"/>
+            <SolidColorBrush x:Key="ChartFillBrush" Color="#200067C0"/>
+
             <!-- Global Styles -->
             <Style x:Key="SectionTitle" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="FontSize" Value="11"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="Margin" Value="0,16,0,8"/>
+                <Setter Property="Foreground" Value="{StaticResource TextTertiaryBrush}"/>
+                <Setter Property="Margin" Value="0,8,0,6"/>
             </Style>
 
             <Style x:Key="StatValue" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="14"/>
+                <Setter Property="FontSize" Value="18"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="Foreground" Value="#0078D4"/>
-                <Setter Property="FontFamily" Value="Consolas"/>
+                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
             </Style>
 
             <Style x:Key="StatLabel" TargetType="TextBlock">
-                <Setter Property="FontSize" Value="13"/>
-                <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
             </Style>
 
             <Style x:Key="SecondaryText" TargetType="TextBlock">
                 <Setter Property="FontSize" Value="12"/>
-                <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
+                <Setter Property="Foreground" Value="{StaticResource TextTertiaryBrush}"/>
             </Style>
 
             <Style x:Key="KeyBadge" TargetType="Border">
-                <Setter Property="Background" Value="#20808080"/>
-                <Setter Property="BorderBrush" Value="#40808080"/>
+                <Setter Property="Background" Value="{StaticResource SubtleFillBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}"/>
                 <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="CornerRadius" Value="3"/>
-                <Setter Property="Padding" Value="4,2"/>
+                <Setter Property="CornerRadius" Value="4"/>
+                <Setter Property="Padding" Value="6,2"/>
+            </Style>
+
+            <!-- Windows 11 Segmented Button Style -->
+            <Style x:Key="SegmentedButton" TargetType="RadioButton">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Padding" Value="12,6"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="RadioButton">
+                            <Border x:Name="border" Background="{TemplateBinding Background}"
+                                    CornerRadius="4" Padding="{TemplateBinding Padding}"
+                                    SnapsToDevicePixels="True">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="{StaticResource SubtleHoverBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="{StaticResource CardBrush}"/>
+                                    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Card Style -->
+            <Style x:Key="CardBorder" TargetType="Border">
+                <Setter Property="Background" Value="{StaticResource CardBrush}"/>
+                <Setter Property="CornerRadius" Value="6"/>
+                <Setter Property="Padding" Value="10"/>
+                <Setter Property="Effect">
+                    <Setter.Value>
+                        <DropShadowEffect BlurRadius="6" ShadowDepth="1" Opacity="0.06" Direction="270"/>
+                    </Setter.Value>
+                </Setter>
             </Style>
 
             <!-- Button Style -->
@@ -55,10 +121,88 @@
                 <Setter Property="MinWidth" Value="100"/>
             </Style>
 
-            <!-- Colors -->
-            <SolidColorBrush x:Key="AccentBrush" Color="#0078D4"/>
-            <SolidColorBrush x:Key="ChartLineBrush" Color="#0078D4"/>
-            <SolidColorBrush x:Key="ChartFillBrush" Color="#200078D4"/>
+            <!-- Windows 11 Context Menu Style -->
+            <Style TargetType="ContextMenu">
+                <Setter Property="Background" Value="#F9F9F9"/>
+                <Setter Property="BorderBrush" Value="#E5E5E5"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Padding" Value="4"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ContextMenu">
+                            <Border x:Name="Border" Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="8" Padding="{TemplateBinding Padding}"
+                                    SnapsToDevicePixels="True">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="16" ShadowDepth="4" Opacity="0.15" Direction="270"/>
+                                </Border.Effect>
+                                <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Windows 11 MenuItem Style -->
+            <Style TargetType="MenuItem">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                <Setter Property="Padding" Value="12,8"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="MenuItem">
+                            <Border x:Name="Border" Background="{TemplateBinding Background}"
+                                    CornerRadius="4" Margin="0,1" SnapsToDevicePixels="True">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="24"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <!-- Checkmark -->
+                                    <TextBlock x:Name="CheckMark" Grid.Column="0" Text="&#xE73E;"
+                                               FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                               VerticalAlignment="Center" HorizontalAlignment="Center"
+                                               Foreground="{StaticResource AccentBrush}"
+                                               Visibility="Collapsed"/>
+                                    <!-- Header -->
+                                    <ContentPresenter Grid.Column="1" ContentSource="Header"
+                                                      Margin="{TemplateBinding Padding}"
+                                                      VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                                </Trigger>
+                                <Trigger Property="IsHighlighted" Value="True">
+                                    <Setter TargetName="Border" Property="Background" Value="#0A000000"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Foreground" Value="{StaticResource TextTertiaryBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Windows 11 Separator Style -->
+            <Style TargetType="Separator">
+                <Setter Property="Height" Value="1"/>
+                <Setter Property="Margin" Value="12,4"/>
+                <Setter Property="Background" Value="{StaticResource DividerBrush}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Separator">
+                            <Border Background="{TemplateBinding Background}" Height="{TemplateBinding Height}"/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

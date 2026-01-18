@@ -3,7 +3,7 @@
 
 param(
     [string]$Configuration = "Release",
-    [string]$PublishType = "SelfContained",
+    [string]$PublishType = "FrameworkDependent",
     [string]$Runtime = "win-x64"
 )
 
@@ -147,20 +147,15 @@ try {
         $PublishArgs += "--self-contained", "true"
         $PublishArgs += "-p:PublishSingleFile=true"
         $PublishArgs += "-p:IncludeNativeLibrariesForSelfExtract=true"
-        $PublishArgs += "-p:PublishTrimmed=true"
-        $PublishArgs += "-p:TrimMode=partial"
-        $PublishArgs += "-p:PublishReadyToRun=true"
-        $PublishArgs += "-p:PublishReadyToRunComposite=true"
-        Write-Host "Publish Type: Self-contained single file (with trimming)" -ForegroundColor Yellow
+        $PublishArgs += "-p:EnableCompressionInSingleFile=true"
+        $PublishArgs += "-p:PublishTrimmed=false"
+        $PublishArgs += "-p:PublishReadyToRun=false"
+        Write-Host "Publish Type: Self-contained single file (with compression)" -ForegroundColor Yellow
     } else {
         $PublishArgs += "--self-contained", "false"
-        # 明确禁用剪裁（Windows Forms 不支持剪裁）
-        # 必须显式设置为 false，否则可能从其他配置继承
         $PublishArgs += "-p:PublishTrimmed=false"
-        # ReadyToRun 在 FrameworkDependent 模式下可以启用
-        $PublishArgs += "-p:PublishReadyToRun=true"
-        Write-Host "Publish Type: Framework-dependent (no trimming, requires .NET Runtime)" -ForegroundColor Yellow
-        Write-Host "Publish arguments: $($PublishArgs -join ' ')" -ForegroundColor Gray
+        $PublishArgs += "-p:PublishReadyToRun=false"
+        Write-Host "Publish Type: Framework-dependent (requires .NET 8 Runtime)" -ForegroundColor Yellow
     }
     
     dotnet @PublishArgs
@@ -188,7 +183,7 @@ $ZipName = "KeyStats-Windows-$Version-$Runtime-$PublishType.zip"
 $ZipPath = Join-Path $DistDir $ZipName
 
 # Copy files to temporary directory
-$TempDir = Join-Path $DistDir "KeyStats"
+$TempDir = Join-Path $DistDir "KeyStats-$Version"
 New-Item -ItemType Directory -Path $TempDir -Force | Out-Null
 
 Write-Host "Copying files..." -ForegroundColor Cyan

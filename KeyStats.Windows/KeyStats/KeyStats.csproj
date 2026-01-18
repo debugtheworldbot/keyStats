@@ -9,7 +9,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
-    <!-- <ApplicationIcon>Resources\Icons\app.ico</ApplicationIcon> -->
+    <ApplicationIcon>Resources\Icons\app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <AssemblyName>KeyStats</AssemblyName>
@@ -18,8 +18,10 @@
     <Authors>KeyStats</Authors>
     <Product>KeyStats</Product>
     <Description>Keyboard and mouse statistics tracker for Windows</Description>
-    <!-- 发布优化：裁剪和 ReadyToRun 通过命令行参数控制（避免 Windows Forms 裁剪冲突） -->
-    <!-- PublishReadyToRun 和 PublishTrimmed 通过 build.ps1 脚本参数控制 -->
+    <!-- 启用 trimming 并抑制 WPF/Windows Forms 警告 -->
+    <_SuppressWinFormsTrimError>true</_SuppressWinFormsTrimError>
+    <_SuppressWpfTrimError>true</_SuppressWpfTrimError>
+    <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
   </PropertyGroup>
 
   <ItemGroup>

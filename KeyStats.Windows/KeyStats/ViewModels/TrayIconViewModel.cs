@@ -78,8 +78,10 @@ public class TrayIconViewModel : ViewModelBase
                 // 使用高质量缩放算法
                 using var resizedBitmap = ResizeBitmapHighQuality(originalBitmap, iconSize, iconSize);
                 var hIcon = resizedBitmap.GetHicon();
-                TrayIcon = Icon.FromHandle(hIcon);
-                // Clean up GDI handle
+                var tempIcon = DrawingIcon.FromHandle(hIcon);
+                TrayIcon = (DrawingIcon)tempIcon.Clone();
+                // Clean up temp icon and GDI handle
+                tempIcon.Dispose();
                 NativeInterop.DestroyIcon(hIcon);
                 return;
             }
@@ -101,8 +103,10 @@ public class TrayIconViewModel : ViewModelBase
                 // 使用高质量缩放算法
                 using var resizedBitmap = ResizeBitmapHighQuality(originalBitmap, iconSize, iconSize);
                 var hIcon = resizedBitmap.GetHicon();
-                TrayIcon = Icon.FromHandle(hIcon);
-                // Clean up GDI handle
+                var tempIcon = DrawingIcon.FromHandle(hIcon);
+                TrayIcon = (DrawingIcon)tempIcon.Clone();
+                // Clean up temp icon and GDI handle
+                tempIcon.Dispose();
                 NativeInterop.DestroyIcon(hIcon);
                 return;
             }

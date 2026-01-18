@@ -2,13 +2,13 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:viewmodels="clr-namespace:KeyStats.ViewModels"
-             Height="124">
+             MinHeight="24">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="12"/>
             <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="12"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
@@ -16,78 +16,78 @@
         <ItemsControl x:Name="Column1" Grid.Column="0">
             <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type viewmodels:KeyCountItem}">
-                    <Grid Height="20" Margin="0,2">
+                    <Grid Height="22" Margin="0,1">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <Border Grid.Column="0" Background="#20808080" BorderBrush="#40808080"
-                                BorderThickness="1" CornerRadius="3" Padding="4,1"
+                        <Border Grid.Column="0" Background="{StaticResource SubtleFillBrush}"
+                                CornerRadius="4" Padding="6,2"
                                 HorizontalAlignment="Left" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Key}" FontSize="11" FontWeight="Medium"
-                                       MaxWidth="50" TextTrimming="CharacterEllipsis"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       MaxWidth="45" TextTrimming="CharacterEllipsis"
                                        ToolTip="{Binding Key}"/>
                         </Border>
                         <TextBlock Grid.Column="1" Text="{Binding Count}"
-                                   FontSize="11" FontWeight="SemiBold" FontFamily="Consolas"
-                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                                   HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextTertiaryBrush}"
+                                   HorizontalAlignment="Right" VerticalAlignment="Center"
+                                   Margin="4,0,0,0"/>
                     </Grid>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
-
-        <!-- Separator 1 -->
-        <Rectangle Grid.Column="1" Width="1" Fill="#30808080" Margin="6,0"/>
 
         <!-- Column 2 -->
         <ItemsControl x:Name="Column2" Grid.Column="2">
             <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type viewmodels:KeyCountItem}">
-                    <Grid Height="20" Margin="0,2">
+                    <Grid Height="22" Margin="0,1">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <Border Grid.Column="0" Background="#20808080" BorderBrush="#40808080"
-                                BorderThickness="1" CornerRadius="3" Padding="4,1"
+                        <Border Grid.Column="0" Background="{StaticResource SubtleFillBrush}"
+                                CornerRadius="4" Padding="6,2"
                                 HorizontalAlignment="Left" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Key}" FontSize="11" FontWeight="Medium"
-                                       MaxWidth="50" TextTrimming="CharacterEllipsis"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       MaxWidth="45" TextTrimming="CharacterEllipsis"
                                        ToolTip="{Binding Key}"/>
                         </Border>
                         <TextBlock Grid.Column="1" Text="{Binding Count}"
-                                   FontSize="11" FontWeight="SemiBold" FontFamily="Consolas"
-                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                                   HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextTertiaryBrush}"
+                                   HorizontalAlignment="Right" VerticalAlignment="Center"
+                                   Margin="4,0,0,0"/>
                     </Grid>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-        <!-- Separator 2 -->
-        <Rectangle Grid.Column="3" Width="1" Fill="#30808080" Margin="6,0"/>
-
         <!-- Column 3 -->
         <ItemsControl x:Name="Column3" Grid.Column="4">
             <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type viewmodels:KeyCountItem}">
-                    <Grid Height="20" Margin="0,2">
+                    <Grid Height="22" Margin="0,1">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <Border Grid.Column="0" Background="#20808080" BorderBrush="#40808080"
-                                BorderThickness="1" CornerRadius="3" Padding="4,1"
+                        <Border Grid.Column="0" Background="{StaticResource SubtleFillBrush}"
+                                CornerRadius="4" Padding="6,2"
                                 HorizontalAlignment="Left" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Key}" FontSize="11" FontWeight="Medium"
-                                       MaxWidth="50" TextTrimming="CharacterEllipsis"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       MaxWidth="45" TextTrimming="CharacterEllipsis"
                                        ToolTip="{Binding Key}"/>
                         </Border>
                         <TextBlock Grid.Column="1" Text="{Binding Count}"
-                                   FontSize="11" FontWeight="SemiBold" FontFamily="Consolas"
-                                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
-                                   HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextTertiaryBrush}"
+                                   HorizontalAlignment="Right" VerticalAlignment="Center"
+                                   Margin="4,0,0,0"/>
                     </Grid>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
@@ -95,9 +95,10 @@
 
         <!-- Empty State -->
         <TextBlock x:Name="EmptyText" Grid.ColumnSpan="5"
-                   Text="No key presses recorded yet"
+                   Text="暂无按键记录"
                    HorizontalAlignment="Center" VerticalAlignment="Center"
-                   Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                   FontSize="12"
+                   Foreground="{StaticResource TextTertiaryBrush}"
                    Visibility="Collapsed"/>
     </Grid>
 </UserControl>
