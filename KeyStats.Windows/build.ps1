@@ -14,7 +14,18 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 $ErrorActionPreference = "Stop"
 
 # 获取脚本所在目录
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+# 使用 $PSScriptRoot（PowerShell 3.0+），如果不可用则回退到 $MyInvocation
+$ScriptDir = if ($PSScriptRoot) {
+    $PSScriptRoot
+} else {
+    Split-Path -Parent $MyInvocation.MyCommand.Path
+}
+
+if (-not $ScriptDir) {
+    Write-Host "Error: Cannot determine script directory. Please run this script from its location." -ForegroundColor Red
+    exit 1
+}
+
 $ProjectDir = Join-Path $ScriptDir "KeyStats"
 $ProjectFile = Join-Path $ProjectDir "KeyStats.csproj"
 $OutputDir = Join-Path $ScriptDir "publish"
@@ -143,9 +154,13 @@ try {
         Write-Host "Publish Type: Self-contained single file (with trimming)" -ForegroundColor Yellow
     } else {
         $PublishArgs += "--self-contained", "false"
+        # 明确禁用剪裁（Windows Forms 不支持剪裁）
+        # 必须显式设置为 false，否则可能从其他配置继承
         $PublishArgs += "-p:PublishTrimmed=false"
+        # ReadyToRun 在 FrameworkDependent 模式下可以启用
         $PublishArgs += "-p:PublishReadyToRun=true"
         Write-Host "Publish Type: Framework-dependent (no trimming, requires .NET Runtime)" -ForegroundColor Yellow
+        Write-Host "Publish arguments: $($PublishArgs -join ' ')" -ForegroundColor Gray
     }
     
     dotnet @PublishArgs

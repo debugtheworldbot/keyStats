@@ -19,7 +19,7 @@
     <Product>KeyStats</Product>
     <Description>Keyboard and mouse statistics tracker for Windows</Description>
     <!-- 发布优化：裁剪和 ReadyToRun 通过命令行参数控制（避免 Windows Forms 裁剪冲突） -->
-    <PublishReadyToRun>true</PublishReadyToRun>
+    <!-- PublishReadyToRun 和 PublishTrimmed 通过 build.ps1 脚本参数控制 -->
   </PropertyGroup>
 
   <ItemGroup>
