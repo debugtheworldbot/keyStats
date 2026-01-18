@@ -244,13 +244,32 @@ public partial class StatsPopupWindow : Window
         bool taskbarAtRight = workingArea.Right < screenBounds.Right;
         bool taskbarAtLeft = workingArea.Left > screenBounds.Left;
 
+        // 系统托盘区域预留空间（避免遮挡图标）
+        const int trayAreaWidth = 250; // 系统托盘区域宽度（右侧）
+        const int spacing = 10; // 窗口与鼠标/任务栏的最小间距
+
         double left, top;
 
         if (taskbarAtBottom)
         {
             // 任务栏在底部：窗口显示在鼠标上方
             left = mouseX - windowWidth / 2;
-            top = workingArea.Bottom - windowHeight - 10;
+            
+            // 如果鼠标在屏幕右侧（系统托盘区域），窗口定位到左侧，避免遮挡图标
+            if (mouseX > screenBounds.Right - trayAreaWidth)
+            {
+                // 窗口定位到屏幕右侧，但留出系统托盘区域
+                left = screenBounds.Right - windowWidth - trayAreaWidth - spacing;
+            }
+            
+            // 窗口紧贴鼠标上方显示，只保留很小的间距
+            top = mouseY - windowHeight - spacing;
+            
+            // 确保窗口完全在工作区域内
+            if (top + windowHeight > workingArea.Bottom - spacing)
+            {
+                top = workingArea.Bottom - windowHeight - spacing;
+            }
         }
         else if (taskbarAtTop)
         {
@@ -261,7 +280,8 @@ public partial class StatsPopupWindow : Window
         else if (taskbarAtRight)
         {
             // 任务栏在右侧：窗口显示在鼠标左侧
-            left = workingArea.Right - windowWidth - 10;
+            // 如果鼠标在任务栏右侧区域（可能有点击托盘图标），窗口定位到更左侧
+            left = workingArea.Right - windowWidth - trayAreaWidth - 10;
             top = mouseY - windowHeight / 2;
         }
         else if (taskbarAtLeft)
@@ -284,8 +304,10 @@ public partial class StatsPopupWindow : Window
             left = workingArea.Right - windowWidth - 10;
         if (top < workingArea.Top)
             top = workingArea.Top + 10;
-        if (top + windowHeight > workingArea.Bottom)
-            top = workingArea.Bottom - windowHeight - 10;
+        
+        // 确保窗口底部不会延伸到任务栏区域，保持小间距
+        if (top + windowHeight > workingArea.Bottom - spacing)
+            top = workingArea.Bottom - windowHeight - spacing;
 
         // 转换为 WPF 坐标（考虑 DPI）
         Left = left / dpiScale;

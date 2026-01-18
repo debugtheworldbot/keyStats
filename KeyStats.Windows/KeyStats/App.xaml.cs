@@ -12,6 +12,7 @@ public partial class App : System.Windows.Application
 {
     private TaskbarIcon? _trayIcon;
     private TrayIconViewModel? _trayIconViewModel;
+    private System.Threading.Mutex? _singleInstanceMutex;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -41,10 +42,12 @@ public partial class App : System.Windows.Application
             var mutex = new System.Threading.Mutex(true, "KeyStats_SingleInstance", out bool createdNew);
             if (!createdNew)
             {
+                mutex.Dispose();
                 MessageBox.Show("按键统计已在运行中。", "按键统计", MessageBoxButton.OK, MessageBoxImage.Information);
                 Shutdown();
                 return;
             }
+            _singleInstanceMutex = mutex;
 
             Console.WriteLine("Initializing services...");
             // Initialize services
@@ -118,6 +121,8 @@ public partial class App : System.Windows.Application
         _trayIcon?.Dispose();
         InputMonitorService.Instance.StopMonitoring();
         StatsManager.Instance.FlushPendingSave();
+        _singleInstanceMutex?.ReleaseMutex();
+        _singleInstanceMutex?.Dispose();
         base.OnExit(e);
     }
 

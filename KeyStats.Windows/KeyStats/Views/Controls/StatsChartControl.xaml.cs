@@ -47,6 +47,20 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
     private readonly SolidColorBrush _gridBrush = new(Color.FromArgb(60, 128, 128, 128));
     private readonly SolidColorBrush _axisBrush = new(Color.FromArgb(100, 128, 128, 128));
     private readonly SolidColorBrush _textBrush;
+    private readonly SolidColorBrush _highlightBrush = new(Color.FromRgb(255, 100, 50));
+    
+    // 存储数据点位置信息，用于鼠标悬停检测
+    private List<PointData> _dataPoints = new();
+    
+    // 悬停标签
+    private TextBlock? _hoverYLabel;
+    private TextBlock? _hoverXLabel;
+    
+    // 绘图区域参数（用于 hover 检测）
+    private double _plotLeft;
+    private double _plotTop;
+    private double _plotWidth;
+    private double _plotHeight;
 
     public StatsChartControl()
     {
@@ -55,6 +69,10 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
         var grayTextColor = SystemColors.GrayTextColor;
         _textBrush = new SolidColorBrush(grayTextColor);
         SizeChanged += OnSizeChanged;
+        
+        // 添加鼠标移动事件处理
+        ChartCanvas.MouseMove += OnCanvasMouseMove;
+        ChartCanvas.MouseLeave += OnCanvasMouseLeave;
     }
 
     private static void OnChartDataChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -99,6 +117,9 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
     private void DrawChart()
     {
         ChartCanvas.Children.Clear();
+        _dataPoints.Clear();
+        _hoverYLabel = null;
+        _hoverXLabel = null;
 
         var data = ChartData?.Cast<ChartDataPoint>().ToList();
         if (data == null || data.Count == 0)
@@ -117,31 +138,33 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
         const double topPadding = 10;
         const double bottomPadding = 20;
 
-        var plotWidth = width - leftPadding - rightPadding;
-        var plotHeight = height - topPadding - bottomPadding;
+        _plotLeft = leftPadding;
+        _plotTop = topPadding;
+        _plotWidth = width - leftPadding - rightPadding;
+        _plotHeight = height - topPadding - bottomPadding;
 
-        if (plotWidth <= 0 || plotHeight <= 0) return;
+        if (_plotWidth <= 0 || _plotHeight <= 0) return;
 
         var maxValue = data.Max(d => d.Value);
         if (maxValue <= 0) maxValue = 1;
 
         // Draw grid
-        DrawGrid(leftPadding, topPadding, plotWidth, plotHeight);
+        DrawGrid(_plotLeft, _plotTop, _plotWidth, _plotHeight);
 
         // Draw axes
-        DrawAxes(leftPadding, topPadding, plotWidth, plotHeight);
+        DrawAxes(_plotLeft, _plotTop, _plotWidth, _plotHeight);
 
         // Draw axis labels
-        DrawAxisLabels(leftPadding, topPadding, plotWidth, plotHeight, maxValue, data);
+        DrawAxisLabels(_plotLeft, _plotTop, _plotWidth, _plotHeight, maxValue, data);
 
         // Draw chart
         if (ChartStyle == 0)
         {
-            DrawLineChart(data, leftPadding, topPadding, plotWidth, plotHeight, maxValue);
+            DrawLineChart(data, _plotLeft, _plotTop, _plotWidth, _plotHeight, maxValue);
         }
         else
         {
-            DrawBarChart(data, leftPadding, topPadding, plotWidth, plotHeight, maxValue);
+            DrawBarChart(data, _plotLeft, _plotTop, _plotWidth, _plotHeight, maxValue);
         }
     }
 
@@ -262,11 +285,23 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
         if (data.Count < 2) return;
 
         var points = new PointCollection();
+        var pointList = new List<Point>();
+        
         for (int i = 0; i < data.Count; i++)
         {
             var x = left + (width * i / (data.Count - 1));
             var y = top + height - (height * data[i].Value / maxValue);
-            points.Add(new Point(x, y));
+            var point = new Point(x, y);
+            points.Add(point);
+            pointList.Add(point);
+            
+            // 存储数据点信息
+            _dataPoints.Add(new PointData
+            {
+                DataPoint = data[i],
+                Position = point,
+                Index = i
+            });
         }
 
         // Draw line
@@ -280,7 +315,7 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
         ChartCanvas.Children.Add(polyline);
 
         // Draw dots
-        foreach (var point in points)
+        foreach (var point in pointList)
         {
             var dot = new Ellipse
             {
@@ -316,6 +351,16 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
             Canvas.SetLeft(bar, x);
             Canvas.SetTop(bar, y);
             ChartCanvas.Children.Add(bar);
+            
+            // 存储数据点信息（柱状图的中心位置）
+            var centerX = x + barWidth / 2;
+            var centerY = y;
+            _dataPoints.Add(new PointData
+            {
+                DataPoint = data[i],
+                Position = new Point(centerX, centerY),
+                Index = i
+            });
         }
     }
 
@@ -342,5 +387,112 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
         };
 
         return StatsManager.Instance.FormatHistoryValue(metric, value);
+    }
+
+    private void OnCanvasMouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        var position = e.GetPosition(ChartCanvas);
+        
+        // 只在实际绘图区域内检测
+        if (position.X < _plotLeft || position.X > _plotLeft + _plotWidth ||
+            position.Y < _plotTop || position.Y > _plotTop + _plotHeight)
+        {
+            HideHoverLabels();
+            return;
+        }
+        
+        // 扩大悬停区域：在数据点的横坐标或纵坐标周围都可以触发
+        const double xHitDistance = 40; // X轴方向触发距离
+        const double yHitDistance = 40; // Y轴方向触发距离
+        
+        PointData? closestPoint = null;
+        double minDistance = double.MaxValue;
+        
+        foreach (var pointData in _dataPoints)
+        {
+            double distanceX = Math.Abs(pointData.Position.X - position.X);
+            double distanceY = Math.Abs(pointData.Position.Y - position.Y);
+            
+            // 如果鼠标在X或Y坐标线附近（扩大区域），则认为悬停在此点上
+            if (distanceX <= xHitDistance || distanceY <= yHitDistance)
+            {
+                // 计算到点的距离，选择最近的点
+                double distance = Math.Sqrt(Math.Pow(distanceX, 2) + Math.Pow(distanceY, 2));
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+                    closestPoint = pointData;
+                }
+            }
+        }
+
+        if (closestPoint != null)
+        {
+            ShowHoverLabels(closestPoint);
+        }
+        else
+        {
+            HideHoverLabels();
+        }
+    }
+
+    private void OnCanvasMouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        HideHoverLabels();
+    }
+
+    private void ShowHoverLabels(PointData pointData)
+    {
+        const double bottomPadding = 20;
+        var plotBottom = _plotTop + _plotHeight;
+
+        // 移除旧的标签
+        if (_hoverYLabel != null)
+        {
+            ChartCanvas.Children.Remove(_hoverYLabel);
+        }
+        if (_hoverXLabel != null)
+        {
+            ChartCanvas.Children.Remove(_hoverXLabel);
+        }
+
+        // 创建 Y 轴标签（显示数值）
+        var yValueText = FormatValue(pointData.DataPoint.Value);
+        _hoverYLabel = CreateLabel(yValueText, _highlightBrush, 10);
+        _hoverYLabel.FontWeight = FontWeights.Bold;
+        _hoverYLabel.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        Canvas.SetLeft(_hoverYLabel, _plotLeft - _hoverYLabel.DesiredSize.Width - 4);
+        Canvas.SetTop(_hoverYLabel, pointData.Position.Y - _hoverYLabel.DesiredSize.Height / 2);
+        ChartCanvas.Children.Add(_hoverYLabel);
+
+        // 创建 X 轴标签（显示日期）
+        var xValueText = pointData.DataPoint.Date.ToString("M/d");
+        _hoverXLabel = CreateLabel(xValueText, _highlightBrush, 10);
+        _hoverXLabel.FontWeight = FontWeights.Bold;
+        _hoverXLabel.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        Canvas.SetLeft(_hoverXLabel, pointData.Position.X - _hoverXLabel.DesiredSize.Width / 2);
+        Canvas.SetTop(_hoverXLabel, plotBottom + 4);
+        ChartCanvas.Children.Add(_hoverXLabel);
+    }
+
+    private void HideHoverLabels()
+    {
+        if (_hoverYLabel != null)
+        {
+            ChartCanvas.Children.Remove(_hoverYLabel);
+            _hoverYLabel = null;
+        }
+        if (_hoverXLabel != null)
+        {
+            ChartCanvas.Children.Remove(_hoverXLabel);
+            _hoverXLabel = null;
+        }
+    }
+
+    private class PointData
+    {
+        public ChartDataPoint DataPoint { get; set; } = null!;
+        public Point Position { get; set; }
+        public int Index { get; set; }
     }
 }
