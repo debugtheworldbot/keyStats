@@ -174,8 +174,9 @@ public class InputMonitorService : IDisposable
     private void HandleScroll(uint mouseData)
     {
         // mouseData contains the scroll delta in the high-order word
+        // WHEEL_DELTA is 120, so divide by 120 to get wheel ticks
         var delta = NativeInterop.HiWord((int)mouseData);
-        var scrollDistance = Math.Abs(delta) / 120.0 * 10.0; // Normalize and scale
+        var scrollDistance = Math.Abs(delta) / 120.0;
         MouseScrolled?.Invoke(scrollDistance);
     }
 

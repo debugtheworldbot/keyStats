@@ -443,7 +443,6 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
 
     private void ShowHoverLabels(PointData pointData)
     {
-        const double bottomPadding = 20;
         var plotBottom = _plotTop + _plotHeight;
 
         // 移除旧的标签
