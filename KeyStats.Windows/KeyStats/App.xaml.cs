@@ -8,8 +8,9 @@ using System.Windows.Data;
 using Hardcodet.Wpf.TaskbarNotification;
 using KeyStats.Services;
 using KeyStats.ViewModels;
-using Microsoft.Extensions.Options;
-using PostHog;
+// PostHog 不支持 .NET Framework 4.8，分析功能在此版本中不可用
+// using Microsoft.Extensions.Options;
+// using PostHog;
 
 namespace KeyStats;
 
@@ -19,7 +20,8 @@ public partial class App : System.Windows.Application
     private TrayIconViewModel? _trayIconViewModel;
     private System.Threading.Mutex? _singleInstanceMutex;
     private string? _appVersion;
-    private IPostHogClient? _postHogClient;
+    // PostHog 不支持 .NET Framework 4.8
+    // private IPostHogClient? _postHogClient;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -176,7 +178,13 @@ public partial class App : System.Windows.Application
     {
         try
         {
-            var exePath = Environment.ProcessPath;
+            // .NET Framework 4.8 兼容：使用 Application.ExecutablePath 替代 Environment.ProcessPath
+            var exePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            if (string.IsNullOrWhiteSpace(exePath))
+            {
+                // 备用方案：使用 Application.ExecutablePath（WPF）
+                exePath = System.Windows.Application.ResourceAssembly?.Location;
+            }
             if (string.IsNullOrWhiteSpace(exePath))
             {
                 return;
@@ -223,6 +231,11 @@ public partial class App : System.Windows.Application
 
     private void InitializeAnalytics(StatsManager statsManager)
     {
+        // PostHog 不支持 .NET Framework 4.8，分析功能在此版本中不可用
+        // 分析功能在 .NET Framework 版本中被禁用
+        return;
+        
+        /* 原始代码（仅用于 .NET 8.0 版本）：
         var settings = statsManager.Settings;
         if (!settings.AnalyticsEnabled)
         {
@@ -275,10 +288,15 @@ public partial class App : System.Windows.Application
         }
 
         CaptureEvent("app_open", statsManager, null);
+        */
     }
 
     private void CaptureEvent(string eventName, StatsManager statsManager, Dictionary<string, object?>? extraProperties)
     {
+        // PostHog 不支持 .NET Framework 4.8，分析功能在此版本中不可用
+        return;
+        
+        /* 原始代码（仅用于 .NET 8.0 版本）：
         if (_postHogClient == null)
         {
             return;
@@ -303,10 +321,16 @@ public partial class App : System.Windows.Application
         }
 
         _postHogClient.Capture(distinctId, eventName, properties);
+        */
     }
 
     private Dictionary<string, object> BuildBaseProperties(Models.AppSettings settings)
     {
+        // PostHog 不支持 .NET Framework 4.8，此方法在此版本中不会被调用
+        // 保留方法签名以避免编译错误
+        return new Dictionary<string, object>();
+        
+        /* 原始代码（仅用于 .NET 8.0 版本）：
         var appVersion = _appVersion ?? "0.0.0";
         var properties = new Dictionary<string, object>
         {
@@ -314,7 +338,7 @@ public partial class App : System.Windows.Application
             ["app_version"] = appVersion,
             ["os"] = "Windows",
             ["os_version"] = Environment.OSVersion.VersionString,
-            ["dotnet_version"] = Environment.Version.ToString(),
+            ["dotnet_version"] = System.Environment.Version.ToString(),
             ["locale"] = CultureInfo.CurrentUICulture.Name
         };
 
@@ -330,10 +354,15 @@ public partial class App : System.Windows.Application
         };
 
         return properties;
+        */
     }
 
     private void TrackAnalyticsExit()
     {
+        // PostHog 不支持 .NET Framework 4.8，分析功能在此版本中不可用
+        return;
+        
+        /* 原始代码（仅用于 .NET 8.0 版本）：
         if (_postHogClient == null)
         {
             return;
@@ -343,6 +372,7 @@ public partial class App : System.Windows.Application
         CaptureEvent("app_exit", statsManager, null);
 
         _postHogClient.Dispose();
+        */
     }
 
     /// <summary>
@@ -350,6 +380,10 @@ public partial class App : System.Windows.Application
     /// </summary>
     public void TrackPageView(string pageName, Dictionary<string, object?>? extraProperties = null)
     {
+        // PostHog 不支持 .NET Framework 4.8，分析功能在此版本中不可用
+        return;
+        
+        /* 原始代码（仅用于 .NET 8.0 版本）：
         if (_postHogClient == null)
         {
             return;
@@ -373,6 +407,7 @@ public partial class App : System.Windows.Application
         }
 
         CaptureEvent("pageview", statsManager, properties);
+        */
     }
 
     /// <summary>
@@ -380,6 +415,10 @@ public partial class App : System.Windows.Application
     /// </summary>
     public void TrackClick(string elementName, Dictionary<string, object?>? extraProperties = null)
     {
+        // PostHog 不支持 .NET Framework 4.8，分析功能在此版本中不可用
+        return;
+        
+        /* 原始代码（仅用于 .NET 8.0 版本）：
         if (_postHogClient == null)
         {
             return;
@@ -403,6 +442,7 @@ public partial class App : System.Windows.Application
         }
 
         CaptureEvent("click", statsManager, properties);
+        */
     }
 
     /// <summary>

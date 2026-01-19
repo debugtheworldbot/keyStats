@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Timers;
 using KeyStats.Helpers;
@@ -332,7 +335,12 @@ public class StatsManager : IDisposable
                 var json = JsonSerializer.Serialize(CurrentStats, new JsonSerializerOptions { WriteIndented = true });
                 var tempPath = _statsFilePath + ".tmp";
                 File.WriteAllText(tempPath, json);
-                File.Move(tempPath, _statsFilePath, true);
+                // .NET Framework 4.8 兼容：File.Move 没有 3 参数重载，需要先删除
+                if (File.Exists(_statsFilePath))
+                {
+                    File.Delete(_statsFilePath);
+                }
+                File.Move(tempPath, _statsFilePath);
             }
             catch (Exception ex)
             {
@@ -384,7 +392,12 @@ public class StatsManager : IDisposable
             var json = JsonSerializer.Serialize(History, new JsonSerializerOptions { WriteIndented = true });
             var tempPath = _historyFilePath + ".tmp";
             File.WriteAllText(tempPath, json);
-            File.Move(tempPath, _historyFilePath, true);
+                // .NET Framework 4.8 兼容：File.Move 没有 3 参数重载，需要先删除
+                if (File.Exists(_historyFilePath))
+                {
+                    File.Delete(_historyFilePath);
+                }
+                File.Move(tempPath, _historyFilePath);
         }
         catch (Exception ex)
         {
@@ -437,7 +450,12 @@ public class StatsManager : IDisposable
             var json = JsonSerializer.Serialize(Settings, new JsonSerializerOptions { WriteIndented = true });
             var tempPath = _settingsFilePath + ".tmp";
             File.WriteAllText(tempPath, json);
-            File.Move(tempPath, _settingsFilePath, true);
+                // .NET Framework 4.8 兼容：File.Move 没有 3 参数重载，需要先删除
+                if (File.Exists(_settingsFilePath))
+                {
+                    File.Delete(_settingsFilePath);
+                }
+                File.Move(tempPath, _settingsFilePath);
         }
         catch (Exception ex)
         {

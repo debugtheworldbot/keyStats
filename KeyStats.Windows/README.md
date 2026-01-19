@@ -15,15 +15,16 @@ A keyboard and mouse statistics tracker for Windows, ported from the macOS versi
 
 ## Requirements
 
-- Windows 10 or Windows 11
-- .NET 8.0 Runtime
+- Windows 10 (1903+) or Windows 11
+- **无需安装任何依赖**（使用 .NET Framework 4.8，Windows 10/11 已预装，开箱即用）
+- **应用大小：约 5-10 MB**（相比自包含版本的 100-120 MB 大幅减小）
 
 ## Building
 
 ### Prerequisites
 
-- Visual Studio 2022 (17.8 or later) with .NET desktop development workload
-- Or .NET 8.0 SDK
+- Visual Studio 2019 or later with .NET desktop development workload
+- Or .NET SDK (支持 .NET Framework 4.8)
 
 ### Build with Visual Studio
 
@@ -43,98 +44,71 @@ dotnet run --project KeyStats
 
 #### 使用打包脚本（推荐）
 
+**方法 1：使用批处理文件（推荐，自动处理执行策略）**
+
+```cmd
+# 直接双击运行，或命令行执行
+build.bat
+```
+
+**方法 2：使用 PowerShell 脚本**
+
+如果直接运行 PowerShell 脚本遇到执行策略错误，可以使用以下方式：
+
 ```powershell
-# PowerShell - 自包含版本（推荐，无需安装 .NET）
+# 方式 A：使用 -ExecutionPolicy Bypass 参数
+powershell -ExecutionPolicy Bypass -File .\build.ps1
+
+# 方式 B：临时设置执行策略（仅当前会话）
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
 .\build.ps1
 
-# PowerShell - 框架依赖版本（需要 .NET 8.0 Runtime，文件更小）
-.\build.ps1 -PublishType FrameworkDependent
-
-# 批处理文件（Windows）
-build.bat Release SelfContained
+# 方式 C：使用批处理文件（推荐）
+build.bat
 ```
+
+**注意**：如果遇到 "无法加载文件，因为在此系统上禁止运行脚本" 的错误，请使用 `build.bat` 或上述方式 A/B。
 
 **参数说明：**
 - `Configuration`: `Release` 或 `Debug`（默认：Release）
-- `PublishType`: `SelfContained`（自包含，无需 .NET 运行时）或 `FrameworkDependent`（需要 .NET 运行时，默认：SelfContained）
-- `Runtime`: `win-x64`、`win-x86` 或 `win-arm64`（默认：win-x64）
 
 **输出：**
 - 发布文件：`publish/` 目录
-- 打包文件：`dist/KeyStats-Windows-<版本>-<运行时>-<类型>.zip`
+- 打包文件：`dist/KeyStats-Windows-<版本>-NetFramework48.zip`
 
-#### 两种打包方式对比
+#### .NET Framework 4.8 方案优势
 
-| 特性 | SelfContained（自包含） | FrameworkDependent（框架依赖） |
-|------|------------------------|------------------------------|
-| **文件大小** | ~100-120 MB（优化后） | ~5-10 MB |
-| **需要安装 .NET** | ❌ 不需要 | ✅ 需要 .NET 8.0 Desktop Runtime |
-| **安装难度** | 开箱即用 | 非常简单（见下方说明） |
-| **启动速度** | 稍慢（首次解压） | 更快 |
-| **适用场景** | 分发给不熟悉技术的用户 | 分发给开发者或技术用户 |
-| **推荐度** | ⭐⭐⭐⭐⭐ 推荐 | ⭐⭐⭐ 可选 |
+| 特性 | .NET Framework 4.8 |
+|------|-------------------|
+| **文件大小** | ~5-10 MB ✅ |
+| **需要安装 .NET** | ❌ 不需要（Windows 10/11 已预装） |
+| **安装难度** | 开箱即用 ✅ |
+| **启动速度** | 快速 ✅ |
+| **适用场景** | 所有用户 ✅ |
+| **推荐度** | ⭐⭐⭐⭐⭐ 强烈推荐 |
 
-**安装 .NET 8.0 Runtime 说明：**
+**为什么选择 .NET Framework 4.8？**
+- Windows 10 (1903+) 和 Windows 11 都预装了 .NET Framework 4.8
+- 应用本身只有 5-10 MB，无需打包运行时
+- 用户无需安装任何额外依赖，真正开箱即用
+- 性能优秀，启动快速
 
-安装非常简单，只需 1-2 分钟：
+**系统要求：**
 
-1. **自动安装（最简单）**：
-   - 首次运行 FrameworkDependent 版本时，Windows 可能会自动提示下载安装
-   - 点击提示即可完成安装
-   - **注意**：如果 Windows 没有自动提示，会显示系统错误对话框（英文），提示找不到运行时
+- Windows 10 (版本 1903 或更高) - 已预装 .NET Framework 4.8
+- Windows 11 - 已预装 .NET Framework 4.8
 
-2. **手动安装（推荐）**：
-   - 访问：https://dotnet.microsoft.com/download/dotnet/8.0
-   - 下载 "Desktop Runtime"（约 50MB）
-   - 双击安装即可
+如果你的 Windows 10 版本较旧（早于 1903），可以：
+1. 升级到 Windows 10 1903 或更高版本（推荐）
+2. 或手动安装 .NET Framework 4.8：https://dotnet.microsoft.com/download/dotnet-framework/net48
 
-3. **包管理器安装**：
-   ```powershell
-   # Chocolatey
-   choco install dotnet-desktopruntime-8.0
-   
-   # winget
-   winget install Microsoft.DotNet.DesktopRuntime.8
-   ```
-
-**如果未安装 .NET Runtime 会发生什么？**
-
-如果用户在没有安装 .NET 8.0 Desktop Runtime 的情况下运行 FrameworkDependent 版本：
-
-1. **Windows 系统错误对话框**：
-   - 会显示一个系统错误对话框（英文）
-   - 标题类似："This application requires one of the following versions of the .NET Framework"
-   - 或者："To run this application, you must install .NET Desktop Runtime 8.0"
-
-2. **应用无法启动**：
-   - 应用不会启动，不会显示任何界面
-   - 用户需要先安装 .NET Runtime 才能使用
-
-3. **解决方案**：
-   - 按照上面的说明安装 .NET 8.0 Desktop Runtime
-   - 或者使用 SelfContained 版本（无需安装，开箱即用）
-
-**使用启动器脚本（可选）**：
-
-FrameworkDependent 版本包含两个启动器脚本，可以在启动前检查运行时并显示友好的中文提示：
-
-- `CheckRuntime.bat` - 批处理启动器（推荐）
-- `CheckRuntime.ps1` - PowerShell 启动器（功能更丰富）
-
-使用方法：双击 `CheckRuntime.bat` 而不是直接运行 `KeyStats.exe`。如果运行时未安装，会显示中文提示并可以自动打开下载页面。
-
-**建议：**
-- 如果分发给普通用户 → 使用 **SelfContained**（无需安装，开箱即用）
-- 如果分发给开发者或技术用户 → 可以使用 **FrameworkDependent**（文件更小）
-
-#### 手动发布
+#### 手动构建
 
 ```bash
-# Self-contained single-file executable
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+# .NET Framework 4.8 版本（推荐）
+dotnet build -c Release
 
-# Framework-dependent (smaller size, requires .NET runtime)
-dotnet publish -c Release -r win-x64 --self-contained false
+# 输出在 bin/Release/net48/ 目录
 ```
 
 ## Project Structure

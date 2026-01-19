@@ -1,3 +1,4 @@
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
@@ -13,6 +14,20 @@ namespace KeyStats.Helpers;
 
 public static class IconGenerator
 {
+    // .NET Framework 4.8 兼容：Math.Clamp 不存在，手动实现
+    private static float Clamp(float value, float min, float max)
+    {
+        if (value < min) return min;
+        if (value > max) return max;
+        return value;
+    }
+    
+    private static double Clamp(double value, double min, double max)
+    {
+        if (value < min) return min;
+        if (value > max) return max;
+        return value;
+    }
     private const string TrayFontFamily = "Segoe UI";
     private const float TrayFontScale = 2.2f; // 增大到 2.2，使字号更大
     private const float TrayTextPaddingRatio = 0.08f;
@@ -108,8 +123,8 @@ public static class IconGenerator
         };
 
         float fontSize = baseFontSize * scale * TrayFontScale;
-        float padding = MathF.Max(1f, size * TrayTextPaddingRatio);
-        float lineSpacing = MathF.Max(0f, size * TrayLineSpacingRatio);
+        float padding = Math.Max(1f, size * TrayTextPaddingRatio);
+        float lineSpacing = Math.Max(0f, size * TrayLineSpacingRatio);
 
         using var format = (StringFormat)StringFormat.GenericTypographic.Clone();
         format.FormatFlags |= StringFormatFlags.NoWrap;
@@ -121,12 +136,12 @@ public static class IconGenerator
         if (!string.IsNullOrEmpty(keysDisplay))
         {
             lineCount++;
-            maxTextWidth = MathF.Max(maxTextWidth, g.MeasureString(keysDisplay, measureFont, int.MaxValue, format).Width);
+            maxTextWidth = Math.Max(maxTextWidth, g.MeasureString(keysDisplay, measureFont, int.MaxValue, format).Width);
         }
         if (!string.IsNullOrEmpty(clicksDisplay))
         {
             lineCount++;
-            maxTextWidth = MathF.Max(maxTextWidth, g.MeasureString(clicksDisplay, measureFont, int.MaxValue, format).Width);
+            maxTextWidth = Math.Max(maxTextWidth, g.MeasureString(clicksDisplay, measureFont, int.MaxValue, format).Width);
         }
 
         float lineHeight = measureFont.GetHeight(g);
@@ -136,7 +151,7 @@ public static class IconGenerator
         float fitScale = 1f;
         if (maxTextWidth > maxWidth && maxTextWidth > 0f)
         {
-            fitScale = MathF.Min(fitScale, maxWidth / maxTextWidth);
+            fitScale = Math.Min(fitScale, maxWidth / maxTextWidth);
         }
         if (fitScale < 1f)
         {
@@ -193,10 +208,19 @@ public static class IconGenerator
         }
     }
 
-    private static string FormatIconNumber(string text)
+    private static string FormatIconNumber(string? text)
     {
+        // 处理 null 或空字符串
+        if (string.IsNullOrEmpty(text))
+        {
+            return "";
+        }
+        
+        // 此时 text 一定不为 null，使用 null-forgiving 操作符告诉编译器
+        string nonNullText = text!;
+        
         // Try to parse and format the number compactly
-        if (int.TryParse(text.Replace(",", "").Replace(".", ""), out int num))
+        if (int.TryParse(nonNullText.Replace(",", "").Replace(".", ""), out int num))
         {
             if (num >= 1_000_000)
                 return $"{num / 1_000_000.0:F2}M";
@@ -204,7 +228,8 @@ public static class IconGenerator
                 return $"{num / 1_000.0:F2}k";
             return num.ToString();
         }
-        return text.Length > 4 ? text[..4] : text;
+        // .NET Framework 4.8 兼容：使用 Substring 替代范围运算符
+        return nonNullText.Length > 4 ? nonNullText.Substring(0, 4) : nonNullText;
     }
 
     private static void DrawKeyboardIcon(Graphics g, DrawingColor color)
@@ -335,7 +360,7 @@ public static class IconGenerator
 
     private static DrawingColor InterpolateColor(DrawingColor from, DrawingColor to, double progress)
     {
-        progress = Math.Clamp(progress, 0, 1);
+        progress = Clamp(progress, 0, 1);
         return DrawingColor.FromArgb(
             (int)(from.A + (to.A - from.A) * progress),
             (int)(from.R + (to.R - from.R) * progress),
@@ -346,7 +371,7 @@ public static class IconGenerator
 
     private static DrawingColor LightenColor(DrawingColor color, double fraction)
     {
-        fraction = Math.Clamp(fraction, 0, 1);
+        fraction = Clamp(fraction, 0, 1);
         return DrawingColor.FromArgb(
             color.A,
             (int)(color.R + (255 - color.R) * fraction),

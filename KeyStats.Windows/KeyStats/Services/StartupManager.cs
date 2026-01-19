@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Win32;
 
 namespace KeyStats.Services;
@@ -37,7 +38,8 @@ public class StartupManager
 
             if (enabled)
             {
-                var exePath = Environment.ProcessPath;
+                // .NET Framework 4.8 兼容：使用 Assembly.Location 替代 Environment.ProcessPath
+                var exePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                 if (!string.IsNullOrEmpty(exePath))
                 {
                     key.SetValue(AppName, $"\"{exePath}\"");

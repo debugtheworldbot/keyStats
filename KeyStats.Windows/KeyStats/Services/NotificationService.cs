@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Toolkit.Uwp.Notifications;
 
 namespace KeyStats.Services;

@@ -1,18 +1,10 @@
 // Resolve WPF vs Windows Forms namespace conflicts
 // Alias WPF types to take precedence in this project
+// Note: .NET Framework 4.8 不支持 global using (C# 10.0 特性)
+// 这些别名需要在每个文件中显式声明，或者使用完整的命名空间
+// 为了兼容性，此文件保留但不使用 global using
 
-global using Application = System.Windows.Application;
-global using MessageBox = System.Windows.MessageBox;
-global using MessageBoxButton = System.Windows.MessageBoxButton;
-global using MessageBoxImage = System.Windows.MessageBoxImage;
-global using MessageBoxResult = System.Windows.MessageBoxResult;
-global using Binding = System.Windows.Data.Binding;
-global using SystemColors = System.Windows.SystemColors;
-global using Size = System.Windows.Size;
-global using Point = System.Windows.Point;
-global using Rectangle = System.Windows.Shapes.Rectangle;
-
-// Media types
-global using Color = System.Windows.Media.Color;
-global using Brush = System.Windows.Media.Brush;
-global using SolidColorBrush = System.Windows.Media.SolidColorBrush;
+// 如果需要使用这些别名，请在文件顶部添加：
+// using Application = System.Windows.Application;
+// using MessageBox = System.Windows.MessageBox;
+// 等等...

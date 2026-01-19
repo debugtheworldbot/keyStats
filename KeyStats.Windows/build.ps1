@@ -1,9 +1,9 @@
-# KeyStats Windows Build Script
+﻿# KeyStats Windows Build Script
 # Usage: .\build.ps1 [Release|Debug] [SelfContained|FrameworkDependent]
 
 param(
     [string]$Configuration = "Release",
-    [string]$PublishType = "FrameworkDependent",
+    [string]$PublishType = "SelfContained",
     [string]$Runtime = "win-x64"
 )
 
@@ -131,39 +131,64 @@ finally {
     Pop-Location
 }
 
+# Check target framework
+$ProjectContent = Get-Content $ProjectFile -Raw
+$IsNetFramework = $ProjectContent -match '<TargetFramework>net\d+</TargetFramework>' -and $ProjectContent -match '<TargetFramework>net48</TargetFramework>'
+
 # Publish project
 Write-Host "Publishing project..." -ForegroundColor Cyan
 Push-Location $ScriptDir
 try {
-    $PublishArgs = @(
-        "publish",
-        $ProjectFile,
-        "-c", $Configuration,
-        "-r", $Runtime,
-        "-o", $OutputDir
-    )
-    
-    if ($PublishType -eq "SelfContained") {
-        $PublishArgs += "--self-contained", "true"
-        $PublishArgs += "-p:PublishSingleFile=true"
-        $PublishArgs += "-p:IncludeNativeLibrariesForSelfExtract=true"
-        $PublishArgs += "-p:EnableCompressionInSingleFile=true"
-        $PublishArgs += "-p:PublishTrimmed=false"
-        $PublishArgs += "-p:PublishReadyToRun=false"
-        Write-Host "Publish Type: Self-contained single file (with compression)" -ForegroundColor Yellow
+    if ($IsNetFramework) {
+        # .NET Framework 4.8: 使用 build 而不是 publish（运行时已预装）
+        Write-Host "Target Framework: .NET Framework 4.8 (运行时已预装在 Windows 10/11)" -ForegroundColor Yellow
+        Write-Host "应用大小: 约 5-10 MB，开箱即用" -ForegroundColor Green
+        
+        dotnet build $ProjectFile -c $Configuration -o $OutputDir
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Build failed!" -ForegroundColor Red
+            exit 1
+        }
+        
+        # 复制输出文件
+        $BinDir = Join-Path $ProjectDir "bin\$Configuration\net48"
+        if (Test-Path $BinDir) {
+            Copy-Item -Path "$BinDir\*" -Destination $OutputDir -Recurse -Force
+        }
+        
+        Write-Host "Build succeeded!" -ForegroundColor Green
     } else {
-        $PublishArgs += "--self-contained", "false"
-        $PublishArgs += "-p:PublishTrimmed=false"
-        $PublishArgs += "-p:PublishReadyToRun=false"
-        Write-Host "Publish Type: Framework-dependent (requires .NET 8 Runtime)" -ForegroundColor Yellow
+        # .NET 8: 使用 publish
+        $PublishArgs = @(
+            "publish",
+            $ProjectFile,
+            "-c", $Configuration,
+            "-r", $Runtime,
+            "-o", $OutputDir
+        )
+        
+        if ($PublishType -eq "SelfContained") {
+            $PublishArgs += "--self-contained", "true"
+            $PublishArgs += "-p:PublishSingleFile=true"
+            $PublishArgs += "-p:IncludeNativeLibrariesForSelfExtract=true"
+            $PublishArgs += "-p:EnableCompressionInSingleFile=true"
+            $PublishArgs += "-p:PublishTrimmed=false"
+            $PublishArgs += "-p:PublishReadyToRun=false"
+            Write-Host "Publish Type: Self-contained single file (with compression)" -ForegroundColor Yellow
+        } else {
+            $PublishArgs += "--self-contained", "false"
+            $PublishArgs += "-p:PublishTrimmed=false"
+            $PublishArgs += "-p:PublishReadyToRun=false"
+            Write-Host "Publish Type: Framework-dependent (requires .NET 8 Runtime)" -ForegroundColor Yellow
+        }
+        
+        dotnet @PublishArgs
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Publish failed!" -ForegroundColor Red
+            exit 1
+        }
+        Write-Host "Publish succeeded!" -ForegroundColor Green
     }
-    
-    dotnet @PublishArgs
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Publish failed!" -ForegroundColor Red
-        exit 1
-    }
-    Write-Host "Publish succeeded!" -ForegroundColor Green
 }
 finally {
     Pop-Location
@@ -179,7 +204,12 @@ if (-not $Version) {
     $Version = "1.0.0"
 }
 
-$ZipName = "KeyStats-Windows-$Version-$Runtime-$PublishType.zip"
+# Determine zip name based on framework
+if ($IsNetFramework) {
+    $ZipName = "KeyStats-Windows-$Version-NetFramework48.zip"
+} else {
+    $ZipName = "KeyStats-Windows-$Version-$Runtime-$PublishType.zip"
+}
 $ZipPath = Join-Path $DistDir $ZipName
 
 # Copy files to temporary directory
@@ -190,10 +220,15 @@ Write-Host "Copying files..." -ForegroundColor Cyan
 Copy-Item -Path "$OutputDir\*" -Destination $TempDir -Recurse -Force
 
 # 创建 README
-$RuntimeRequirement = if ($PublishType -eq "SelfContained") { 
-    "No .NET runtime required" 
-} else { 
-    ".NET 8.0 Runtime required" 
+if ($IsNetFramework) {
+    $RuntimeRequirement = "No .NET runtime installation required (uses pre-installed .NET Framework 4.8)"
+    $PublishType = "NetFramework48"
+} else {
+    $RuntimeRequirement = if ($PublishType -eq "SelfContained") { 
+        "No .NET runtime required" 
+    } else { 
+        ".NET 8.0 Runtime required" 
+    }
 }
 
 $ReadmeLines = @(
@@ -209,7 +244,13 @@ $ReadmeLines = @(
     ""
 )
 
-if ($PublishType -eq "FrameworkDependent") {
+if ($IsNetFramework) {
+    $ReadmeLines += @(
+        "Note: This version uses .NET Framework 4.8, which is pre-installed on Windows 10/11.",
+        "No additional installation required - ready to use!",
+        ""
+    )
+} elseif ($PublishType -eq "FrameworkDependent") {
     $ReadmeLines += @(
         "Note: This version requires .NET 8.0 Desktop Runtime.",
         "If runtime is not installed, use CheckRuntime.bat for friendly error message.",

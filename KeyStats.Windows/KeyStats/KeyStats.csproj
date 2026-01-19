@@ -2,11 +2,13 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
+    <!-- 使用 .NET Framework 4.8：Windows 10/11 已预装，应用大小约 5-10 MB，开箱即用 -->
+    <TargetFramework>net48</TargetFramework>
     <!-- 在 Debug 模式下显示控制台窗口，方便查看输出 -->
     <ApplicationManifest Condition="'$(Configuration)' == 'Debug'">app.manifest</ApplicationManifest>
     <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- .NET Framework 不支持 ImplicitUsings，需要显式 using -->
+    <ImplicitUsings>disable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>Resources\Icons\app.ico</ApplicationIcon>
@@ -18,16 +20,22 @@
     <Authors>KeyStats</Authors>
     <Product>KeyStats</Product>
     <Description>Keyboard and mouse statistics tracker for Windows</Description>
-    <!-- 启用 trimming 并抑制 WPF/Windows Forms 警告 -->
-    <_SuppressWinFormsTrimError>true</_SuppressWinFormsTrimError>
-    <_SuppressWpfTrimError>true</_SuppressWpfTrimError>
-    <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
+    <LangVersion>10.0</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="1.1.0" />
     <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
-    <PackageReference Include="PostHog" Version="2.2.0" />
+    <!-- System.Text.Json 需要单独安装包才能在 .NET Framework 4.8 中使用 -->
+    <!-- 升级到 8.0.5 以修复 CVE-2024-30105 和 CVE-2024-43485 安全漏洞 -->
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <!-- PostHog 不支持 .NET Framework 4.8，分析功能在 .NET Framework 版本中不可用 -->
+    <!-- <PackageReference Include="PostHog" Version="2.2.0" /> -->
+  </ItemGroup>
+  
+  <!-- .NET Framework 需要显式引用 Microsoft.CSharp 以支持 dynamic 类型 -->
+  <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 
   <ItemGroup>
