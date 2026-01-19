@@ -3,7 +3,8 @@
     "allow": [
       "Bash(dotnet build:*)",
       "Bash(taskkill:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(terminal-notifier:*)"
     ]
   }
 }

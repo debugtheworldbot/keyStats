@@ -41,7 +41,15 @@ brew upgrade keystats
 
 ## System Requirements
 
+### macOS
 - macOS 13.0 (Ventura) or higher
+
+### Windows
+- Windows 10 or higher
+- **[.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) must be installed first**
+
+> **Why is .NET 8 Desktop Runtime required?**
+> The Windows version is built with WPF (Windows Presentation Foundation), Microsoft's official desktop application framework, which requires the .NET runtime environment to run. If .NET 8 Desktop Runtime is not installed on your computer, the application will not launch.
 
 
 ## First Run Permission Setup

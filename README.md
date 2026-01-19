@@ -48,7 +48,15 @@ brew upgrade keystats
 
 ## 系统要求
 
+### macOS
 - macOS 13.0 (Ventura) 或更高版本
+
+### Windows
+- Windows 10 或更高版本
+- **需要先安装 [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)**
+
+> **为什么需要 .NET 8 Desktop Runtime？**
+> Windows 版本使用 WPF (Windows Presentation Foundation) 框架开发，这是微软官方的桌面应用开发框架，需要 .NET 运行时环境才能运行。如果你的电脑上没有安装 .NET 8 Desktop Runtime，应用将无法启动。
 
 
 ## 首次运行权限设置
