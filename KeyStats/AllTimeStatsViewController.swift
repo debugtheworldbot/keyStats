@@ -38,6 +38,11 @@ class AllTimeStatsViewController: NSViewController {
         setupUI()
         refreshData()
     }
+
+    override func viewDidAppear() {
+        super.viewDidAppear()
+        scrollToTop()
+    }
     
     private func setupUI() {
         // 滚动视图
@@ -471,6 +476,15 @@ class AllTimeStatsViewController: NSViewController {
         formatter.numberStyle = .decimal
         return formatter.string(from: NSNumber(value: number)) ?? "\(number)"
     }
+
+    func scrollToTop() {
+        guard let documentView = scrollView.documentView else { return }
+        let contentHeight = scrollView.contentView.bounds.height
+        let maxY = max(0, documentView.bounds.height - contentHeight)
+        let targetY: CGFloat = documentView.isFlipped ? 0 : maxY
+        scrollView.contentView.scroll(to: NSPoint(x: 0, y: targetY))
+        scrollView.reflectScrolledClipView(scrollView.contentView)
+    }
 }
 
 // MARK: - 组件：统计大卡片
@@ -739,6 +753,8 @@ class TopKeyRowView: NSView {
         barContainer.layer?.backgroundColor = NSColor.separatorColor.withAlphaComponent(0.3).cgColor
         barContainer.layer?.cornerRadius = 4
         barContainer.translatesAutoresizingMaskIntoConstraints = false
+        barContainer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        barContainer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         
         // 进度条前景
         let barFill = NSView()
@@ -761,6 +777,8 @@ class TopKeyRowView: NSView {
         countLabel.font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .regular)
         countLabel.textColor = .secondaryLabelColor
         countLabel.alignment = .right
+        countLabel.setContentHuggingPriority(.required, for: .horizontal)
+        countLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
         
         stack.addArrangedSubview(rankLabel)
         stack.addArrangedSubview(keyLabel)
@@ -768,6 +786,8 @@ class TopKeyRowView: NSView {
         stack.addArrangedSubview(countLabel)
         
         barContainer.heightAnchor.constraint(equalToConstant: 8).isActive = true
+        barContainer.widthAnchor.constraint(greaterThanOrEqualToConstant: 160).isActive = true
+        countLabel.widthAnchor.constraint(equalToConstant: 60).isActive = true
     }
 }
 

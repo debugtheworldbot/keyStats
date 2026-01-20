@@ -30,6 +30,9 @@ final class AllTimeStatsWindowController: NSWindowController {
         
         if let vc = contentViewController as? AllTimeStatsViewController {
             vc.refreshData()
+            DispatchQueue.main.async {
+                vc.scrollToTop()
+            }
         }
     }
 }
