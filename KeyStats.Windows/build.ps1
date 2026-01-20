@@ -157,9 +157,11 @@ finally {
 Write-Host "Creating distribution package..." -ForegroundColor Cyan
 New-Item -ItemType Directory -Path $DistDir -Force | Out-Null
 
-# Get version number
-$Version = (Select-String -Path $ProjectFile -Pattern '<Version>(\d+\.\d+\.\d+)</Version>').Matches.Groups[1].Value
-if (-not $Version) {
+# Get version number (supports formats like 1.0.0, 1.15, 1.15-test, 1.15.0-beta)
+$VersionMatch = Select-String -Path $ProjectFile -Pattern '<Version>([^<]+)</Version>'
+if ($VersionMatch -and $VersionMatch.Matches.Groups[1].Value) {
+    $Version = $VersionMatch.Matches.Groups[1].Value.Trim()
+} else {
     $Version = "1.0.0"
 }
 
