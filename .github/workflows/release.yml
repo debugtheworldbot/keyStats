@@ -6,10 +6,99 @@ on:
       - 'v*'
 
 jobs:
+  # ============================================================
+  # macOS: Check for changes and decide whether to build or reuse
+  # ============================================================
+  check-macos:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+      skipped: ${{ steps.final-status.outputs.skipped }}
+      previous_sha256: ${{ steps.download.outputs.sha256 }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Check for macOS changes
+        id: check-changes
+        run: |
+          CURRENT_TAG=${GITHUB_REF#refs/tags/}
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | grep -v "^${CURRENT_TAG}$" | head -n 1)
+
+          if [ -z "$PREVIOUS_TAG" ]; then
+            echo "No previous tag found, will build"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Comparing $PREVIOUS_TAG to $CURRENT_TAG"
+
+          # Check if macOS-related directories have changes
+          CHANGES=$(git diff --name-only "$PREVIOUS_TAG" "$CURRENT_TAG" -- KeyStats/ KeyStats.xcodeproj/ scripts/)
+
+          if [ -z "$CHANGES" ]; then
+            echo "No changes in macOS directories"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "Changes detected in macOS directories:"
+            echo "$CHANGES"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download previous macOS release
+        id: download
+        if: steps.check-changes.outputs.has_changes == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p macos-dist
+
+          # Download the DMG from latest release
+          if gh release download --pattern "KeyStats.dmg" --dir macos-dist 2>/dev/null; then
+            echo "Downloaded KeyStats.dmg"
+            ls -la macos-dist/
+            SHA256=$(shasum -a 256 macos-dist/KeyStats.dmg | cut -d ' ' -f 1)
+            echo "sha256=$SHA256" >> $GITHUB_OUTPUT
+            echo "success=true" >> $GITHUB_OUTPUT
+          else
+            echo "No previous macOS release found, will need to build"
+            echo "success=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Determine final skip status
+        id: final-status
+        run: |
+          if [ "${{ steps.check-changes.outputs.has_changes }}" == "true" ]; then
+            echo "skipped=false" >> $GITHUB_OUTPUT
+            echo "Result: will build (changes detected)"
+          elif [ "${{ steps.download.outputs.success }}" == "true" ]; then
+            echo "skipped=true" >> $GITHUB_OUTPUT
+            echo "Result: will skip (no changes, cache available)"
+          else
+            echo "skipped=false" >> $GITHUB_OUTPUT
+            echo "Result: will build (no changes but cache unavailable)"
+          fi
+
+      - name: Upload cached macOS artifact
+        if: steps.final-status.outputs.skipped == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: macos-dist/KeyStats.dmg
+
   build-macos:
+    needs: check-macos
+    if: needs.check-macos.outputs.skipped != 'true'
     runs-on: macos-26
-    permissions:
-      contents: write
+    outputs:
+      sha256: ${{ steps.sha256.outputs.SHA256 }}
 
     steps:
       - name: Check build environment
@@ -22,13 +111,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Extract version
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
       - name: Update app version
         run: |
-          VERSION=${{ steps.version.outputs.VERSION }}
+          VERSION=${{ needs.check-macos.outputs.version }}
           sed -i '' "s/MARKETING_VERSION = .*/MARKETING_VERSION = $VERSION;/" KeyStats.xcodeproj/project.pbxproj
           echo "Updated MARKETING_VERSION to $VERSION"
 
@@ -45,23 +130,97 @@ jobs:
           name: macos-dmg
           path: KeyStats.dmg
 
+  # ============================================================
+  # Windows: Check for changes and decide whether to build or reuse
+  # ============================================================
+  check-windows:
+    runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
-      sha256: ${{ steps.sha256.outputs.SHA256 }}
-
-  build-windows:
-    runs-on: windows-latest
-    permissions:
-      contents: write
+      skipped: ${{ steps.final-status.outputs.skipped }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Extract version
         id: version
-        shell: bash
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Check for Windows changes
+        id: check-changes
+        run: |
+          CURRENT_TAG=${GITHUB_REF#refs/tags/}
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | grep -v "^${CURRENT_TAG}$" | head -n 1)
+
+          if [ -z "$PREVIOUS_TAG" ]; then
+            echo "No previous tag found, will build"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Comparing $PREVIOUS_TAG to $CURRENT_TAG"
+
+          # Check if KeyStats.Windows directory has changes
+          CHANGES=$(git diff --name-only "$PREVIOUS_TAG" "$CURRENT_TAG" -- KeyStats.Windows/)
+
+          if [ -z "$CHANGES" ]; then
+            echo "No changes in KeyStats.Windows"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "Changes detected in KeyStats.Windows:"
+            echo "$CHANGES"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download previous Windows release
+        id: download
+        if: steps.check-changes.outputs.has_changes == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p windows-dist
+
+          if gh release download --pattern "*Windows*.zip" --dir windows-dist 2>/dev/null; then
+            echo "Downloaded Windows ZIP"
+            ls -la windows-dist/
+            echo "success=true" >> $GITHUB_OUTPUT
+          else
+            echo "No previous Windows release found, will need to build"
+            echo "success=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Determine final skip status
+        id: final-status
+        run: |
+          if [ "${{ steps.check-changes.outputs.has_changes }}" == "true" ]; then
+            echo "skipped=false" >> $GITHUB_OUTPUT
+            echo "Result: will build (changes detected)"
+          elif [ "${{ steps.download.outputs.success }}" == "true" ]; then
+            echo "skipped=true" >> $GITHUB_OUTPUT
+            echo "Result: will skip (no changes, cache available)"
+          else
+            echo "skipped=false" >> $GITHUB_OUTPUT
+            echo "Result: will build (no changes but cache unavailable)"
+          fi
+
+      - name: Upload cached Windows artifact
+        if: steps.final-status.outputs.skipped == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-zip
+          path: windows-dist/*.zip
+
+  build-windows:
+    needs: check-windows
+    if: needs.check-windows.outputs.skipped != 'true'
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -72,7 +231,7 @@ jobs:
         shell: pwsh
         run: |
           $csprojPath = "KeyStats.Windows/KeyStats/KeyStats.csproj"
-          $version = "${{ steps.version.outputs.VERSION }}"
+          $version = "${{ needs.check-windows.outputs.version }}"
           (Get-Content $csprojPath) -replace '<Version>.*</Version>', "<Version>$version</Version>" | Set-Content $csprojPath
           Write-Host "Updated Version to $version"
 
@@ -88,11 +247,15 @@ jobs:
           name: windows-zip
           path: KeyStats.Windows/dist/*.zip
 
-    outputs:
-      version: ${{ steps.version.outputs.VERSION }}
-
+  # ============================================================
+  # Create Release: Wait for all builds and create GitHub release
+  # ============================================================
   create-release:
-    needs: [build-macos, build-windows]
+    needs: [check-macos, check-windows, build-macos, build-windows]
+    if: |
+      always() &&
+      (needs.check-macos.outputs.skipped == 'true' || needs.build-macos.result == 'success') &&
+      (needs.check-windows.outputs.skipped == 'true' || needs.build-windows.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -122,23 +285,23 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update Homebrew Tap
+        if: needs.check-macos.outputs.skipped != 'true'
         env:
           TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
         run: |
           git clone https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/debugtheworldbot/homebrew-keystats.git /tmp/homebrew-keystats
           cd /tmp/homebrew-keystats
-          sed -i "s/version \".*\"/version \"${{ needs.build-macos.outputs.version }}\"/" Casks/keystats.rb
+          sed -i "s/version \".*\"/version \"${{ needs.check-macos.outputs.version }}\"/" Casks/keystats.rb
           sed -i "s/sha256 \".*\"/sha256 \"${{ needs.build-macos.outputs.sha256 }}\"/" Casks/keystats.rb
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Casks/keystats.rb
-          git commit -m "chore: update keystats to v${{ needs.build-macos.outputs.version }}"
+          git commit -m "chore: update keystats to v${{ needs.check-macos.outputs.version }}"
           git push origin main
 
       - name: Verify Release
-        if: success()
         run: |
-          echo "✅ Release v${{ needs.build-macos.outputs.version }} created successfully"
-          echo "✅ macOS DMG SHA256: ${{ needs.build-macos.outputs.sha256 }}"
-          echo "✅ Windows ZIP uploaded"
-          echo "✅ Homebrew tap updated"
+          echo "✅ Release v${{ needs.check-macos.outputs.version }} created successfully"
+          echo "macOS build: ${{ needs.check-macos.outputs.skipped == 'true' && 'reused from previous release' || 'freshly built' }}"
+          echo "Windows build: ${{ needs.check-windows.outputs.skipped == 'true' && 'reused from previous release' || 'freshly built' }}"
+          echo "Homebrew tap: ${{ needs.check-macos.outputs.skipped == 'true' && 'not updated (no macOS changes)' || 'updated' }}"
