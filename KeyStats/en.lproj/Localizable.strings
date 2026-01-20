@@ -68,3 +68,44 @@
 
 "about.author" = "Author";
 "about.version" = "Version %@ (%@)";
+
+"allTimeStats.windowTitle" = "All-Time Statistics";
+"allTimeStats.title" = "Lifetime Statistics";
+"allTimeStats.button" = "All-Time Stats";
+"allTimeStats.rangeFormat" = "%@ - %@ (%d Days)";
+"allTimeStats.noData" = "No Data Available";
+"allTimeStats.topKeys" = "Most Used Keys";
+"allTimeStats.funStats" = "Fun Stats";
+"allTimeStats.maxDailyKeyPresses" = "Most Keys in a Day";
+"allTimeStats.maxDailyClicks" = "Most Clicks in a Day";
+"allTimeStats.avgKeyPressesPerDay" = "Average Keys per Day";
+"allTimeStats.avgClicksPerDay" = "Average Clicks per Day";
+"stats.totalClicks" = "Total Clicks";
+
+"allTimeStats.insights" = "Insights";
+"insights.peakDay" = "Peak Day";
+"insights.dailyAvg" = "Daily Average";
+"insights.clickRatio" = "Click Ratio";
+"insights.leftRight" = "Left : Right";
+"allTimeStats.mostActiveWeekday" = "Productivity Peak";
+"allTimeStats.marathonMouse" = "Mouse Marathons";
+"allTimeStats.everestScroll" = "Scroll Everests";
+"insights.marathon" = "%.1f Marathons";
+"insights.everest" = "%.1f Everests";
+"insights.tooltip.peakWeekday" = "The day of the week with the highest average activity (keys + clicks)";
+"insights.tooltip.marathon" = "Total mouse distance equivalent to %.1f marathons (42.195km)";
+"insights.tooltip.everest" = "Total scroll distance equivalent to climbing %.1f Mount Everests (8848m)";
+
+"insights.perfectionist" = "Correction Rate";
+"insights.tooltip.perfectionist" = "Percentage of Delete/Backspace keys in total keystrokes";
+"insights.inputStyle" = "Input Style";
+"insights.style.keyboard" = "Hacker";
+"insights.style.mouse" = "Designer";
+"insights.style.balanced" = "Balanced";
+"insights.tooltip.inputStyle" = "Determined by the ratio of key presses to mouse clicks";
+
+"insights.subtitle.weeklyBest" = "Weekly Best";
+"insights.subtitle.marathons" = "Marathons";
+"insights.subtitle.everests" = "Everests";
+"insights.subtitle.backspaceDel" = "Backspace/Del";
+"insights.subtitle.ratioFormat" = "Ratio: %.1f";

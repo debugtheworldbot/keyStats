@@ -68,3 +68,44 @@
 
 "about.author" = "作者";
 "about.version" = "版本 %@ (%@)";
+
+"allTimeStats.windowTitle" = "有史以来统计";
+"allTimeStats.title" = "有史以来统计";
+"allTimeStats.button" = "历史总计";
+"allTimeStats.rangeFormat" = "%@ - %@ (共 %d 天)";
+"allTimeStats.noData" = "暂无数据";
+"allTimeStats.topKeys" = "最常按键";
+"allTimeStats.funStats" = "趣味统计";
+"allTimeStats.maxDailyKeyPresses" = "最高单日键盘敲击";
+"allTimeStats.maxDailyClicks" = "最高单日点击数";
+"allTimeStats.avgKeyPressesPerDay" = "平均每天键盘敲击";
+"allTimeStats.avgClicksPerDay" = "平均每天点击数";
+"stats.totalClicks" = "总点击数";
+
+"allTimeStats.insights" = "洞察分析";
+"insights.peakDay" = "巅峰单日";
+"insights.dailyAvg" = "每日平均";
+"insights.clickRatio" = "点击占比";
+"insights.leftRight" = "左 : 右";
+"allTimeStats.mostActiveWeekday" = "效率巅峰";
+"allTimeStats.marathonMouse" = "鼠标长征";
+"allTimeStats.everestScroll" = "指尖攀登";
+"insights.marathon" = "%.1f 个马拉松";
+"insights.everest" = "%.1f 座珠穆朗玛峰";
+"insights.tooltip.peakWeekday" = "统计历史中平均活跃度（按键+点击）最高的一天";
+"insights.tooltip.marathon" = "鼠标累计移动距离相当于 %.1f 个全程马拉松 (42.195km)";
+"insights.tooltip.everest" = "滚轮累计滚动距离相当于爬了 %.1f 座珠穆朗玛峰 (8848m)";
+
+"insights.perfectionist" = "纠错指数";
+"insights.tooltip.perfectionist" = "删除键 (Delete/Backspace) 在所有按键中的占比";
+"insights.inputStyle" = "操作流派";
+"insights.style.keyboard" = "键盘流";
+"insights.style.mouse" = "鼠标流";
+"insights.style.balanced" = "平衡流";
+"insights.tooltip.inputStyle" = "基于按键数与点击数的比率判定";
+
+"insights.subtitle.weeklyBest" = "每周最佳";
+"insights.subtitle.marathons" = "个马拉松";
+"insights.subtitle.everests" = "座珠峰";
+"insights.subtitle.backspaceDel" = "退格/删除";
+"insights.subtitle.ratioFormat" = "键鼠比: %.1f";
