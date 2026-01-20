@@ -19,6 +19,7 @@ class StatsPopoverViewController: NSViewController {
     private var chartView: StatsChartView!
     private var historySummaryLabel: NSTextField!
     private var settingsButton: NSButton!
+    private var allTimeStatsButton: NSButton!
     private var pendingStatsRefresh = false
     
     // 统计项视图
@@ -257,6 +258,21 @@ class StatsPopoverViewController: NSViewController {
             hoverButton.cornerRadius = 6
         }
 
+        allTimeStatsButton = makeSymbolButton(systemName: "chart.bar.xaxis",
+                                              fallbackTitle: NSLocalizedString("allTimeStats.button", comment: ""),
+                                              pointSize: 16,
+                                              weight: .semibold,
+                                              action: #selector(showAllTimeStats))
+        allTimeStatsButton.toolTip = NSLocalizedString("allTimeStats.button", comment: "")
+        allTimeStatsButton.setAccessibilityLabel(NSLocalizedString("allTimeStats.button", comment: ""))
+        allTimeStatsButton.imageScaling = .scaleProportionallyDown
+        allTimeStatsButton.setContentHuggingPriority(.required, for: .horizontal)
+        allTimeStatsButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        if let hoverButton = allTimeStatsButton as? HoverIconButton {
+            hoverButton.padding = 4
+            hoverButton.cornerRadius = 6
+        }
+
         let footerStack = NSStackView()
         footerStack.orientation = .horizontal
         footerStack.alignment = .bottom
@@ -271,6 +287,7 @@ class StatsPopoverViewController: NSViewController {
         buttonStack.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         footerStack.addArrangedSubview(settingsButton)
+        footerStack.addArrangedSubview(allTimeStatsButton)
         footerStack.addArrangedSubview(footerSpacer)
         footerStack.addArrangedSubview(buttonStack)
 
@@ -524,6 +541,11 @@ class StatsPopoverViewController: NSViewController {
         view.window?.performClose(nil)
     }
 
+    @objc private func showAllTimeStats() {
+        AllTimeStatsWindowController.shared.show()
+        view.window?.performClose(nil)
+    }
+
     @objc private func requestPermission() {
         _ = InputMonitor.shared.checkAccessibilityPermission()
         openAccessibilitySettings()
@@ -639,7 +661,7 @@ class KeyCountRowView: NSView {
     private func setupUI(key: String, count: String) {
         translatesAutoresizingMaskIntoConstraints = false
         let keyFont = NSFont.systemFont(ofSize: 12, weight: .medium)
-        keyLabel = NSTextField(labelWithAttributedString: formattedKeyLabel(for: key, font: keyFont))
+        keyLabel = NSTextField(labelWithAttributedString: Self.attributedKeyLabel(for: key, font: keyFont))
         keyLabel.font = keyFont
         keyLabel.textColor = .labelColor
         keyLabel.lineBreakMode = .byTruncatingTail
@@ -671,7 +693,7 @@ class KeyCountRowView: NSView {
 
     func update(key: String, count: String) {
         if let font = keyLabel.font {
-            keyLabel.attributedStringValue = formattedKeyLabel(for: key, font: font)
+            keyLabel.attributedStringValue = Self.attributedKeyLabel(for: key, font: font)
         } else {
             keyLabel.stringValue = key
         }
@@ -679,7 +701,7 @@ class KeyCountRowView: NSView {
         countLabel.stringValue = count
     }
 
-    private func formattedKeyLabel(for key: String, font: NSFont) -> NSAttributedString {
+    static func attributedKeyLabel(for key: String, font: NSFont) -> NSAttributedString {
         let textAttributes: [NSAttributedString.Key: Any] = [
             .font: font,
             .foregroundColor: NSColor.labelColor
@@ -688,7 +710,6 @@ class KeyCountRowView: NSView {
 
         for (index, part) in keyParts(from: key).enumerated() {
             if index > 0 {
-                // 使用 hair space 最小化按钮间距
                 result.append(NSAttributedString(string: "\u{200A}", attributes: textAttributes))
             }
             if let badge = makeKeyBadge(for: part, font: font) {
@@ -705,7 +726,7 @@ class KeyCountRowView: NSView {
         return result
     }
 
-    private func makeKeyBadge(for keyPart: String, font: NSFont) -> NSImage? {
+    private static func makeKeyBadge(for keyPart: String, font: NSFont) -> NSImage? {
         let contentPointSize = max(font.pointSize - 1, 10)
         let padding: CGFloat = 4
         let lineWidth: CGFloat = 0.8
@@ -771,7 +792,7 @@ class KeyCountRowView: NSView {
         }
     }
 
-    private func drawBadge(size: NSSize, cornerRadius: CGFloat, lineWidth: CGFloat, content: (NSRect) -> Void) -> NSImage {
+    private static func drawBadge(size: NSSize, cornerRadius: CGFloat, lineWidth: CGFloat, content: (NSRect) -> Void) -> NSImage {
         let image = NSImage(size: size)
         image.lockFocus()
         NSGraphicsContext.current?.shouldAntialias = true
@@ -804,7 +825,7 @@ class KeyCountRowView: NSView {
         return image
     }
 
-    private func keyParts(from key: String) -> [String] {
+    private static func keyParts(from key: String) -> [String] {
         guard key.contains("+") else { return [key] }
         if key.hasSuffix("+") {
             var trimmed = String(key.dropLast())
@@ -818,7 +839,7 @@ class KeyCountRowView: NSView {
         return key.split(separator: "+").map { String($0) }
     }
 
-    private func tintImage(_ image: NSImage, with color: NSColor) -> NSImage? {
+    private static func tintImage(_ image: NSImage, with color: NSColor) -> NSImage? {
         guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             return nil
         }

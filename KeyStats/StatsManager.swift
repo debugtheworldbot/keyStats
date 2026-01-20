@@ -4,6 +4,15 @@ import UserNotifications
 
 private let metersPerPixel: Double = 0.000264583
 
+private func baseKeyComponent(_ keyName: String) -> String {
+    let trimmed = keyName.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else { return "" }
+    if let last = trimmed.split(separator: "+").last {
+        return String(last).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    return trimmed
+}
+
 /// 统计数据结构
 struct DailyStats: Codable {
     var date: Date
@@ -37,6 +46,33 @@ struct DailyStats: Codable {
     var totalClicks: Int {
         return leftClicks + rightClicks
     }
+
+    var hasAnyActivity: Bool {
+        return keyPresses > 0 ||
+            leftClicks > 0 ||
+            rightClicks > 0 ||
+            mouseDistance > 0 ||
+            scrollDistance > 0 ||
+            !keyPressCounts.isEmpty
+    }
+    
+    /// 纠错率 (Delete + ForwardDelete / Total Keys)
+    var correctionRate: Double {
+        guard keyPresses > 0 else { return 0 }
+        let deleteLikeCount = keyPressCounts.reduce(0) { partial, entry in
+            let base = baseKeyComponent(entry.key)
+            guard base == "Delete" || base == "ForwardDelete" else { return partial }
+            return partial + entry.value
+        }
+        return Double(deleteLikeCount) / Double(keyPresses)
+    }
+    
+    /// 键鼠比 (Keys / Clicks)
+    var inputRatio: Double {
+        let clicks = totalClicks
+        guard clicks > 0 else { return keyPresses > 0 ? Double.infinity : 0 }
+        return Double(keyPresses) / Double(clicks)
+    }
     
     /// 格式化鼠标移动距离
     var formattedMouseDistance: String {
@@ -56,6 +92,89 @@ struct DailyStats: Codable {
         } else {
             return String(format: "%.0f px", scrollDistance)
         }
+    }
+}
+
+/// 有史以来统计数据结构
+struct AllTimeStats {
+    var totalKeyPresses: Int
+    var totalLeftClicks: Int
+    var totalRightClicks: Int
+    var totalMouseDistance: Double
+    var totalScrollDistance: Double
+    var keyPressCounts: [String: Int]
+    var firstDate: Date?
+    var lastDate: Date?
+    var activeDays: Int
+    var maxDailyKeyPresses: Int
+    var maxDailyKeyPressesDate: Date?
+    var maxDailyClicks: Int
+    var maxDailyClicksDate: Date?
+    var mostActiveWeekday: Int?
+    var keyActiveDays: Int
+    var clickActiveDays: Int
+    
+    var totalClicks: Int {
+        return totalLeftClicks + totalRightClicks
+    }
+
+    /// 纠错率 (Delete + ForwardDelete / Total Keys)
+    var correctionRate: Double {
+        guard totalKeyPresses > 0 else { return 0 }
+        let deleteLikeCount = keyPressCounts.reduce(0) { partial, entry in
+            let base = baseKeyComponent(entry.key)
+            guard base == "Delete" || base == "ForwardDelete" else { return partial }
+            return partial + entry.value
+        }
+        return Double(deleteLikeCount) / Double(totalKeyPresses)
+    }
+    
+    /// 键鼠比 (Keys / Clicks)
+    var inputRatio: Double {
+        let clicks = totalClicks
+        guard clicks > 0 else { return totalKeyPresses > 0 ? Double.infinity : 0 }
+        return Double(totalKeyPresses) / Double(clicks)
+    }
+    
+    /// 格式化鼠标移动距离
+    var formattedMouseDistance: String {
+        let meters = totalMouseDistance * 0.000264583 // metersPerPixel
+        if meters >= 1000 {
+            return String(format: "%.2f km", meters / 1000)
+        } else if totalMouseDistance >= 1000 {
+            return String(format: "%.1f m", meters)
+        }
+        return String(format: "%.0f px", totalMouseDistance)
+    }
+    
+    /// 格式化滚动距离
+    var formattedScrollDistance: String {
+        if totalScrollDistance >= 10000 {
+            return String(format: "%.1f k", totalScrollDistance / 1000)
+        } else {
+            return String(format: "%.0f px", totalScrollDistance)
+        }
+    }
+
+    static func initial() -> AllTimeStats {
+        return AllTimeStats(
+            totalKeyPresses: 0,
+            totalLeftClicks: 0,
+            totalRightClicks: 0,
+            totalMouseDistance: 0,
+            totalScrollDistance: 0,
+            keyPressCounts: [:],
+            firstDate: nil,
+            lastDate: nil,
+            activeDays: 0,
+            maxDailyKeyPresses: 0,
+            maxDailyKeyPressesDate: nil,
+            maxDailyClicks: 0,
+            maxDailyClicksDate: nil,
+            mostActiveWeekday: nil,
+            keyActiveDays: 0,
+            clickActiveDays: 0
+        )
     }
 }
 
@@ -95,6 +214,11 @@ class StatsManager {
     private(set) var currentIconTintColor: NSColor?
     var menuBarUpdateHandler: (() -> Void)?
     var statsUpdateHandler: (() -> Void)?
+    
+    // Cache for All-Time Stats
+    private var cachedHistoryStats: AllTimeStats?
+    private var cachedWeekdayStats: [Int: (total: Int, count: Int)]?
+    private var cachedForDateKey: String?
     
     /// 设置：是否在菜单栏显示按键数
     var showKeyPressesInMenuBar: Bool {
@@ -419,6 +543,9 @@ class StatsManager {
         var stats = currentStats
         stats.date = normalizedDate
         history[key] = stats
+        cachedHistoryStats = nil
+        cachedWeekdayStats = nil
+        cachedForDateKey = nil
         saveHistory()
     }
     
@@ -691,5 +818,104 @@ extension StatsManager {
         } else {
             return String(format: "%.0f px", distance)
         }
+    }
+    
+    // MARK: - 全量统计
+    
+    func getAllTimeStats() -> AllTimeStats {
+        let todayKey = dateFormatter.string(from: currentStats.date)
+        
+        // 1. 检查并重建缓存（如果需要）
+        // 如果缓存不存在，或者缓存是基于旧的日期（比如昨天）生成的，则需要更新
+        if cachedHistoryStats == nil || cachedForDateKey != todayKey {
+            var stats = AllTimeStats.initial()
+            var wdStats: [Int: (total: Int, count: Int)] = [:]
+            
+            // 聚合历史数据（排除今天）
+            for hStats in history.values {
+                if dateFormatter.string(from: hStats.date) == todayKey { continue }
+                aggregate(daily: hStats, into: &stats, weekdays: &wdStats)
+            }
+            
+            cachedHistoryStats = stats
+            cachedWeekdayStats = wdStats
+            cachedForDateKey = todayKey
+        }
+        
+        // 2. 基于缓存开始构建最终结果
+        var totalStats = cachedHistoryStats ?? AllTimeStats.initial()
+        var weekdayStats = cachedWeekdayStats ?? [:]
+        
+        // 3. 聚合内存中最新的今日数据
+        aggregate(daily: currentStats, into: &totalStats, weekdays: &weekdayStats)
+
+        // 4. 计算衍生数据（如每周最佳）
+        var maxAvg = 0.0
+        var bestWeekday: Int?
+        for (day, data) in weekdayStats {
+            guard data.count > 0 else { continue }
+            let avg = Double(data.total) / Double(data.count)
+            if avg > maxAvg {
+                maxAvg = avg
+                bestWeekday = day
+            }
+        }
+        totalStats.mostActiveWeekday = bestWeekday
+
+        return totalStats
+    }
+    
+    private func aggregate(daily: DailyStats, into total: inout AllTimeStats, weekdays: inout [Int: (total: Int, count: Int)]) {
+        guard daily.hasAnyActivity else { return }
+        total.totalKeyPresses += daily.keyPresses
+        total.totalLeftClicks += daily.leftClicks
+        total.totalRightClicks += daily.rightClicks
+        total.totalMouseDistance += daily.mouseDistance
+        total.totalScrollDistance += daily.scrollDistance
+
+        for (key, count) in daily.keyPressCounts {
+            total.keyPressCounts[key, default: 0] += count
+        }
+
+        if daily.keyPresses > total.maxDailyKeyPresses {
+            total.maxDailyKeyPresses = daily.keyPresses
+            total.maxDailyKeyPressesDate = daily.date
+        }
+        let dailyClicks = daily.leftClicks + daily.rightClicks
+        if dailyClicks > total.maxDailyClicks {
+            total.maxDailyClicks = dailyClicks
+            total.maxDailyClicksDate = daily.date
+        }
+        if daily.keyPresses > 0 {
+            total.keyActiveDays += 1
+        }
+        if dailyClicks > 0 {
+            total.clickActiveDays += 1
+        }
+
+        let date = Calendar.current.startOfDay(for: daily.date)
+        
+        // Weekday stats
+        let weekday = Calendar.current.component(.weekday, from: date)
+        let dailyTotal = daily.keyPresses + dailyClicks
+        let current = weekdays[weekday, default: (0, 0)]
+        let increment = dailyTotal > 0 ? 1 : 0
+        weekdays[weekday] = (current.total + dailyTotal, current.count + increment)
+        
+        if let currentFirst = total.firstDate {
+            if date < currentFirst {
+                total.firstDate = date
+            }
+        } else {
+            total.firstDate = date
+        }
+        if let currentLast = total.lastDate {
+            if date > currentLast {
+                total.lastDate = date
+            }
+        } else {
+            total.lastDate = date
+        }
+        total.activeDays += 1
     }
 }
