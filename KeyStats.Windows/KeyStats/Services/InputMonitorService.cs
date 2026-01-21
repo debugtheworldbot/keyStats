@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using KeyStats.Helpers;
@@ -16,6 +17,7 @@ public class InputMonitorService : IDisposable
     private NativeInterop.LowLevelMouseProc? _mouseProc;
 
     private bool _isMonitoring;
+    private readonly HashSet<int> _pressedKeys = new(); // 跟踪当前按下的键，防止长按时重复计数
     private readonly double _mouseSampleInterval = 1.0 / 30.0; // 30 FPS
     private DateTime _lastMouseSampleTime = DateTime.MinValue;
     private System.Drawing.Point? _lastMousePosition;
@@ -96,6 +98,9 @@ public class InputMonitorService : IDisposable
             _mouseHookId = IntPtr.Zero;
         }
 
+        // 清空按下的键集合
+        _pressedKeys.Clear();
+
         _isMonitoring = false;
         Debug.WriteLine("Input monitoring stopped");
     }
@@ -105,12 +110,23 @@ public class InputMonitorService : IDisposable
         if (nCode >= 0)
         {
             var message = (int)wParam;
+            var hookStruct = Marshal.PtrToStructure<NativeInterop.KBDLLHOOKSTRUCT>(lParam);
+            var vkCode = (int)hookStruct.vkCode;
+
             if (message == NativeInterop.WM_KEYDOWN || message == NativeInterop.WM_SYSKEYDOWN)
             {
-                var hookStruct = Marshal.PtrToStructure<NativeInterop.KBDLLHOOKSTRUCT>(lParam);
-                var vkCode = (int)hookStruct.vkCode;
-                var keyName = KeyNameMapper.GetKeyName(vkCode);
-                KeyPressed?.Invoke(keyName);
+                // 只在键第一次按下时记录，忽略长按时的重复按下事件
+                if (!_pressedKeys.Contains(vkCode))
+                {
+                    _pressedKeys.Add(vkCode);
+                    var keyName = KeyNameMapper.GetKeyName(vkCode);
+                    KeyPressed?.Invoke(keyName);
+                }
+            }
+            else if (message == NativeInterop.WM_KEYUP || message == NativeInterop.WM_SYSKEYUP)
+            {
+                // 键释放时，从集合中移除
+                _pressedKeys.Remove(vkCode);
             }
         }
 
