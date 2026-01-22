@@ -1,5 +1,5 @@
 import Cocoa
-import TelemetryDeck
+import PostHog
 
 class SettingsViewController: NSViewController, NSTextFieldDelegate {
 
@@ -503,7 +503,7 @@ class SettingsViewController: NSViewController, NSTextFieldDelegate {
         do {
             try LaunchAtLoginManager.shared.setEnabled(shouldEnable)
             updateState()
-            TelemetryDeck.signal("settingChanged", parameters: ["setting": "launchAtLogin", "enabled": String(shouldEnable)])
+            PostHogSDK.shared.capture("settingChanged", properties: ["setting": "launchAtLogin", "enabled": String(shouldEnable)])
         } catch {
             updateState()
             showLaunchAtLoginError()
@@ -522,7 +522,7 @@ class SettingsViewController: NSViewController, NSTextFieldDelegate {
 
         if alert.runModal() == .alertFirstButtonReturn {
             StatsManager.shared.resetStats()
-            TelemetryDeck.signal("statsReset")
+            PostHogSDK.shared.capture("statsReset")
         }
     }
 

@@ -1,23 +1,22 @@
 import Cocoa
-import TelemetryDeck
+import PostHog
 
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
-    
+
     private var menuBarController: MenuBarController?
     private var permissionCheckTimer: Timer?
     private var permissionCheckCount = 0
     private let maxPermissionChecks = 150 // 5分钟后停止（2秒间隔 × 150次）
     private let launchAtLoginPromptedKey = "launchAtLoginPrompted"
-    
+
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-        // 初始化 TelemetryDeck
-        var config = TelemetryDeck.Config(appID: "24F911EE-3D21-4EE7-9E7D-5F9FA485B66E")
-        #if DEBUG
-        config.testMode = false  // Debug 构建也发送正式数据
-        #endif
-        TelemetryDeck.initialize(config: config)
-        TelemetryDeck.signal("appLaunched")
+        // 初始化 PostHog
+        let config = PostHogConfig(apiKey: "phc_TYyyKIfGgL1CXZx7t9dY7igE3yNwNpjj9aqItSpNVLx", host: "https://us.i.posthog.com")
+        config.captureApplicationLifecycleEvents = true  // 自动采集应用生命周期事件
+        config.captureScreenViews = true  // 自动采集屏幕视图
+        PostHogSDK.shared.setup(config)
+        PostHogSDK.shared.register(["platform": "macOS"])  // 注册平台属性
 
         // 初始化菜单栏控制器
         menuBarController = MenuBarController()
@@ -66,7 +65,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     self.permissionCheckTimer = nil
                     InputMonitor.shared.startMonitoring()
                     self.promptLaunchAtLoginIfNeeded()
-                    TelemetryDeck.signal("permissionGranted", parameters: ["permission": "accessibility"])
+                    PostHogSDK.shared.capture("permissionGranted", properties: ["permission": "accessibility"])
                     print("权限已授予，开始监听")
                     return
                 }

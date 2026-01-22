@@ -7,8 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		941ADB172F18D1AE00B2D578 /* TelemetryClient in Frameworks */ = {isa = PBXBuildFile; productRef = 941ADB162F18D1AE00B2D578 /* TelemetryClient */; };
-		941ADB192F18D1AE00B2D578 /* TelemetryDeck in Frameworks */ = {isa = PBXBuildFile; productRef = 941ADB182F18D1AE00B2D578 /* TelemetryDeck */; };
+		941ADB172F18D1AE00B2D578 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 941ADB162F18D1AE00B2D578 /* PostHog */; };
 		A1000020 /* AllTimeStatsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000020 /* AllTimeStatsWindowController.swift */; };
 		A1000021 /* AllTimeStatsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000021 /* AllTimeStatsViewController.swift */; };
 		A1000001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001 /* AppDelegate.swift */; };
@@ -65,8 +64,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				941ADB172F18D1AE00B2D578 /* TelemetryClient in Frameworks */,
-				941ADB192F18D1AE00B2D578 /* TelemetryDeck in Frameworks */,
+				941ADB172F18D1AE00B2D578 /* PostHog in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -165,7 +163,7 @@
 			);
 			mainGroup = A5000001;
 			packageReferences = (
-				941ADB152F18D1AE00B2D578 /* XCRemoteSwiftPackageReference "SwiftSDK" */,
+				941ADB152F18D1AE00B2D578 /* XCRemoteSwiftPackageReference "posthog-ios" */,
 			);
 			productRefGroup = A5000003 /* Products */;
 			projectDirPath = "";
@@ -426,26 +424,21 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		941ADB152F18D1AE00B2D578 /* XCRemoteSwiftPackageReference "SwiftSDK" */ = {
+		941ADB152F18D1AE00B2D578 /* XCRemoteSwiftPackageReference "posthog-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/TelemetryDeck/SwiftSDK";
+			repositoryURL = "https://github.com/PostHog/posthog-ios";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 2.11.0;
+				minimumVersion = 3.0.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		941ADB162F18D1AE00B2D578 /* TelemetryClient */ = {
+		941ADB162F18D1AE00B2D578 /* PostHog */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 941ADB152F18D1AE00B2D578 /* XCRemoteSwiftPackageReference "SwiftSDK" */;
-			productName = TelemetryClient;
-		};
-		941ADB182F18D1AE00B2D578 /* TelemetryDeck */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 941ADB152F18D1AE00B2D578 /* XCRemoteSwiftPackageReference "SwiftSDK" */;
-			productName = TelemetryDeck;
+			package = 941ADB152F18D1AE00B2D578 /* XCRemoteSwiftPackageReference "posthog-ios" */;
+			productName = PostHog;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

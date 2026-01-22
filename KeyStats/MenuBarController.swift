@@ -1,5 +1,5 @@
 import Cocoa
-import TelemetryDeck
+import PostHog
 
 enum DynamicIconColorStyle: String {
     case icon
@@ -86,7 +86,7 @@ class MenuBarController {
 
         // 激活应用以确保弹窗可以接收焦点
         NSApp.activate(ignoringOtherApps: true)
-        TelemetryDeck.signal("popoverOpened")
+        PostHogSDK.shared.capture("popoverOpened")
     }
     
     private func closePopover() {

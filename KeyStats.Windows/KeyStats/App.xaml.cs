@@ -364,6 +364,7 @@ public partial class App : System.Windows.Application
         {
             ["app_name"] = "KeyStats",
             ["app_version"] = appVersion,
+            ["platform"] = "windows",
             ["os"] = "Windows",
             ["os_version"] = Environment.OSVersion.VersionString,
             ["dotnet_version"] = System.Environment.Version.ToString(),
