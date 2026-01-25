@@ -4,7 +4,10 @@
       "Bash(dotnet build:*)",
       "Bash(taskkill:*)",
       "Bash(powershell:*)",
-      "Bash(terminal-notifier:*)"
+      "Bash(terminal-notifier:*)",
+      "Bash(ls:*)",
+      "Bash(gh pr list:*)",
+      "Bash(git show:*)"
     ]
   }
 }

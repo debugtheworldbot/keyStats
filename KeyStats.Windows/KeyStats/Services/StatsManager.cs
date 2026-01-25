@@ -334,13 +334,18 @@ public class StatsManager : IDisposable
             {
                 var json = JsonSerializer.Serialize(CurrentStats, new JsonSerializerOptions { WriteIndented = true });
                 var tempPath = _statsFilePath + ".tmp";
+                var backupPath = _statsFilePath + ".bak";
                 File.WriteAllText(tempPath, json);
-                // .NET Framework 4.8 兼容：File.Move 没有 3 参数重载，需要先删除
+
                 if (File.Exists(_statsFilePath))
                 {
-                    File.Delete(_statsFilePath);
+                    // 原子替换：临时文件 → 目标文件，原文件 → 备份文件
+                    File.Replace(tempPath, _statsFilePath, backupPath);
                 }
-                File.Move(tempPath, _statsFilePath);
+                else
+                {
+                    File.Move(tempPath, _statsFilePath);
+                }
             }
             catch (Exception ex)
             {
@@ -348,6 +353,7 @@ public class StatsManager : IDisposable
             }
 
             RecordCurrentStatsToHistory();
+            SaveHistory();
         }
     }
 
@@ -382,7 +388,6 @@ public class StatsManager : IDisposable
             KeyPressCounts = new Dictionary<string, int>(CurrentStats.KeyPressCounts)
         };
         History[key] = statsCopy;
-        // SaveHistory is called by the timer callback, no need to call it here
     }
 
     private void SaveHistory()
@@ -391,13 +396,17 @@ public class StatsManager : IDisposable
         {
             var json = JsonSerializer.Serialize(History, new JsonSerializerOptions { WriteIndented = true });
             var tempPath = _historyFilePath + ".tmp";
+            var backupPath = _historyFilePath + ".bak";
             File.WriteAllText(tempPath, json);
-                // .NET Framework 4.8 兼容：File.Move 没有 3 参数重载，需要先删除
-                if (File.Exists(_historyFilePath))
-                {
-                    File.Delete(_historyFilePath);
-                }
+
+            if (File.Exists(_historyFilePath))
+            {
+                File.Replace(tempPath, _historyFilePath, backupPath);
+            }
+            else
+            {
                 File.Move(tempPath, _historyFilePath);
+            }
         }
         catch (Exception ex)
         {
@@ -449,13 +458,17 @@ public class StatsManager : IDisposable
         {
             var json = JsonSerializer.Serialize(Settings, new JsonSerializerOptions { WriteIndented = true });
             var tempPath = _settingsFilePath + ".tmp";
+            var backupPath = _settingsFilePath + ".bak";
             File.WriteAllText(tempPath, json);
-                // .NET Framework 4.8 兼容：File.Move 没有 3 参数重载，需要先删除
-                if (File.Exists(_settingsFilePath))
-                {
-                    File.Delete(_settingsFilePath);
-                }
+
+            if (File.Exists(_settingsFilePath))
+            {
+                File.Replace(tempPath, _settingsFilePath, backupPath);
+            }
+            else
+            {
                 File.Move(tempPath, _settingsFilePath);
+            }
         }
         catch (Exception ex)
         {
@@ -512,7 +525,11 @@ public class StatsManager : IDisposable
             ResetStats(now);
         }
         // Also prune old history entries during midnight reset
-        PruneOldHistory(History);
+        lock (_lock)
+        {
+            PruneOldHistory(History);
+            SaveHistory();
+        }
         ScheduleNextMidnightReset();
     }
 
@@ -525,6 +542,11 @@ public class StatsManager : IDisposable
     {
         lock (_lock)
         {
+            // 先保存旧数据到 History，避免丢失最后一次保存后的增量
+            RecordCurrentStatsToHistory();
+            SaveHistory();
+
+            // 然后创建新的统计对象
             CurrentStats = new DailyStats(date);
         }
 
@@ -642,12 +664,15 @@ public class StatsManager : IDisposable
     public List<(DateTime Date, double Value)> GetHistorySeries(HistoryRange range, HistoryMetric metric)
     {
         var dates = GetDatesInRange(range);
-        return dates.Select(date =>
+        lock (_lock)
         {
-            var key = date.ToString("yyyy-MM-dd");
-            var stats = History.TryGetValue(key, out var s) ? s : new DailyStats(date);
-            return (date, GetMetricValue(metric, stats));
-        }).ToList();
+            return dates.Select(date =>
+            {
+                var key = date.ToString("yyyy-MM-dd");
+                var stats = History.TryGetValue(key, out var s) ? s : new DailyStats(date);
+                return (date, GetMetricValue(metric, stats));
+            }).ToList();
+        }
     }
 
     public string FormatHistoryValue(HistoryMetric metric, double value)
