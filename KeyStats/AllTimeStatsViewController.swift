@@ -1,5 +1,18 @@
 import Cocoa
 
+private func resolvedCGColor(_ color: NSColor, for view: NSView) -> CGColor {
+    var resolved: CGColor = color.cgColor
+    view.effectiveAppearance.performAsCurrentDrawingAppearance {
+        resolved = color.cgColor
+    }
+    return resolved
+}
+
+private func resolvedColor(_ color: NSColor, for view: NSView) -> NSColor {
+    let cgColor = resolvedCGColor(color, for: view)
+    return NSColor(cgColor: cgColor) ?? color
+}
+
 class AllTimeStatsViewController: NSViewController {
     
     // MARK: - UI 组件
@@ -30,14 +43,17 @@ class AllTimeStatsViewController: NSViewController {
     private let cardCascadeDelay: TimeInterval = 0.05
     private let insightRowCascadeDelay: TimeInterval = 0.08
     private let topKeyRowCascadeDelay: TimeInterval = 0.03
+    private let visibilityCheckDelays: [TimeInterval] = [0, 0.05, 0.15, 0.3, 0.6]
     private var animatedViews = Set<ObjectIdentifier>()
     private var animationObserver: NSObjectProtocol?
+    private var appearanceObservation: NSKeyValueObservation?
     private var isViewVisible = false
 
     deinit {
         if let observer = animationObserver {
             NotificationCenter.default.removeObserver(observer)
         }
+        appearanceObservation = nil
     }
     
     override func loadView() {
@@ -46,7 +62,7 @@ class AllTimeStatsViewController: NSViewController {
             self?.updateAppearance()
         }
         view.wantsLayer = true
-        view.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+        view.layer?.backgroundColor = resolvedCGColor(NSColor.windowBackgroundColor, for: view)
         self.view = view
     }
     
@@ -55,20 +71,28 @@ class AllTimeStatsViewController: NSViewController {
         setupUI()
         refreshData()
         updateAppearance() // 初始化 appearance
+        appearanceObservation = NSApp.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
+            DispatchQueue.main.async {
+                self?.updateAppearance()
+            }
+        }
     }
 
     override func viewDidAppear() {
         super.viewDidAppear()
         isViewVisible = true
         scrollToTop()
-        DispatchQueue.main.async { [weak self] in
-            self?.checkVisibleAnimations()
-        }
+        scheduleVisibilityChecks()
     }
 
     override func viewWillDisappear() {
         super.viewWillDisappear()
         isViewVisible = false
+    }
+
+    override func viewDidLayout() {
+        super.viewDidLayout()
+        checkVisibleAnimations()
     }
     
     private func setupUI() {
@@ -268,9 +292,7 @@ class AllTimeStatsViewController: NSViewController {
 
         updateInsights(stats)
         updateTopKeys(stats.keyPressCounts)
-        DispatchQueue.main.async { [weak self] in
-            self?.checkVisibleAnimations()
-        }
+        scheduleVisibilityChecks()
     }
 
     private func updateInsights(_ stats: AllTimeStats) {
@@ -541,6 +563,7 @@ class AllTimeStatsViewController: NSViewController {
     private func checkVisibleAnimations() {
         guard isViewVisible else { return }
         guard scrollView.window != nil else { return }
+        documentView.layoutSubtreeIfNeeded()
 
         if isViewInVisibleRect(cardsGrid) {
             animateBigStatCards()
@@ -575,9 +598,8 @@ class AllTimeStatsViewController: NSViewController {
     }
 
     private func isViewInVisibleRect(_ view: NSView) -> Bool {
-        guard let documentView = scrollView.documentView else { return false }
-        let visibleRect = scrollView.documentVisibleRect
-        let viewRect = view.convert(view.bounds, to: documentView)
+        let visibleRect = scrollView.contentView.bounds.insetBy(dx: 0, dy: -24)
+        let viewRect = view.convert(view.bounds, to: scrollView.contentView)
         return viewRect.intersects(visibleRect)
     }
 
@@ -586,6 +608,14 @@ class AllTimeStatsViewController: NSViewController {
         guard !animatedViews.contains(identifier) else { return }
         animatedViews.insert(identifier)
         action()
+    }
+
+    private func scheduleVisibilityChecks() {
+        for delay in visibilityCheckDelays {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                self?.checkVisibleAnimations()
+            }
+        }
     }
     
     private func formatNumber(_ number: Int) -> String {
@@ -607,7 +637,8 @@ class AllTimeStatsViewController: NSViewController {
     
     private func updateAppearance() {
         // 更新主视图背景色
-        view.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+        view.layer?.backgroundColor = resolvedCGColor(NSColor.windowBackgroundColor, for: view)
+        view.window?.backgroundColor = resolvedColor(NSColor.windowBackgroundColor, for: view)
         
         // 更新所有卡片
         keyPressCard.updateAppearance()
@@ -663,16 +694,7 @@ class BigStatCard: NSView {
     private var useCustomFormat = false
     private var customFormatValue: String = ""
 
-    // Hover tracking
-    private var trackingArea: NSTrackingArea?
-    private var isHovered = false
     private let normalBackgroundColor = NSColor.controlBackgroundColor
-    private var hoverBackgroundColor: NSColor {
-        let isDarkMode = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        // 在 dark mode 下使用更高的混合比例以获得更好的可见性
-        let blendFraction = isDarkMode ? 0.1 : 0.05
-        return NSColor.controlBackgroundColor.blended(withFraction: blendFraction, of: NSColor.white) ?? NSColor.controlBackgroundColor
-    }
 
     init(icon: String, title: String, color: NSColor) {
         super.init(frame: .zero)
@@ -715,48 +737,6 @@ class BigStatCard: NSView {
         }
     }
 
-    // MARK: - Hover Tracking
-    override func updateTrackingAreas() {
-        super.updateTrackingAreas()
-        if let existing = trackingArea {
-            removeTrackingArea(existing)
-        }
-        trackingArea = NSTrackingArea(
-            rect: bounds,
-            options: [.mouseEnteredAndExited, .activeInKeyWindow],
-            owner: self,
-            userInfo: nil
-        )
-        addTrackingArea(trackingArea!)
-    }
-
-    override func mouseEntered(with event: NSEvent) {
-        isHovered = true
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.15
-            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
-        }
-        CATransaction.begin()
-        CATransaction.setAnimationDuration(0.15)
-        layer?.backgroundColor = hoverBackgroundColor.cgColor
-        let isDarkMode = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        layer?.shadowColor = isDarkMode ? NSColor.white.cgColor : NSColor.black.cgColor
-        layer?.shadowOpacity = isDarkMode ? 0.1 : 0.08
-        layer?.shadowOffset = CGSize(width: 0, height: 2)
-        layer?.shadowRadius = 8
-        layer?.transform = CATransform3DMakeScale(1.02, 1.02, 1)
-        CATransaction.commit()
-    }
-
-    override func mouseExited(with event: NSEvent) {
-        isHovered = false
-        CATransaction.begin()
-        CATransaction.setAnimationDuration(0.15)
-        layer?.backgroundColor = normalBackgroundColor.cgColor
-        layer?.shadowOpacity = 0
-        layer?.transform = CATransform3DIdentity
-        CATransaction.commit()
-    }
 
     private func setupUI(icon: String, title: String, color: NSColor) {
         let stack = NSStackView()
@@ -870,28 +850,17 @@ class BigStatCard: NSView {
     
     func updateAppearance() {
         // 更新背景色和边框
-        if isHovered {
-            layer?.backgroundColor = hoverBackgroundColor.cgColor
-            let isDarkMode = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-            layer?.shadowColor = isDarkMode ? NSColor.white.cgColor : NSColor.black.cgColor
-        } else {
-            layer?.backgroundColor = normalBackgroundColor.cgColor
-        }
-        layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.2).cgColor
+        layer?.backgroundColor = resolvedCGColor(normalBackgroundColor, for: self)
+        let borderColor = NSColor.separatorColor.withAlphaComponent(0.2)
+        layer?.borderColor = resolvedCGColor(borderColor, for: self)
+        layer?.shadowOpacity = 0
     }
 }
 
 // MARK: - 组件：洞察分析项
 
 class InsightItemView: NSView {
-    // Hover tracking
-    private var trackingArea: NSTrackingArea?
-    private var isHovered = false
     private let normalBackgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.5)
-    private var hoverBackgroundColor: NSColor {
-        let isDarkMode = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        return NSColor.controlBackgroundColor.withAlphaComponent(isDarkMode ? 0.9 : 0.8)
-    }
 
     init(title: String, value: String, subtitle: String, icon: String, tooltip: String? = nil) {
         super.init(frame: .zero)
@@ -934,55 +903,13 @@ class InsightItemView: NSView {
         }
     }
 
-    // MARK: - Hover Tracking
-    override func updateTrackingAreas() {
-        super.updateTrackingAreas()
-        if let existing = trackingArea {
-            removeTrackingArea(existing)
-        }
-        trackingArea = NSTrackingArea(
-            rect: bounds,
-            options: [.mouseEnteredAndExited, .activeInKeyWindow],
-            owner: self,
-            userInfo: nil
-        )
-        addTrackingArea(trackingArea!)
-    }
-
-    override func mouseEntered(with event: NSEvent) {
-        isHovered = true
-        CATransaction.begin()
-        CATransaction.setAnimationDuration(0.15)
-        layer?.backgroundColor = hoverBackgroundColor.cgColor
-        let isDarkMode = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        layer?.shadowColor = isDarkMode ? NSColor.white.cgColor : NSColor.black.cgColor
-        layer?.shadowOpacity = isDarkMode ? 0.08 : 0.05
-        layer?.shadowOffset = CGSize(width: 0, height: 1)
-        layer?.shadowRadius = 4
-        CATransaction.commit()
-    }
-
-    override func mouseExited(with event: NSEvent) {
-        isHovered = false
-        CATransaction.begin()
-        CATransaction.setAnimationDuration(0.15)
-        layer?.backgroundColor = normalBackgroundColor.cgColor
-        layer?.shadowOpacity = 0
-        CATransaction.commit()
-    }
     
     func updateAppearance() {
         // 更新背景色和边框
-        if isHovered {
-            layer?.backgroundColor = hoverBackgroundColor.cgColor
-            let isDarkMode = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-            layer?.shadowColor = isDarkMode ? NSColor.white.cgColor : NSColor.black.cgColor
-            layer?.shadowOpacity = isDarkMode ? 0.08 : 0.05
-        } else {
-            layer?.backgroundColor = normalBackgroundColor.cgColor
-            layer?.shadowOpacity = 0
-        }
-        layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.25).cgColor
+        layer?.backgroundColor = resolvedCGColor(normalBackgroundColor, for: self)
+        layer?.shadowOpacity = 0
+        let borderColor = NSColor.separatorColor.withAlphaComponent(0.25)
+        layer?.borderColor = resolvedCGColor(borderColor, for: self)
     }
     
     private func setupUI(title: String, value: String, subtitle: String, icon: String) {
@@ -1167,8 +1094,10 @@ class ClickRatioView: NSView {
     
     func updateAppearance() {
         // 更新背景色和边框
-        layer?.backgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.5).cgColor
-        layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.15).cgColor
+        let backgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.5)
+        layer?.backgroundColor = resolvedCGColor(backgroundColor, for: self)
+        let borderColor = NSColor.separatorColor.withAlphaComponent(0.15)
+        layer?.borderColor = resolvedCGColor(borderColor, for: self)
     }
 }
 
@@ -1325,7 +1254,8 @@ class TopKeyRowView: NSView {
     func updateAppearance() {
         // 更新交替背景色
         if isAlternate {
-            layer?.backgroundColor = NSColor.separatorColor.withAlphaComponent(0.08).cgColor
+            let backgroundColor = NSColor.separatorColor.withAlphaComponent(0.08)
+            layer?.backgroundColor = resolvedCGColor(backgroundColor, for: self)
         } else {
             layer?.backgroundColor = nil
         }
@@ -1379,24 +1309,13 @@ class TopKeysPieChartView: NSView {
         hasAnimatedIn = true
 
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
-            guard let self = self, let layer = self.layer else { return }
-            let startScale = CATransform3DMakeScale(0.01, 0.01, 1)
-            CATransaction.begin()
-            CATransaction.setDisableActions(true)
-            layer.transform = startScale
-            CATransaction.commit()
-
-            let scale = CABasicAnimation(keyPath: "transform")
-            scale.fromValue = startScale
-            scale.toValue = CATransform3DIdentity
-            scale.duration = 0.5
-            scale.timingFunction = CAMediaTimingFunction(name: .easeOut)
-            layer.add(scale, forKey: "scaleIn")
-
-            CATransaction.begin()
-            CATransaction.setDisableActions(true)
-            layer.transform = CATransform3DIdentity
-            CATransaction.commit()
+            guard let self = self else { return }
+            self.alphaValue = 0
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.5
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                self.animator().alphaValue = 1.0
+            }
         }
     }
 
@@ -1529,10 +1448,7 @@ class TopKeysPieChartView: NSView {
             width: innerRadius * 2,
             height: innerRadius * 2
         ))
-        let isDarkMode = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        let holeColor = isDarkMode 
-            ? NSColor.windowBackgroundColor.withAlphaComponent(0.9)
-            : NSColor.windowBackgroundColor
+        let holeColor = resolvedColor(NSColor.windowBackgroundColor, for: self)
         holeColor.setFill()
         holePath.fill()
 

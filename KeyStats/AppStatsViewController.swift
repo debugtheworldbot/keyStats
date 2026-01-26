@@ -11,7 +11,9 @@ final class AppStatsViewController: NSViewController {
     private var listHeaderView: AppStatsHeaderRowView!
     private var listStack: NSStackView!
     private var emptyStateLabel: NSTextField!
+    private var separatorLine: NSView!
     private var statsUpdateToken: UUID?
+    private var appearanceObservation: NSKeyValueObservation?
     private var pendingRefresh = false
     private var sortMetric: SortMetric = .keys
     private var appIconCache: [String: NSImage] = [:]
@@ -28,9 +30,12 @@ final class AppStatsViewController: NSViewController {
     // MARK: - Lifecycle
 
     override func loadView() {
-        let view = NSView(frame: NSRect(x: 0, y: 0, width: 560, height: 640))
+        let view = AppearanceTrackingView(frame: NSRect(x: 0, y: 0, width: 560, height: 640))
+        view.onEffectiveAppearanceChange = { [weak self] in
+            self?.updateAppearance()
+        }
         view.wantsLayer = true
-        view.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+        view.layer?.backgroundColor = resolvedCGColor(NSColor.windowBackgroundColor, for: view)
         self.view = view
     }
 
@@ -38,6 +43,12 @@ final class AppStatsViewController: NSViewController {
         super.viewDidLoad()
         setupUI()
         refreshData()
+        updateAppearance() // 初始化 appearance
+        appearanceObservation = NSApp.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
+            DispatchQueue.main.async {
+                self?.updateAppearance()
+            }
+        }
     }
 
     override func viewWillAppear() {
@@ -50,9 +61,10 @@ final class AppStatsViewController: NSViewController {
         super.viewWillDisappear()
         stopLiveUpdates()
     }
-
+    
     deinit {
         stopLiveUpdates()
+        appearanceObservation = nil
     }
 
     // MARK: - UI
@@ -67,7 +79,7 @@ final class AppStatsViewController: NSViewController {
         view.addSubview(listHeaderView)
 
         // Separator line under header
-        let separatorLine = NSView()
+        separatorLine = NSView()
         separatorLine.translatesAutoresizingMaskIntoConstraints = false
         separatorLine.wantsLayer = true
         separatorLine.layer?.backgroundColor = NSColor.separatorColor.cgColor
@@ -430,6 +442,39 @@ final class AppStatsViewController: NSViewController {
             return .all
         }
     }
+    
+    // MARK: - Appearance Updates
+    
+    private func updateAppearance() {
+        // 更新主视图背景色
+        view.layer?.backgroundColor = resolvedCGColor(NSColor.windowBackgroundColor, for: view)
+        view.window?.backgroundColor = resolvedColor(NSColor.windowBackgroundColor, for: view)
+        
+        // 更新分隔线颜色
+        separatorLine.layer?.backgroundColor = resolvedCGColor(NSColor.separatorColor, for: view)
+        
+        // 更新列表行的背景色
+        for (index, row) in listStack.arrangedSubviews.enumerated() {
+            if let appRow = row as? AppStatsRowView {
+                appRow.applyAlternatingBackground(isEvenRow: index.isMultiple(of: 2))
+            }
+        }
+
+        // 通知所有子视图更新 appearance
+        view.needsDisplay = true
+        listHeaderView?.needsDisplay = true
+    }
+}
+
+final class AppearanceTrackingView: NSView {
+    var onEffectiveAppearanceChange: (() -> Void)?
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        DispatchQueue.main.async { [weak self] in
+            self?.onEffectiveAppearanceChange?()
+        }
+    }
 }
 
 private enum SortMetric {
@@ -725,9 +770,22 @@ private final class AppStatsRowView: NSView {
         let index = isEvenRow ? 0 : 1
         let fallback = isEvenRow ? NSColor.windowBackgroundColor : NSColor.controlBackgroundColor
         let color = colors.count > index ? colors[index] : fallback
-        layer?.backgroundColor = color.cgColor
+        layer?.backgroundColor = resolvedCGColor(color, for: self)
         layer?.cornerRadius = isEvenRow ? 0 : AppStatsLayout.rowCornerRadius
     }
+}
+
+private func resolvedCGColor(_ color: NSColor, for view: NSView) -> CGColor {
+    var resolved: CGColor = color.cgColor
+    view.effectiveAppearance.performAsCurrentDrawingAppearance {
+        resolved = color.cgColor
+    }
+    return resolved
+}
+
+private func resolvedColor(_ color: NSColor, for view: NSView) -> NSColor {
+    let cgColor = resolvedCGColor(color, for: view)
+    return NSColor(cgColor: cgColor) ?? color
 }
 
 private final class SingleBarView: NSView {
@@ -836,6 +894,7 @@ private final class SingleBarView: NSView {
 
         if targetBarWidth >= minWidthForLabel {
             // 显示在柱状图内部靠右
+            // 使用白色文字，系统颜色（systemBlue/systemPurple/systemOrange）会自动适配 dark mode
             let labelX = targetBarWidth - labelSize.width - labelPadding
             valueLabel.frame = CGRect(x: labelX, y: labelY, width: labelSize.width, height: labelSize.height)
             valueLabel.textColor = .white

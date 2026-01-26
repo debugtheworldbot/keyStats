@@ -23,6 +23,7 @@ class StatsPopoverViewController: NSViewController {
     private var allTimeStatsButton: NSButton!
     private var pendingStatsRefresh = false
     private var statsUpdateToken: UUID?
+    private var appearanceObservation: NSKeyValueObservation?
     
     // 统计项视图
     private var keyPressView: StatItemView!
@@ -39,7 +40,10 @@ class StatsPopoverViewController: NSViewController {
     
     override func loadView() {
         // 创建主视图
-        let mainView = NSView(frame: NSRect(x: 0, y: 0, width: 360, height: 640))
+        let mainView = AppearanceTrackingView(frame: NSRect(x: 0, y: 0, width: 360, height: 640))
+        mainView.onEffectiveAppearanceChange = { [weak self] in
+            self?.updateAppearance()
+        }
         mainView.wantsLayer = true
         self.view = mainView
     }
@@ -48,6 +52,12 @@ class StatsPopoverViewController: NSViewController {
         super.viewDidLoad()
         setupUI()
         updateStats()
+        updateAppearance()
+        appearanceObservation = NSApp.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
+            DispatchQueue.main.async {
+                self?.updateAppearance()
+            }
+        }
     }
 
     override func viewWillAppear() {
@@ -59,6 +69,7 @@ class StatsPopoverViewController: NSViewController {
     override func viewDidAppear() {
         super.viewDidAppear()
         focusPrimaryControl()
+        updateAppearance()
     }
 
     override func viewWillDisappear() {
@@ -68,6 +79,7 @@ class StatsPopoverViewController: NSViewController {
     
     deinit {
         stopLiveUpdates()
+        appearanceObservation = nil
     }
     
     // MARK: - UI 设置
@@ -544,6 +556,21 @@ class StatsPopoverViewController: NSViewController {
         let formatted = StatsManager.shared.formatHistoryValue(metric: metric, value: total)
         historySummaryLabel.stringValue = String(format: NSLocalizedString("history.total", comment: ""), formatted)
     }
+
+    // MARK: - Appearance Updates
+
+    private func updateAppearance() {
+        updateKeyBreakdown()
+        updateKeyBreakdownSeparatorColors()
+        chartView.needsDisplay = true
+    }
+
+    private func updateKeyBreakdownSeparatorColors() {
+        let isDarkMode = view.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        let alpha: CGFloat = isDarkMode ? 0.35 : 0.15
+        let separatorColor = NSColor.separatorColor.withAlphaComponent(alpha).cgColor
+        keyBreakdownSeparators.forEach { $0.layer?.backgroundColor = separatorColor }
+    }
     
     private func selectedRange() -> StatsManager.HistoryRange {
         switch rangeControl.selectedSegment {
@@ -669,6 +696,7 @@ class StatItemView: NSView {
 class KeyCountRowView: NSView {
     private var keyLabel: NSTextField!
     private var countLabel: NSTextField!
+    private var currentKey: String
     private static let symbolNameMap: [String: String] = [
         "Cmd": "command",
         "Shift": "shift",
@@ -690,6 +718,7 @@ class KeyCountRowView: NSView {
     private static let squareSymbolKeys: Set<String> = ["Ctrl", "Control"]
 
     init(key: String, count: String) {
+        self.currentKey = key
         super.init(frame: .zero)
         setupUI(key: key, count: count)
     }
@@ -701,7 +730,7 @@ class KeyCountRowView: NSView {
     private func setupUI(key: String, count: String) {
         translatesAutoresizingMaskIntoConstraints = false
         let keyFont = NSFont.systemFont(ofSize: 12, weight: .medium)
-        keyLabel = NSTextField(labelWithAttributedString: Self.attributedKeyLabel(for: key, font: keyFont))
+        keyLabel = NSTextField(labelWithAttributedString: Self.attributedKeyLabel(for: key, font: keyFont, appearance: effectiveAppearance))
         keyLabel.font = keyFont
         keyLabel.textColor = .labelColor
         keyLabel.lineBreakMode = .byTruncatingTail
@@ -732,16 +761,27 @@ class KeyCountRowView: NSView {
     }
 
     func update(key: String, count: String) {
-        if let font = keyLabel.font {
-            keyLabel.attributedStringValue = Self.attributedKeyLabel(for: key, font: font)
-        } else {
-            keyLabel.stringValue = key
-        }
+        currentKey = key
+        applyKeyLabel()
         keyLabel.toolTip = key
         countLabel.stringValue = count
     }
 
-    static func attributedKeyLabel(for key: String, font: NSFont) -> NSAttributedString {
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        applyKeyLabel()
+    }
+
+    private func applyKeyLabel() {
+        if let font = keyLabel.font {
+            keyLabel.attributedStringValue = Self.attributedKeyLabel(for: currentKey, font: font, appearance: effectiveAppearance)
+        } else {
+            keyLabel.stringValue = currentKey
+        }
+    }
+
+    static func attributedKeyLabel(for key: String, font: NSFont, appearance: NSAppearance? = nil) -> NSAttributedString {
+        let currentAppearance = appearance ?? NSApp.effectiveAppearance
         let textAttributes: [NSAttributedString.Key: Any] = [
             .font: font,
             .foregroundColor: NSColor.labelColor
@@ -752,7 +792,7 @@ class KeyCountRowView: NSView {
             if index > 0 {
                 result.append(NSAttributedString(string: "\u{200A}", attributes: textAttributes))
             }
-            if let badge = makeKeyBadge(for: part, font: font) {
+            if let badge = makeKeyBadge(for: part, font: font, appearance: currentAppearance) {
                 let attachment = NSTextAttachment()
                 attachment.image = badge
                 let baselineOffset = (font.ascender + font.descender - badge.size.height) / 2 + 1
@@ -766,7 +806,7 @@ class KeyCountRowView: NSView {
         return result
     }
 
-    private static func makeKeyBadge(for keyPart: String, font: NSFont) -> NSImage? {
+    private static func makeKeyBadge(for keyPart: String, font: NSFont, appearance: NSAppearance) -> NSImage? {
         let contentPointSize = max(font.pointSize - 1, 10)
         let padding: CGFloat = 4
         let lineWidth: CGFloat = 0.8
@@ -800,7 +840,7 @@ class KeyCountRowView: NSView {
                 badgeWidth = ceil(max(badgeHeight, symbolWidth + padding * 2))
             }
             let badgeSize = NSSize(width: badgeWidth, height: badgeHeight)
-            return drawBadge(size: badgeSize, cornerRadius: badgeHeight * cornerRadiusScale, lineWidth: lineWidth) { rect in
+            return drawBadge(size: badgeSize, cornerRadius: badgeHeight * cornerRadiusScale, lineWidth: lineWidth, appearance: appearance) { rect in
                 let symbolRect = NSRect(
                     x: rect.midX - symbolRectSize.width / 2,
                     y: rect.midY - symbolRectSize.height / 2,
@@ -821,7 +861,7 @@ class KeyCountRowView: NSView {
         let contentHeight = max(contentPointSize, textSize.height)
         let badgeWidth = ceil(max(badgeHeight, textSize.width + padding * 2))
         let badgeSize = NSSize(width: badgeWidth, height: badgeHeight)
-        return drawBadge(size: badgeSize, cornerRadius: badgeHeight * cornerRadiusScale, lineWidth: lineWidth) { rect in
+        return drawBadge(size: badgeSize, cornerRadius: badgeHeight * cornerRadiusScale, lineWidth: lineWidth, appearance: appearance) { rect in
             let textRect = NSRect(
                 x: rect.midX - textSize.width / 2,
                 y: rect.midY - textSize.height / 2,
@@ -832,35 +872,32 @@ class KeyCountRowView: NSView {
         }
     }
 
-    private static func drawBadge(size: NSSize, cornerRadius: CGFloat, lineWidth: CGFloat, content: (NSRect) -> Void) -> NSImage {
+    private static func drawBadge(size: NSSize, cornerRadius: CGFloat, lineWidth: CGFloat, appearance: NSAppearance, content: (NSRect) -> Void) -> NSImage {
         let image = NSImage(size: size)
         image.lockFocus()
-        NSGraphicsContext.current?.shouldAntialias = true
-        NSGraphicsContext.current?.imageInterpolation = .high
+        appearance.performAsCurrentDrawingAppearance {
+            NSGraphicsContext.current?.shouldAntialias = true
+            NSGraphicsContext.current?.imageInterpolation = .high
 
-        let rect = NSRect(
-            x: lineWidth / 2,
-            y: lineWidth / 2,
-            width: size.width - lineWidth,
-            height: size.height - lineWidth
-        )
-        let path = NSBezierPath(roundedRect: rect, xRadius: cornerRadius, yRadius: cornerRadius)
-        path.lineJoinStyle = .round
-        path.lineCapStyle = .round
+            let rect = NSRect(
+                x: lineWidth / 2,
+                y: lineWidth / 2,
+                width: size.width - lineWidth,
+                height: size.height - lineWidth
+            )
+            let path = NSBezierPath(roundedRect: rect, xRadius: cornerRadius, yRadius: cornerRadius)
+            path.lineJoinStyle = .round
+            path.lineCapStyle = .round
 
-        // 使用动态透明度以支持 Dark Mode
-        let isDarkMode = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        let fillAlpha: CGFloat = isDarkMode ? 0.6 : 0.35
-        let strokeAlpha: CGFloat = isDarkMode ? 0.7 : 0.35
+            // 使用动态透明度以支持 Dark Mode
+            let isDarkMode = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            let fillAlpha: CGFloat = isDarkMode ? 0.6 : 0.6
 
-        NSColor.controlBackgroundColor.withAlphaComponent(fillAlpha).setFill()
-        path.fill()
-        NSColor.separatorColor.withAlphaComponent(strokeAlpha).setStroke()
-        path.lineWidth = lineWidth
-        path.stroke()
+            NSColor.separatorColor.withAlphaComponent(fillAlpha).setFill()
+            path.fill()
 
-        content(rect)
-
+            content(rect)
+        }
         image.unlockFocus()
         return image
     }
