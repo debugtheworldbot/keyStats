@@ -12,9 +12,7 @@ final class AppStatsViewController: NSViewController {
     private var listStack: NSStackView!
     private var emptyStateLabel: NSTextField!
     private var separatorLine: NSView!
-    private var statsUpdateToken: UUID?
     private var appearanceObservation: NSKeyValueObservation?
-    private var pendingRefresh = false
     private var sortMetric: SortMetric = .keys
     private var appIconCache: [String: NSImage] = [:]
     private lazy var defaultAppIcon: NSImage = {
@@ -54,16 +52,9 @@ final class AppStatsViewController: NSViewController {
     override func viewWillAppear() {
         super.viewWillAppear()
         refreshData()
-        startLiveUpdates()
-    }
-
-    override func viewWillDisappear() {
-        super.viewWillDisappear()
-        stopLiveUpdates()
     }
     
     deinit {
-        stopLiveUpdates()
         appearanceObservation = nil
     }
 
@@ -139,6 +130,9 @@ final class AppStatsViewController: NSViewController {
         ], trackingMode: .selectOne, target: self, action: #selector(controlsChanged))
         rangeControl.selectedSegment = 0
 
+        rangeControl.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        rangeControl.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
         let controlsStack = NSStackView(views: [rangeControl])
         controlsStack.orientation = .vertical
         controlsStack.alignment = .leading
@@ -200,7 +194,6 @@ final class AppStatsViewController: NSViewController {
     // MARK: - Data
 
     func refreshData() {
-        pendingRefresh = false
         let statsManager = StatsManager.shared
         if !statsManager.appStatsEnabled {
             updateEmptyState(text: NSLocalizedString("appStats.disabled", comment: ""))
@@ -392,30 +385,6 @@ final class AppStatsViewController: NSViewController {
         NSGraphicsContext.restoreGraphicsState()
 
         return rep
-    }
-
-    // MARK: - Updates
-
-    private func startLiveUpdates() {
-        statsUpdateToken = StatsManager.shared.addStatsUpdateHandler { [weak self] in
-            self?.scheduleRefresh()
-        }
-    }
-
-    private func stopLiveUpdates() {
-        if let token = statsUpdateToken {
-            StatsManager.shared.removeStatsUpdateHandler(token)
-        }
-        statsUpdateToken = nil
-        pendingRefresh = false
-    }
-
-    private func scheduleRefresh() {
-        guard !pendingRefresh else { return }
-        pendingRefresh = true
-        DispatchQueue.main.async { [weak self] in
-            self?.refreshData()
-        }
     }
 
     // MARK: - Controls
@@ -796,6 +765,9 @@ private final class SingleBarView: NSView {
     private var formattedValue: String = ""
     private var targetBarWidth: CGFloat = 0
     private let labelPadding: CGFloat = 4
+    private let animationDuration: TimeInterval = 0.35
+    private var isAnimating = false
+    private var animationToken = UUID()
 
     init(color: NSColor) {
         super.init(frame: .zero)
@@ -853,6 +825,9 @@ private final class SingleBarView: NSView {
 
     func animateIn(delay: TimeInterval = 0) {
         targetBarWidth = bounds.width * CGFloat(value / maxValue)
+        isAnimating = true
+        let token = UUID()
+        animationToken = token
 
         CATransaction.begin()
         CATransaction.setDisableActions(true)
@@ -862,7 +837,7 @@ private final class SingleBarView: NSView {
         let animation = CABasicAnimation(keyPath: "bounds.size.width")
         animation.fromValue = 0
         animation.toValue = targetBarWidth
-        animation.duration = 0.35
+        animation.duration = animationDuration
         animation.beginTime = CACurrentMediaTime() + delay
         animation.timingFunction = CAMediaTimingFunction(name: .easeOut)
         animation.fillMode = .forwards
@@ -875,10 +850,21 @@ private final class SingleBarView: NSView {
         CATransaction.commit()
 
         updateLabelPosition()
+
+        let totalDelay = delay + animationDuration
+        DispatchQueue.main.asyncAfter(deadline: .now() + totalDelay) { [weak self] in
+            guard let self = self, self.animationToken == token else { return }
+            self.isAnimating = false
+            self.barLayer.removeAnimation(forKey: "widthAnimation")
+            self.updateBarPosition(animated: false)
+            self.updateLabelPosition()
+        }
     }
 
     private func updateBarPosition(animated: Bool) {
-        barLayer.removeAnimation(forKey: "widthAnimation")
+        if !isAnimating {
+            barLayer.removeAnimation(forKey: "widthAnimation")
+        }
 
         CATransaction.begin()
         CATransaction.setDisableActions(!animated)
