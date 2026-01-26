@@ -642,6 +642,35 @@ class StatsManager {
         }
     }
 
+    // MARK: - 数据导出
+
+    private struct ExportPayload: Codable {
+        let version: Int
+        let exportedAt: Date
+        let currentStats: DailyStats
+        let history: [String: DailyStats]
+    }
+
+    func exportStatsData() throws -> Data {
+        var exportHistory = history
+        let normalizedDate = Calendar.current.startOfDay(for: currentStats.date)
+        var current = currentStats
+        current.date = normalizedDate
+        let key = dateFormatter.string(from: normalizedDate)
+        exportHistory[key] = current
+
+        let payload = ExportPayload(
+            version: 1,
+            exportedAt: Date(),
+            currentStats: current,
+            history: exportHistory
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        return try encoder.encode(payload)
+    }
+
     private func scheduleSave() {
         guard saveTimer == nil else { return }
         saveTimer = Timer.scheduledTimer(withTimeInterval: saveInterval, repeats: false) { [weak self] _ in

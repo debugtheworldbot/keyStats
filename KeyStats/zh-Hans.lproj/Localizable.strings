@@ -57,6 +57,7 @@
 "history.empty" = "无数据";
 
 "button.reset" = "重置统计";
+"button.exportData" = "数据导出";
 "button.quit" = "退出应用";
 
 "keyBreakdown.empty" = "暂无键位数据";
@@ -68,6 +69,12 @@
 
 "launchAtLogin.error.title" = "无法更新开机启动";
 "launchAtLogin.error.message" = "请前往“系统设置 > 通用 > 登录项”中启用 KeyStats。";
+
+"export.savePanel.title" = "导出数据";
+"export.savePanel.message" = "选择保存 JSON 数据的位置";
+"export.savePanel.prompt" = "导出";
+"export.error.title" = "导出失败";
+"export.error.message" = "无法导出数据：%@";
 
 "about.author" = "作者";
 "about.version" = "版本 %@ (%@)";

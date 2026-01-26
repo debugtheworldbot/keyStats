@@ -19,6 +19,7 @@ class SettingsViewController: NSViewController, NSTextFieldDelegate {
     private var isHoveringHelpButton = false
     private var isHoveringHelpPopover = false
     private var resetButton: NSButton!
+    private var exportButton: NSButton!
     private var showThresholdsButton: NSButton!
     private var thresholdStack: NSStackView!
     private var keyPressThresholdField: NSTextField!
@@ -37,6 +38,14 @@ class SettingsViewController: NSViewController, NSTextFieldDelegate {
         formatter.allowsFloats = false
         formatter.minimum = NSNumber(value: thresholdMinimum)
         formatter.maximum = NSNumber(value: thresholdMaximum)
+        return formatter
+    }()
+
+    private lazy var exportFileDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone.current
         return formatter
     }()
 
@@ -161,8 +170,19 @@ class SettingsViewController: NSViewController, NSTextFieldDelegate {
         resetButton = NSButton(title: NSLocalizedString("button.reset", comment: ""), target: self, action: #selector(resetStats))
         resetButton.bezelStyle = .rounded
         resetButton.controlSize = .regular
-        
-        let contentStack = NSStackView(views: [optionsStack, thresholdStack, resetButton])
+
+        exportButton = NSButton(title: NSLocalizedString("button.exportData", comment: ""), target: self, action: #selector(exportData))
+        exportButton.bezelStyle = .rounded
+        exportButton.controlSize = .regular
+
+        let actionRow = NSStackView(views: [resetButton, exportButton])
+        actionRow.orientation = .horizontal
+        actionRow.alignment = .centerY
+        actionRow.spacing = 8
+        actionRow.distribution = .fillProportionally
+        actionRow.translatesAutoresizingMaskIntoConstraints = false
+
+        let contentStack = NSStackView(views: [optionsStack, thresholdStack, actionRow])
         contentStack.orientation = .vertical
         contentStack.alignment = .leading
         contentStack.spacing = 16
@@ -524,6 +544,51 @@ class SettingsViewController: NSViewController, NSTextFieldDelegate {
             StatsManager.shared.resetStats()
             PostHogSDK.shared.capture("statsReset")
         }
+    }
+
+    @objc private func exportData() {
+        let savePanel = NSSavePanel()
+        savePanel.allowedFileTypes = ["json"]
+        savePanel.canCreateDirectories = true
+        savePanel.nameFieldStringValue = makeExportFileName()
+        savePanel.title = NSLocalizedString("export.savePanel.title", comment: "")
+        savePanel.message = NSLocalizedString("export.savePanel.message", comment: "")
+        savePanel.prompt = NSLocalizedString("export.savePanel.prompt", comment: "")
+
+        guard let window = view.window else {
+            if savePanel.runModal() == .OK, let url = savePanel.url {
+                writeExport(to: url)
+            }
+            return
+        }
+
+        savePanel.beginSheetModal(for: window) { [weak self] response in
+            guard response == .OK, let url = savePanel.url else { return }
+            self?.writeExport(to: url)
+        }
+    }
+
+    private func makeExportFileName() -> String {
+        let dateString = exportFileDateFormatter.string(from: Date())
+        return "KeyStats-Export-\(dateString).json"
+    }
+
+    private func writeExport(to url: URL) {
+        do {
+            let data = try StatsManager.shared.exportStatsData()
+            try data.write(to: url, options: .atomic)
+        } catch {
+            showExportError(error)
+        }
+    }
+
+    private func showExportError(_ error: Error) {
+        let alert = NSAlert()
+        alert.messageText = NSLocalizedString("export.error.title", comment: "")
+        alert.informativeText = String(format: NSLocalizedString("export.error.message", comment: ""), error.localizedDescription)
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: NSLocalizedString("button.ok", comment: ""))
+        alert.runModal()
     }
 
     private func showLaunchAtLoginError() {

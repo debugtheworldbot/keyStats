@@ -57,6 +57,7 @@
 "history.empty" = "No Data";
 
 "button.reset" = "Reset Stats";
+"button.exportData" = "Export Data";
 "button.quit" = "Quit";
 
 "keyBreakdown.empty" = "No key data yet";
@@ -68,6 +69,12 @@
 
 "launchAtLogin.error.title" = "Couldn’t Update Login Item";
 "launchAtLogin.error.message" = "Please enable KeyStats in System Settings > General > Login Items.";
+
+"export.savePanel.title" = "Export Data";
+"export.savePanel.message" = "Choose where to save the JSON data.";
+"export.savePanel.prompt" = "Export";
+"export.error.title" = "Export Failed";
+"export.error.message" = "Couldn't export data: %@";
 
 "about.author" = "Author";
 "about.version" = "Version %@ (%@)";
