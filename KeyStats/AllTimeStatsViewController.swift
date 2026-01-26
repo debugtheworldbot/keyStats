@@ -530,8 +530,7 @@ class AllTimeStatsViewController: NSViewController {
                 key: item.key,
                 count: item.value,
                 maxCount: maxCount,
-                color: color,
-                isAlternate: index % 2 == 1
+                color: color
             )
             keyListContainer.addArrangedSubview(row)
             row.widthAnchor.constraint(equalTo: keyListContainer.widthAnchor).isActive = true
@@ -1107,12 +1106,10 @@ class TopKeyRowView: NSView {
     private var barFill: NSView!
     private var barFillWidthConstraint: NSLayoutConstraint?
     private var targetRatio: CGFloat = 0
-    private var isAlternate: Bool = false
 
-    init(rank: Int, key: String, count: Int, maxCount: Double, color: NSColor, isAlternate: Bool = false) {
+    init(rank: Int, key: String, count: Int, maxCount: Double, color: NSColor) {
         super.init(frame: .zero)
-        self.isAlternate = isAlternate
-        setupUI(rank: rank, key: key, count: count, maxCount: maxCount, color: color, isAlternate: isAlternate)
+        setupUI(rank: rank, key: key, count: count, maxCount: maxCount, color: color)
     }
 
     required init?(coder: NSCoder) {
@@ -1159,17 +1156,14 @@ class TopKeyRowView: NSView {
         }
     }
 
-    private func setupUI(rank: Int, key: String, count: Int, maxCount: Double, color: NSColor, isAlternate: Bool) {
+    private func setupUI(rank: Int, key: String, count: Int, maxCount: Double, color: NSColor) {
         translatesAutoresizingMaskIntoConstraints = false
         heightAnchor.constraint(equalToConstant: 32).isActive = true
 
         self.wantsLayer = true
         self.layer?.cornerRadius = 6
 
-        // Alternating background
-        if isAlternate {
-            self.layer?.backgroundColor = NSColor.separatorColor.withAlphaComponent(0.08).cgColor
-        }
+        self.layer?.backgroundColor = NSColor.clear.cgColor
 
         // Initial state for entry animation
         self.alphaValue = 0
@@ -1252,13 +1246,9 @@ class TopKeyRowView: NSView {
     }
     
     func updateAppearance() {
-        // 更新交替背景色
-        if isAlternate {
-            let backgroundColor = NSColor.separatorColor.withAlphaComponent(0.08)
-            layer?.backgroundColor = resolvedCGColor(backgroundColor, for: self)
-        } else {
-            layer?.backgroundColor = nil
-        }
+        layer?.backgroundColor = NSColor.clear.cgColor
+        layer?.borderWidth = 0
+        layer?.borderColor = nil
     }
 }
 
