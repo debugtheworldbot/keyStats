@@ -324,7 +324,7 @@ final class AppStatsViewController: NSViewController {
 
     private func formatScrollDistance(_ distance: Double) -> String {
         if distance >= 10000 {
-            return String(format: "%.1f k", distance / 1000)
+            return String(format: "%.1f kPx", distance / 1000)
         }
         return String(format: "%.0f px", distance)
     }

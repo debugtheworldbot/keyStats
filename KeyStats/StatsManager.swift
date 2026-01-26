@@ -127,7 +127,7 @@ struct DailyStats: Codable {
     /// 格式化滚动距离
     var formattedScrollDistance: String {
         if scrollDistance >= 10000 {
-            return String(format: "%.1f k", scrollDistance / 1000)
+            return String(format: "%.1f kPx", scrollDistance / 1000)
         } else {
             return String(format: "%.0f px", scrollDistance)
         }
@@ -189,7 +189,7 @@ struct AllTimeStats {
     /// 格式化滚动距离
     var formattedScrollDistance: String {
         if totalScrollDistance >= 10000 {
-            return String(format: "%.1f k", totalScrollDistance / 1000)
+            return String(format: "%.1f kPx", totalScrollDistance / 1000)
         } else {
             return String(format: "%.0f px", totalScrollDistance)
         }
@@ -936,7 +936,7 @@ extension StatsManager {
     
     private func formatScrollDistance(_ distance: Double) -> String {
         if distance >= 10000 {
-            return String(format: "%.1f k", distance / 1000)
+            return String(format: "%.1f kPx", distance / 1000)
         } else {
             return String(format: "%.0f px", distance)
         }

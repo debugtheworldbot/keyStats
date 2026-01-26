@@ -718,6 +718,11 @@ class BigStatCard: NSView {
         stopAnimation()
     }
 
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        updateAppearance()
+    }
+
     // MARK: - Entry Animation
     func animateIn(delay: TimeInterval) {
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
@@ -884,6 +889,11 @@ class InsightItemView: NSView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        updateAppearance()
+    }
+
     // MARK: - Entry Animation
     func animateIn(delay: TimeInterval) {
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
@@ -961,8 +971,11 @@ class InsightItemView: NSView {
 
 class ClickRatioView: NSView {
     private var leftBar: NSView!
+    private var barContainer: NSView!
     private var leftBarWidthConstraint: NSLayoutConstraint?
     private var targetLeftRatio: CGFloat = 0
+    private let barBackgroundColor = NSColor.systemOrange.withAlphaComponent(0.2)
+    private let leftBarColor = NSColor.systemBlue
 
     init(leftClicks: Int, rightClicks: Int) {
         super.init(frame: .zero)
@@ -971,6 +984,11 @@ class ClickRatioView: NSView {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        updateAppearance()
     }
 
     // MARK: - Entry Animation
@@ -1018,9 +1036,9 @@ class ClickRatioView: NSView {
         addSubview(titleLabel)
 
         // 进度条背景
-        let barContainer = NSView()
+        barContainer = NSView()
         barContainer.wantsLayer = true
-        barContainer.layer?.backgroundColor = NSColor.systemOrange.withAlphaComponent(0.2).cgColor
+        barContainer.layer?.backgroundColor = resolvedCGColor(barBackgroundColor, for: self)
         barContainer.layer?.cornerRadius = 6
         barContainer.translatesAutoresizingMaskIntoConstraints = false
         addSubview(barContainer)
@@ -1028,7 +1046,7 @@ class ClickRatioView: NSView {
         // 左键占比 (蓝色)
         leftBar = NSView()
         leftBar.wantsLayer = true
-        leftBar.layer?.backgroundColor = NSColor.systemBlue.cgColor
+        leftBar.layer?.backgroundColor = resolvedCGColor(leftBarColor, for: self)
         leftBar.translatesAutoresizingMaskIntoConstraints = false
         barContainer.addSubview(leftBar)
 
@@ -1097,6 +1115,8 @@ class ClickRatioView: NSView {
         layer?.backgroundColor = resolvedCGColor(backgroundColor, for: self)
         let borderColor = NSColor.separatorColor.withAlphaComponent(0.15)
         layer?.borderColor = resolvedCGColor(borderColor, for: self)
+        barContainer?.layer?.backgroundColor = resolvedCGColor(barBackgroundColor, for: self)
+        leftBar?.layer?.backgroundColor = resolvedCGColor(leftBarColor, for: self)
     }
 }
 
@@ -1104,8 +1124,14 @@ class ClickRatioView: NSView {
 
 class TopKeyRowView: NSView {
     private var barFill: NSView!
+    private var barContainer: NSView!
     private var barFillWidthConstraint: NSLayoutConstraint?
     private var targetRatio: CGFloat = 0
+    private var keyLabel: NSTextField!
+    private var keyFont: NSFont = NSFont.systemFont(ofSize: 14, weight: .medium)
+    private var currentKey: String = ""
+    private var barFillColor: NSColor = .systemBlue
+    private let barBackgroundColor = NSColor.separatorColor.withAlphaComponent(0.3)
 
     init(rank: Int, key: String, count: Int, maxCount: Double, color: NSColor) {
         super.init(frame: .zero)
@@ -1186,9 +1212,10 @@ class TopKeyRowView: NSView {
         rankLabel.textColor = .tertiaryLabelColor
         rankLabel.widthAnchor.constraint(equalToConstant: 20).isActive = true
 
-        let keyFont = NSFont.systemFont(ofSize: 14, weight: .medium)
-        let keyAttributed = KeyCountRowView.attributedKeyLabel(for: key, font: keyFont)
-        let keyLabel = NSTextField(labelWithAttributedString: keyAttributed)
+        currentKey = key
+        keyFont = NSFont.systemFont(ofSize: 14, weight: .medium)
+        let keyAttributed = KeyCountRowView.attributedKeyLabel(for: key, font: keyFont, appearance: keycapAppearance())
+        keyLabel = NSTextField(labelWithAttributedString: keyAttributed)
         keyLabel.font = keyFont
         keyLabel.alignment = .left
         keyLabel.textColor = .labelColor
@@ -1199,9 +1226,9 @@ class TopKeyRowView: NSView {
         keyLabel.widthAnchor.constraint(equalToConstant: 80).isActive = true
 
         // 进度条背景
-        let barContainer = NSView()
+        barContainer = NSView()
         barContainer.wantsLayer = true
-        barContainer.layer?.backgroundColor = NSColor.separatorColor.withAlphaComponent(0.3).cgColor
+        barContainer.layer?.backgroundColor = resolvedCGColor(barBackgroundColor, for: self)
         barContainer.layer?.cornerRadius = 4
         barContainer.translatesAutoresizingMaskIntoConstraints = false
         barContainer.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -1210,7 +1237,8 @@ class TopKeyRowView: NSView {
         // 进度条前景
         barFill = NSView()
         barFill.wantsLayer = true
-        barFill.layer?.backgroundColor = color.withAlphaComponent(0.8).cgColor
+        barFillColor = color
+        barFill.layer?.backgroundColor = resolvedCGColor(barFillColor.withAlphaComponent(0.8), for: self)
         barFill.layer?.cornerRadius = 4
         barFill.translatesAutoresizingMaskIntoConstraints = false
         barContainer.addSubview(barFill)
@@ -1249,6 +1277,28 @@ class TopKeyRowView: NSView {
         layer?.backgroundColor = NSColor.clear.cgColor
         layer?.borderWidth = 0
         layer?.borderColor = nil
+        barContainer?.layer?.backgroundColor = resolvedCGColor(barBackgroundColor, for: self)
+        barFill?.layer?.backgroundColor = resolvedCGColor(barFillColor.withAlphaComponent(0.8), for: self)
+        applyKeyLabel()
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        updateAppearance()
+    }
+
+    private func applyKeyLabel() {
+        guard let keyLabel = keyLabel else { return }
+        keyLabel.attributedStringValue = KeyCountRowView.attributedKeyLabel(
+            for: currentKey,
+            font: keyFont,
+            appearance: keycapAppearance()
+        )
+    }
+
+    private func keycapAppearance() -> NSAppearance {
+        let isDark = effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        return NSAppearance(named: isDark ? .vibrantDark : .vibrantLight) ?? effectiveAppearance
     }
 }
 
@@ -1291,6 +1341,11 @@ class TopKeysPieChartView: NSView {
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         wantsLayer = true
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
     }
 
     // MARK: - Entry Animation
@@ -1418,10 +1473,9 @@ class TopKeysPieChartView: NSView {
 
             // 绘制分隔线
             if entries.count > 1 {
-                let isDarkMode = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-                let separatorColor = isDarkMode 
-                    ? NSColor.windowBackgroundColor.withAlphaComponent(0.6)
-                    : NSColor.windowBackgroundColor
+                let isDarkMode = effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                let baseSeparator = resolvedColor(NSColor.windowBackgroundColor, for: self)
+                let separatorColor = baseSeparator.withAlphaComponent(isDarkMode ? 0.6 : 1.0)
                 separatorColor.setStroke()
                 path.lineWidth = 1
                 path.stroke()
