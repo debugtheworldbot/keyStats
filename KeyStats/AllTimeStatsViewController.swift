@@ -25,9 +25,26 @@ class AllTimeStatsViewController: NSViewController {
     private var keyListStack: NSStackView!
     private var keyListContainer: NSStackView!
     private var keyPieChartView: TopKeysPieChartView!
+
+    // MARK: - Animation Constants
+    private let cardCascadeDelay: TimeInterval = 0.05
+    private let insightRowCascadeDelay: TimeInterval = 0.08
+    private let topKeyRowCascadeDelay: TimeInterval = 0.03
+    private var animatedViews = Set<ObjectIdentifier>()
+    private var animationObserver: NSObjectProtocol?
+    private var isViewVisible = false
+
+    deinit {
+        if let observer = animationObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
     
     override func loadView() {
-        let view = NSView(frame: NSRect(x: 0, y: 0, width: 540, height: 700))
+        let view = AppearanceTrackingView(frame: NSRect(x: 0, y: 0, width: 540, height: 700))
+        view.onEffectiveAppearanceChange = { [weak self] in
+            self?.updateAppearance()
+        }
         view.wantsLayer = true
         view.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
         self.view = view
@@ -37,11 +54,21 @@ class AllTimeStatsViewController: NSViewController {
         super.viewDidLoad()
         setupUI()
         refreshData()
+        updateAppearance() // 初始化 appearance
     }
 
     override func viewDidAppear() {
         super.viewDidAppear()
+        isViewVisible = true
         scrollToTop()
+        DispatchQueue.main.async { [weak self] in
+            self?.checkVisibleAnimations()
+        }
+    }
+
+    override func viewWillDisappear() {
+        super.viewWillDisappear()
+        isViewVisible = false
     }
     
     private func setupUI() {
@@ -50,6 +77,14 @@ class AllTimeStatsViewController: NSViewController {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.hasVerticalScroller = true
         scrollView.drawsBackground = false
+        scrollView.contentView.postsBoundsChangedNotifications = true
+        animationObserver = NotificationCenter.default.addObserver(
+            forName: NSView.boundsDidChangeNotification,
+            object: scrollView.contentView,
+            queue: .main
+        ) { [weak self] _ in
+            self?.checkVisibleAnimations()
+        }
         view.addSubview(scrollView)
         
         NSLayoutConstraint.activate([
@@ -233,8 +268,11 @@ class AllTimeStatsViewController: NSViewController {
 
         updateInsights(stats)
         updateTopKeys(stats.keyPressCounts)
+        DispatchQueue.main.async { [weak self] in
+            self?.checkVisibleAnimations()
+        }
     }
-    
+
     private func updateInsights(_ stats: AllTimeStats) {
         let oldRows = insightsGrid.arrangedSubviews
         for row in oldRows {
@@ -248,7 +286,7 @@ class AllTimeStatsViewController: NSViewController {
             insightsGrid.addArrangedSubview(emptyLabel)
             return
         }
-        
+
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .medium
         dateFormatter.timeStyle = .none
@@ -465,10 +503,89 @@ class AllTimeStatsViewController: NSViewController {
 
         for (index, item) in sortedKeys.enumerated() {
             let color = TopKeysPieChartView.colors[index % TopKeysPieChartView.colors.count]
-            let row = TopKeyRowView(rank: index + 1, key: item.key, count: item.value, maxCount: maxCount, color: color)
+            let row = TopKeyRowView(
+                rank: index + 1,
+                key: item.key,
+                count: item.value,
+                maxCount: maxCount,
+                color: color,
+                isAlternate: index % 2 == 1
+            )
             keyListContainer.addArrangedSubview(row)
             row.widthAnchor.constraint(equalTo: keyListContainer.widthAnchor).isActive = true
         }
+    }
+
+    private func animateBigStatCards() {
+        let cards: [(BigStatCard, TimeInterval)] = [
+            (keyPressCard, 0),
+            (clickCard, cardCascadeDelay),
+            (mouseDistCard, cardCascadeDelay * 2),
+            (scrollDistCard, cardCascadeDelay * 3)
+        ]
+
+        for (card, delay) in cards where isViewInVisibleRect(card) {
+            animateOnce(card) {
+                card.animateIn(delay: delay)
+            }
+        }
+    }
+
+    private func animateInsightRow(_ row: NSStackView, index: Int) {
+        let delay = insightRowCascadeDelay * TimeInterval(index)
+        for case let item as InsightItemView in row.arrangedSubviews {
+            item.animateIn(delay: delay)
+        }
+    }
+
+    private func checkVisibleAnimations() {
+        guard isViewVisible else { return }
+        guard scrollView.window != nil else { return }
+
+        if isViewInVisibleRect(cardsGrid) {
+            animateBigStatCards()
+        }
+
+        for (index, row) in insightsGrid.arrangedSubviews.enumerated() {
+            guard isViewInVisibleRect(row) else { continue }
+            if let ratioRow = row as? ClickRatioView {
+                animateOnce(ratioRow) {
+                    ratioRow.animateEntryIn(delay: insightRowCascadeDelay * TimeInterval(index))
+                }
+            } else if let stackRow = row as? NSStackView {
+                animateOnce(stackRow) {
+                    animateInsightRow(stackRow, index: index)
+                }
+            }
+        }
+
+        if isViewInVisibleRect(keyPieChartView) {
+            animateOnce(keyPieChartView) {
+                keyPieChartView.animateIn()
+            }
+        }
+
+        for (index, row) in keyListContainer.arrangedSubviews.enumerated() {
+            guard let keyRow = row as? TopKeyRowView else { continue }
+            guard isViewInVisibleRect(keyRow) else { continue }
+            animateOnce(keyRow) {
+                keyRow.animateIn(delay: topKeyRowCascadeDelay * TimeInterval(index))
+            }
+        }
+    }
+
+    private func isViewInVisibleRect(_ view: NSView) -> Bool {
+        guard let documentView = scrollView.documentView else { return false }
+        let visibleRect = scrollView.documentVisibleRect
+        let viewRect = view.convert(view.bounds, to: documentView)
+        return viewRect.intersects(visibleRect)
+    }
+
+    private func animateOnce(_ view: NSView, action: () -> Void) {
+        let identifier = ObjectIdentifier(view)
+        guard !animatedViews.contains(identifier) else { return }
+        animatedViews.insert(identifier)
+        action()
     }
     
     private func formatNumber(_ number: Int) -> String {
@@ -485,28 +602,162 @@ class AllTimeStatsViewController: NSViewController {
         scrollView.contentView.scroll(to: NSPoint(x: 0, y: targetY))
         scrollView.reflectScrolledClipView(scrollView.contentView)
     }
+    
+    // MARK: - Appearance Updates
+    
+    private func updateAppearance() {
+        // 更新主视图背景色
+        view.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+        
+        // 更新所有卡片
+        keyPressCard.updateAppearance()
+        clickCard.updateAppearance()
+        mouseDistCard.updateAppearance()
+        scrollDistCard.updateAppearance()
+        
+        // 更新洞察分析项
+        for row in insightsGrid.arrangedSubviews {
+            if let insightItem = row as? InsightItemView {
+                insightItem.updateAppearance()
+            } else if let stackRow = row as? NSStackView {
+                for item in stackRow.arrangedSubviews {
+                    if let insightItem = item as? InsightItemView {
+                        insightItem.updateAppearance()
+                    }
+                }
+            } else if let ratioView = row as? ClickRatioView {
+                ratioView.updateAppearance()
+            }
+        }
+        
+        // 更新键位列表行
+        for row in keyListContainer.arrangedSubviews {
+            if let keyRow = row as? TopKeyRowView {
+                keyRow.updateAppearance()
+            }
+        }
+        
+        // 重新绘制饼图
+        keyPieChartView.needsDisplay = true
+        
+        // 通知所有子视图更新
+        view.needsDisplay = true
+    }
 }
 
 // MARK: - 组件：统计大卡片
 
 class BigStatCard: NSView {
     private var valueLabel: NSTextField!
-    
+    private var displayLink: CVDisplayLink?
+    private var animationStartTime: CFTimeInterval = 0
+    private var animationDuration: CFTimeInterval = 0.6
+    private var targetValue: Double = 0
+    private var currentDisplayValue: Double = 0
+    private var isAnimating = false
+    private var numberFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        return f
+    }()
+    private var useCustomFormat = false
+    private var customFormatValue: String = ""
+
+    // Hover tracking
+    private var trackingArea: NSTrackingArea?
+    private var isHovered = false
+    private let normalBackgroundColor = NSColor.controlBackgroundColor
+    private var hoverBackgroundColor: NSColor {
+        let isDarkMode = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        // 在 dark mode 下使用更高的混合比例以获得更好的可见性
+        let blendFraction = isDarkMode ? 0.1 : 0.05
+        return NSColor.controlBackgroundColor.blended(withFraction: blendFraction, of: NSColor.white) ?? NSColor.controlBackgroundColor
+    }
+
     init(icon: String, title: String, color: NSColor) {
         super.init(frame: .zero)
         self.wantsLayer = true
-        self.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
-        self.layer?.cornerRadius = 16
+        self.layer?.backgroundColor = normalBackgroundColor.cgColor
+        self.layer?.cornerRadius = 12
         self.layer?.borderWidth = 1
         self.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.2).cgColor
-        
+
+        // Initial state for entry animation
+        self.alphaValue = 0
+        self.layer?.transform = CATransform3DMakeScale(0.95, 0.95, 1)
+
         setupUI(icon: icon, title: title, color: color)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
+    deinit {
+        stopAnimation()
+    }
+
+    // MARK: - Entry Animation
+    func animateIn(delay: TimeInterval) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            guard let self = self else { return }
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.3
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                self.animator().alphaValue = 1.0
+            }
+
+            CATransaction.begin()
+            CATransaction.setAnimationDuration(0.3)
+            CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: .easeOut))
+            self.layer?.transform = CATransform3DIdentity
+            CATransaction.commit()
+        }
+    }
+
+    // MARK: - Hover Tracking
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let existing = trackingArea {
+            removeTrackingArea(existing)
+        }
+        trackingArea = NSTrackingArea(
+            rect: bounds,
+            options: [.mouseEnteredAndExited, .activeInKeyWindow],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(trackingArea!)
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        isHovered = true
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.15
+            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        }
+        CATransaction.begin()
+        CATransaction.setAnimationDuration(0.15)
+        layer?.backgroundColor = hoverBackgroundColor.cgColor
+        let isDarkMode = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        layer?.shadowColor = isDarkMode ? NSColor.white.cgColor : NSColor.black.cgColor
+        layer?.shadowOpacity = isDarkMode ? 0.1 : 0.08
+        layer?.shadowOffset = CGSize(width: 0, height: 2)
+        layer?.shadowRadius = 8
+        layer?.transform = CATransform3DMakeScale(1.02, 1.02, 1)
+        CATransaction.commit()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        isHovered = false
+        CATransaction.begin()
+        CATransaction.setAnimationDuration(0.15)
+        layer?.backgroundColor = normalBackgroundColor.cgColor
+        layer?.shadowOpacity = 0
+        layer?.transform = CATransform3DIdentity
+        CATransaction.commit()
+    }
+
     private func setupUI(icon: String, title: String, color: NSColor) {
         let stack = NSStackView()
         stack.orientation = .vertical
@@ -514,61 +765,224 @@ class BigStatCard: NSView {
         stack.spacing = 12
         stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
-        
+
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
             stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
             stack.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
-        
+
         // 标题行
         let titleStack = NSStackView()
         titleStack.spacing = 8
-        
+
         let iconLabel = NSTextField(labelWithString: icon)
         iconLabel.font = NSFont.systemFont(ofSize: 20)
-        
+
         let titleLabel = NSTextField(labelWithString: title)
         titleLabel.font = NSFont.systemFont(ofSize: 13, weight: .medium)
         titleLabel.textColor = .secondaryLabelColor
-        
+
         titleStack.addArrangedSubview(iconLabel)
         titleStack.addArrangedSubview(titleLabel)
-        
+
         // 数值
         valueLabel = NSTextField(labelWithString: "0")
         valueLabel.font = NSFont.monospacedDigitSystemFont(ofSize: 28, weight: .bold)
         valueLabel.textColor = .labelColor
-        
+
         stack.addArrangedSubview(titleStack)
         stack.addArrangedSubview(valueLabel)
     }
-    
+
     func setValue(_ value: String) {
         valueLabel.stringValue = value
+    }
+
+    func animateValue(to value: Int, delay: TimeInterval = 0) {
+        useCustomFormat = false
+        targetValue = Double(value)
+        startAnimation(delay: delay)
+    }
+
+    func animateValue(to value: String, numericValue: Double, delay: TimeInterval = 0) {
+        useCustomFormat = true
+        customFormatValue = value
+        targetValue = numericValue
+        startAnimation(delay: delay)
+    }
+
+    private func startAnimation(delay: TimeInterval) {
+        stopAnimation()
+        currentDisplayValue = 0
+        valueLabel.stringValue = "0"
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            self?.beginAnimation()
+        }
+    }
+
+    private func beginAnimation() {
+        isAnimating = true
+        animationStartTime = CACurrentMediaTime()
+
+        // 使用 Timer 代替 CVDisplayLink，更简单可靠
+        Timer.scheduledTimer(withTimeInterval: 1.0/60.0, repeats: true) { [weak self] timer in
+            guard let self = self, self.isAnimating else {
+                timer.invalidate()
+                return
+            }
+            self.updateAnimation(timer: timer)
+        }
+    }
+
+    private func updateAnimation(timer: Timer) {
+        let elapsed = CACurrentMediaTime() - animationStartTime
+        let progress = min(elapsed / animationDuration, 1.0)
+
+        // easeOutQuart 缓动函数
+        let easedProgress = 1.0 - pow(1.0 - progress, 4)
+
+        currentDisplayValue = targetValue * easedProgress
+
+        if useCustomFormat {
+            // 对于自定义格式（如距离），在动画结束时显示最终格式
+            if progress >= 1.0 {
+                valueLabel.stringValue = customFormatValue
+            } else {
+                let displayInt = Int(currentDisplayValue)
+                valueLabel.stringValue = numberFormatter.string(from: NSNumber(value: displayInt)) ?? "\(displayInt)"
+            }
+        } else {
+            let displayInt = Int(currentDisplayValue)
+            valueLabel.stringValue = numberFormatter.string(from: NSNumber(value: displayInt)) ?? "\(displayInt)"
+        }
+
+        if progress >= 1.0 {
+            isAnimating = false
+            timer.invalidate()
+        }
+    }
+
+    private func stopAnimation() {
+        isAnimating = false
+    }
+    
+    func updateAppearance() {
+        // 更新背景色和边框
+        if isHovered {
+            layer?.backgroundColor = hoverBackgroundColor.cgColor
+            let isDarkMode = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            layer?.shadowColor = isDarkMode ? NSColor.white.cgColor : NSColor.black.cgColor
+        } else {
+            layer?.backgroundColor = normalBackgroundColor.cgColor
+        }
+        layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.2).cgColor
     }
 }
 
 // MARK: - 组件：洞察分析项
 
 class InsightItemView: NSView {
+    // Hover tracking
+    private var trackingArea: NSTrackingArea?
+    private var isHovered = false
+    private let normalBackgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.5)
+    private var hoverBackgroundColor: NSColor {
+        let isDarkMode = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        return NSColor.controlBackgroundColor.withAlphaComponent(isDarkMode ? 0.9 : 0.8)
+    }
+
     init(title: String, value: String, subtitle: String, icon: String, tooltip: String? = nil) {
         super.init(frame: .zero)
         self.wantsLayer = true
-        self.layer?.backgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.5).cgColor
+        self.layer?.backgroundColor = normalBackgroundColor.cgColor
         self.layer?.cornerRadius = 12
         self.layer?.borderWidth = 1
-        self.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.1).cgColor
-        
+        self.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.25).cgColor
+
+        // Initial state for entry animation
+        self.alphaValue = 0
+        self.layer?.transform = CATransform3DMakeTranslation(0, -10, 0)
+
         if let tooltip = tooltip {
             self.toolTip = tooltip
         }
-        
+
         setupUI(title: title, value: value, subtitle: subtitle, icon: icon)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - Entry Animation
+    func animateIn(delay: TimeInterval) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            guard let self = self else { return }
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.25
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                self.animator().alphaValue = 1.0
+            }
+
+            CATransaction.begin()
+            CATransaction.setAnimationDuration(0.25)
+            CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: .easeOut))
+            self.layer?.transform = CATransform3DIdentity
+            CATransaction.commit()
+        }
+    }
+
+    // MARK: - Hover Tracking
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let existing = trackingArea {
+            removeTrackingArea(existing)
+        }
+        trackingArea = NSTrackingArea(
+            rect: bounds,
+            options: [.mouseEnteredAndExited, .activeInKeyWindow],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(trackingArea!)
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        isHovered = true
+        CATransaction.begin()
+        CATransaction.setAnimationDuration(0.15)
+        layer?.backgroundColor = hoverBackgroundColor.cgColor
+        let isDarkMode = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        layer?.shadowColor = isDarkMode ? NSColor.white.cgColor : NSColor.black.cgColor
+        layer?.shadowOpacity = isDarkMode ? 0.08 : 0.05
+        layer?.shadowOffset = CGSize(width: 0, height: 1)
+        layer?.shadowRadius = 4
+        CATransaction.commit()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        isHovered = false
+        CATransaction.begin()
+        CATransaction.setAnimationDuration(0.15)
+        layer?.backgroundColor = normalBackgroundColor.cgColor
+        layer?.shadowOpacity = 0
+        CATransaction.commit()
+    }
+    
+    func updateAppearance() {
+        // 更新背景色和边框
+        if isHovered {
+            layer?.backgroundColor = hoverBackgroundColor.cgColor
+            let isDarkMode = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            layer?.shadowColor = isDarkMode ? NSColor.white.cgColor : NSColor.black.cgColor
+            layer?.shadowOpacity = isDarkMode ? 0.08 : 0.05
+        } else {
+            layer?.backgroundColor = normalBackgroundColor.cgColor
+            layer?.shadowOpacity = 0
+        }
+        layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.25).cgColor
     }
     
     private func setupUI(title: String, value: String, subtitle: String, icon: String) {
@@ -620,35 +1034,63 @@ class InsightItemView: NSView {
 // MARK: - 组件：点击占比视图
 
 class ClickRatioView: NSView {
+    private var leftBar: NSView!
+    private var leftBarWidthConstraint: NSLayoutConstraint?
+    private var targetLeftRatio: CGFloat = 0
+
     init(leftClicks: Int, rightClicks: Int) {
         super.init(frame: .zero)
         setupUI(leftClicks: leftClicks, rightClicks: rightClicks)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
+    // MARK: - Entry Animation
+    func animateIn(delay: TimeInterval) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            guard let self = self, let leftBar = self.leftBar else { return }
+
+            // Animate progress bar width
+            self.leftBarWidthConstraint?.isActive = false
+            self.leftBarWidthConstraint = leftBar.widthAnchor.constraint(equalTo: leftBar.superview!.widthAnchor, multiplier: max(0.01, self.targetLeftRatio))
+            self.leftBarWidthConstraint?.isActive = true
+
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.4
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                context.allowsImplicitAnimation = true
+                self.layoutSubtreeIfNeeded()
+            }
+        }
+    }
+
     private func setupUI(leftClicks: Int, rightClicks: Int) {
         self.wantsLayer = true
         self.layer?.backgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.5).cgColor
         self.layer?.cornerRadius = 12
         self.layer?.borderWidth = 1
-        self.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.1).cgColor
-        
+        self.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.15).cgColor
+
+        // Initial state for entry animation
+        self.alphaValue = 0
+        self.layer?.transform = CATransform3DMakeTranslation(0, -10, 0)
+
         translatesAutoresizingMaskIntoConstraints = false
         heightAnchor.constraint(equalToConstant: 80).isActive = true
-        
+
         let total = max(1, leftClicks + rightClicks)
         let leftRatio = Double(leftClicks) / Double(total)
         let rightRatio = Double(rightClicks) / Double(total)
-        
+        targetLeftRatio = CGFloat(leftRatio)
+
         let titleLabel = NSTextField(labelWithString: NSLocalizedString("insights.clickRatio", comment: ""))
         titleLabel.font = NSFont.systemFont(ofSize: 13, weight: .medium)
         titleLabel.textColor = .secondaryLabelColor
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         addSubview(titleLabel)
-        
+
         // 进度条背景
         let barContainer = NSView()
         barContainer.wantsLayer = true
@@ -656,97 +1098,183 @@ class ClickRatioView: NSView {
         barContainer.layer?.cornerRadius = 6
         barContainer.translatesAutoresizingMaskIntoConstraints = false
         addSubview(barContainer)
-        
+
         // 左键占比 (蓝色)
-        let leftBar = NSView()
+        leftBar = NSView()
         leftBar.wantsLayer = true
         leftBar.layer?.backgroundColor = NSColor.systemBlue.cgColor
-        // 只设置左边的圆角有点麻烦，这里简单处理，整个 barContainer 是圆角
-        // 如果 leftRatio 是 1.0，则全部蓝色
         leftBar.translatesAutoresizingMaskIntoConstraints = false
         barContainer.addSubview(leftBar)
-        
+
         // 标签
         let leftLabel = NSTextField(labelWithString: "\(Int(leftRatio * 100))% L")
         leftLabel.font = NSFont.systemFont(ofSize: 12, weight: .bold)
         leftLabel.textColor = .systemBlue
         leftLabel.translatesAutoresizingMaskIntoConstraints = false
-        
+
         let rightLabel = NSTextField(labelWithString: "R \(Int(rightRatio * 100))%")
         rightLabel.font = NSFont.systemFont(ofSize: 12, weight: .bold)
         rightLabel.textColor = .systemOrange
         rightLabel.translatesAutoresizingMaskIntoConstraints = false
-        
+
         addSubview(leftLabel)
         addSubview(rightLabel)
-        
+
+        // Start with 0 width for animation
+        leftBarWidthConstraint = leftBar.widthAnchor.constraint(equalToConstant: 0)
+
         NSLayoutConstraint.activate([
             titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 12),
             titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            
+
             barContainer.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 12),
             barContainer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             barContainer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             barContainer.heightAnchor.constraint(equalToConstant: 12),
-            
+
             leftBar.leadingAnchor.constraint(equalTo: barContainer.leadingAnchor),
             leftBar.topAnchor.constraint(equalTo: barContainer.topAnchor),
             leftBar.bottomAnchor.constraint(equalTo: barContainer.bottomAnchor),
-            leftBar.widthAnchor.constraint(equalTo: barContainer.widthAnchor, multiplier: max(0.01, leftRatio)),
-            
+            leftBarWidthConstraint!,
+
             leftLabel.topAnchor.constraint(equalTo: barContainer.bottomAnchor, constant: 6),
             leftLabel.leadingAnchor.constraint(equalTo: barContainer.leadingAnchor),
-            
+
             rightLabel.topAnchor.constraint(equalTo: barContainer.bottomAnchor, constant: 6),
             rightLabel.trailingAnchor.constraint(equalTo: barContainer.trailingAnchor)
         ])
+    }
+
+    func animateEntryIn(delay: TimeInterval) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            guard let self = self else { return }
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.25
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                self.animator().alphaValue = 1.0
+            }
+
+            CATransaction.begin()
+            CATransaction.setAnimationDuration(0.25)
+            CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: .easeOut))
+            self.layer?.transform = CATransform3DIdentity
+            CATransaction.commit()
+
+            // Animate progress bar after entry animation
+            self.animateIn(delay: 0.15)
+        }
+    }
+    
+    func updateAppearance() {
+        // 更新背景色和边框
+        layer?.backgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.5).cgColor
+        layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.15).cgColor
     }
 }
 
 // MARK: - 组件：Top Key 行
 
 class TopKeyRowView: NSView {
-    init(rank: Int, key: String, count: Int, maxCount: Double, color: NSColor) {
+    private var barFill: NSView!
+    private var barFillWidthConstraint: NSLayoutConstraint?
+    private var targetRatio: CGFloat = 0
+    private var isAlternate: Bool = false
+
+    init(rank: Int, key: String, count: Int, maxCount: Double, color: NSColor, isAlternate: Bool = false) {
         super.init(frame: .zero)
-        setupUI(rank: rank, key: key, count: count, maxCount: maxCount, color: color)
+        self.isAlternate = isAlternate
+        setupUI(rank: rank, key: key, count: count, maxCount: maxCount, color: color, isAlternate: isAlternate)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
-    private func setupUI(rank: Int, key: String, count: Int, maxCount: Double, color: NSColor) {
+
+    // MARK: - Entry Animation
+    func animateIn(delay: TimeInterval) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            guard let self = self else { return }
+
+            // Fade in and slide animation
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.35
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                self.animator().alphaValue = 1.0
+            }
+
+            CATransaction.begin()
+            CATransaction.setAnimationDuration(0.35)
+            CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: .easeOut))
+            self.layer?.transform = CATransform3DIdentity
+            CATransaction.commit()
+
+            // Animate progress bar width after a small delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                self?.animateProgressBar()
+            }
+        }
+    }
+
+    private func animateProgressBar() {
+        guard let barFill = barFill, let superview = barFill.superview else { return }
+
+        barFillWidthConstraint?.isActive = false
+        barFillWidthConstraint = barFill.widthAnchor.constraint(equalTo: superview.widthAnchor, multiplier: max(0.01, targetRatio))
+        barFillWidthConstraint?.isActive = true
+
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.35
+            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            context.allowsImplicitAnimation = true
+            self.layoutSubtreeIfNeeded()
+        }
+    }
+
+    private func setupUI(rank: Int, key: String, count: Int, maxCount: Double, color: NSColor, isAlternate: Bool) {
         translatesAutoresizingMaskIntoConstraints = false
         heightAnchor.constraint(equalToConstant: 32).isActive = true
-        
+
+        self.wantsLayer = true
+        self.layer?.cornerRadius = 6
+
+        // Alternating background
+        if isAlternate {
+            self.layer?.backgroundColor = NSColor.separatorColor.withAlphaComponent(0.08).cgColor
+        }
+
+        // Initial state for entry animation
+        self.alphaValue = 0
+        self.layer?.transform = CATransform3DMakeTranslation(-20, 0, 0)
+
         let stack = NSStackView()
         stack.orientation = .horizontal
         stack.spacing = 12
         stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
-        
+
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor),
+            stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6),
             stack.trailingAnchor.constraint(equalTo: trailingAnchor),
             stack.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
-        
+
         let rankLabel = NSTextField(labelWithString: "\(rank)")
         rankLabel.font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .regular)
         rankLabel.textColor = .tertiaryLabelColor
         rankLabel.widthAnchor.constraint(equalToConstant: 20).isActive = true
-        
+
         let keyFont = NSFont.systemFont(ofSize: 14, weight: .medium)
         let keyAttributed = KeyCountRowView.attributedKeyLabel(for: key, font: keyFont)
         let keyLabel = NSTextField(labelWithAttributedString: keyAttributed)
         keyLabel.font = keyFont
+        keyLabel.alignment = .left
         keyLabel.textColor = .labelColor
         keyLabel.lineBreakMode = .byTruncatingTail
         keyLabel.maximumNumberOfLines = 1
         keyLabel.cell?.truncatesLastVisibleLine = true
         keyLabel.toolTip = key
         keyLabel.widthAnchor.constraint(equalToConstant: 80).isActive = true
-        
+
         // 进度条背景
         let barContainer = NSView()
         barContainer.wantsLayer = true
@@ -755,23 +1283,27 @@ class TopKeyRowView: NSView {
         barContainer.translatesAutoresizingMaskIntoConstraints = false
         barContainer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         barContainer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        
+
         // 进度条前景
-        let barFill = NSView()
+        barFill = NSView()
         barFill.wantsLayer = true
         barFill.layer?.backgroundColor = color.withAlphaComponent(0.8).cgColor
         barFill.layer?.cornerRadius = 4
         barFill.translatesAutoresizingMaskIntoConstraints = false
         barContainer.addSubview(barFill)
-        
-        let ratio = maxCount > 0 ? CGFloat(count) / CGFloat(maxCount) : 0
+
+        targetRatio = maxCount > 0 ? CGFloat(count) / CGFloat(maxCount) : 0
+
+        // Start with 0 width for animation
+        barFillWidthConstraint = barFill.widthAnchor.constraint(equalToConstant: 0)
+
         NSLayoutConstraint.activate([
             barFill.leadingAnchor.constraint(equalTo: barContainer.leadingAnchor),
             barFill.topAnchor.constraint(equalTo: barContainer.topAnchor),
             barFill.bottomAnchor.constraint(equalTo: barContainer.bottomAnchor),
-            barFill.widthAnchor.constraint(equalTo: barContainer.widthAnchor, multiplier: max(0.01, ratio))
+            barFillWidthConstraint!
         ])
-        
+
         // 计数值
         let countLabel = NSTextField(labelWithString: "\(count)")
         countLabel.font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .regular)
@@ -779,15 +1311,24 @@ class TopKeyRowView: NSView {
         countLabel.alignment = .right
         countLabel.setContentHuggingPriority(.required, for: .horizontal)
         countLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
-        
+
         stack.addArrangedSubview(rankLabel)
         stack.addArrangedSubview(keyLabel)
         stack.addArrangedSubview(barContainer)
         stack.addArrangedSubview(countLabel)
-        
+
         barContainer.heightAnchor.constraint(equalToConstant: 8).isActive = true
         barContainer.widthAnchor.constraint(greaterThanOrEqualToConstant: 160).isActive = true
         countLabel.widthAnchor.constraint(equalToConstant: 60).isActive = true
+    }
+    
+    func updateAppearance() {
+        // 更新交替背景色
+        if isAlternate {
+            layer?.backgroundColor = NSColor.separatorColor.withAlphaComponent(0.08).cgColor
+        } else {
+            layer?.backgroundColor = nil
+        }
     }
 }
 
@@ -804,11 +1345,117 @@ class TopKeysPieChartView: NSView {
         .systemYellow,
         .systemBrown
     ]
-    
+
     var entries: [(key: String, count: Int)] = [] {
         didSet {
             needsDisplay = true
         }
+    }
+
+    private var hoveredIndex: Int? = nil {
+        didSet {
+            if oldValue != hoveredIndex {
+                needsDisplay = true
+            }
+        }
+    }
+
+    private var trackingArea: NSTrackingArea?
+    private var hasAnimatedIn = false
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        wantsLayer = true
+    }
+
+    // MARK: - Entry Animation
+    func animateIn(delay: TimeInterval = 0) {
+        guard !hasAnimatedIn else { return }
+        hasAnimatedIn = true
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            guard let self = self, let layer = self.layer else { return }
+            let startScale = CATransform3DMakeScale(0.01, 0.01, 1)
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            layer.transform = startScale
+            CATransaction.commit()
+
+            let scale = CABasicAnimation(keyPath: "transform")
+            scale.fromValue = startScale
+            scale.toValue = CATransform3DIdentity
+            scale.duration = 0.5
+            scale.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            layer.add(scale, forKey: "scaleIn")
+
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            layer.transform = CATransform3DIdentity
+            CATransaction.commit()
+        }
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let existing = trackingArea {
+            removeTrackingArea(existing)
+        }
+        trackingArea = NSTrackingArea(
+            rect: bounds,
+            options: [.mouseMoved, .mouseEnteredAndExited, .activeInKeyWindow],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(trackingArea!)
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        let location = convert(event.locationInWindow, from: nil)
+        hoveredIndex = indexOfSlice(at: location)
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        hoveredIndex = nil
+    }
+
+    private func indexOfSlice(at point: NSPoint) -> Int? {
+        guard !entries.isEmpty else { return nil }
+
+        let center = NSPoint(x: bounds.midX, y: bounds.midY)
+        let inset: CGFloat = 8
+        let radius = min(bounds.width, bounds.height) / 2 - inset
+        let innerRadius = radius * 0.5
+
+        let dx = point.x - center.x
+        let dy = point.y - center.y
+        let distance = sqrt(dx * dx + dy * dy)
+
+        // 检查是否在环形区域内
+        guard distance >= innerRadius && distance <= radius else { return nil }
+
+        // 计算角度 (从正上方顺时针)
+        var angle = atan2(dx, dy) * 180 / .pi // 角度从正上方(90度)开始
+        if angle < 0 { angle += 360 }
+
+        let total = entries.reduce(0) { $0 + $1.count }
+        guard total > 0 else { return nil }
+
+        var cumulativeAngle: CGFloat = 0
+        for (index, entry) in entries.enumerated() {
+            let fraction = CGFloat(entry.count) / CGFloat(total)
+            let sliceAngle = 360 * fraction
+            if angle >= cumulativeAngle && angle < cumulativeAngle + sliceAngle {
+                return index
+            }
+            cumulativeAngle += sliceAngle
+        }
+
+        return nil
     }
 
     override func draw(_ dirtyRect: NSRect) {
@@ -855,13 +1502,18 @@ class TopKeysPieChartView: NSView {
             )
             path.close()
 
-            let color = colors[index % colors.count].withAlphaComponent(0.85)
+            let isHovered = hoveredIndex == index
+            let color = colors[index % colors.count].withAlphaComponent(isHovered ? 1.0 : 0.85)
             color.setFill()
             path.fill()
-            
+
             // 绘制分隔线
             if entries.count > 1 {
-                NSColor.windowBackgroundColor.setStroke()
+                let isDarkMode = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                let separatorColor = isDarkMode 
+                    ? NSColor.windowBackgroundColor.withAlphaComponent(0.6)
+                    : NSColor.windowBackgroundColor
+                separatorColor.setStroke()
                 path.lineWidth = 1
                 path.stroke()
             }
@@ -877,7 +1529,43 @@ class TopKeysPieChartView: NSView {
             width: innerRadius * 2,
             height: innerRadius * 2
         ))
-        NSColor.windowBackgroundColor.setFill()
+        let isDarkMode = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        let holeColor = isDarkMode 
+            ? NSColor.windowBackgroundColor.withAlphaComponent(0.9)
+            : NSColor.windowBackgroundColor
+        holeColor.setFill()
         holePath.fill()
+
+        // 在中心显示悬停的按键信息
+        if let index = hoveredIndex, index < entries.count {
+            let entry = entries[index]
+            let percentage = Double(entry.count) / Double(total) * 100
+
+            // 按键名称
+            let keyText = entry.key
+            let keyAttributes: [NSAttributedString.Key: Any] = [
+                .font: NSFont.systemFont(ofSize: 16, weight: .semibold),
+                .foregroundColor: NSColor.labelColor
+            ]
+            let keySize = keyText.size(withAttributes: keyAttributes)
+            let keyPoint = NSPoint(
+                x: center.x - keySize.width / 2,
+                y: center.y + 2
+            )
+            keyText.draw(at: keyPoint, withAttributes: keyAttributes)
+
+            // 百分比
+            let percentText = String(format: "%.1f%%", percentage)
+            let percentAttributes: [NSAttributedString.Key: Any] = [
+                .font: NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium),
+                .foregroundColor: NSColor.secondaryLabelColor
+            ]
+            let percentSize = percentText.size(withAttributes: percentAttributes)
+            let percentPoint = NSPoint(
+                x: center.x - percentSize.width / 2,
+                y: center.y - percentSize.height - 2
+            )
+            percentText.draw(at: percentPoint, withAttributes: percentAttributes)
+        }
     }
 }
