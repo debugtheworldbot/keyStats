@@ -11,6 +11,8 @@ class SettingsViewController: NSViewController, NSTextFieldDelegate {
     private var dynamicIconColorButton: NSButton!
     private var dynamicIconColorStylePopUp: NSPopUpButton!
     private var dynamicIconColorStyleRow: NSStackView!
+    private var dynamicIconColorWindowField: NSTextField!
+    private var dynamicIconColorWindowRow: NSStackView!
     private var dynamicIconColorHelpButton: NSButton!
     private lazy var dynamicIconColorHelpPopover: NSPopover = makeDynamicIconColorHelpPopover()
     private weak var dynamicIconColorHelpContentView: NSView?
@@ -38,6 +40,15 @@ class SettingsViewController: NSViewController, NSTextFieldDelegate {
         formatter.allowsFloats = false
         formatter.minimum = NSNumber(value: thresholdMinimum)
         formatter.maximum = NSNumber(value: thresholdMaximum)
+        return formatter
+    }()
+    
+    private lazy var windowFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .none
+        formatter.allowsFloats = false
+        formatter.minimum = NSNumber(value: 1)
+        formatter.maximum = NSNumber(value: 3600)
         return formatter
     }()
 
@@ -139,7 +150,25 @@ class SettingsViewController: NSViewController, NSTextFieldDelegate {
         styleRow.translatesAutoresizingMaskIntoConstraints = false
         dynamicIconColorStyleRow = styleRow
 
-        let optionsStack = NSStackView(views: [showKeyPressesButton, showMouseClicksButton, appStatsEnabledButton, launchAtLoginButton, dynamicIconColorRow, styleRow, showThresholdsButton])
+        let windowLabel = NSTextField(labelWithString: NSLocalizedString("settings.dynamicIconColorWindow", comment: ""))
+        windowLabel.font = NSFont.systemFont(ofSize: 13)
+        
+        dynamicIconColorWindowField = NSTextField()
+        dynamicIconColorWindowField.formatter = windowFormatter
+        dynamicIconColorWindowField.target = self
+        dynamicIconColorWindowField.action = #selector(dynamicIconColorWindowChanged)
+        dynamicIconColorWindowField.delegate = self
+        dynamicIconColorWindowField.translatesAutoresizingMaskIntoConstraints = false
+        dynamicIconColorWindowField.widthAnchor.constraint(equalToConstant: 50).isActive = true
+        
+        let windowRow = NSStackView(views: [windowLabel, dynamicIconColorWindowField])
+        windowRow.orientation = .horizontal
+        windowRow.alignment = .centerY
+        windowRow.spacing = 8
+        windowRow.translatesAutoresizingMaskIntoConstraints = false
+        dynamicIconColorWindowRow = windowRow
+
+        let optionsStack = NSStackView(views: [showKeyPressesButton, showMouseClicksButton, appStatsEnabledButton, launchAtLoginButton, dynamicIconColorRow, styleRow, windowRow, showThresholdsButton])
         optionsStack.orientation = .vertical
         optionsStack.alignment = .leading
         optionsStack.spacing = 8
@@ -227,6 +256,9 @@ class SettingsViewController: NSViewController, NSTextFieldDelegate {
         let isEnabled = StatsManager.shared.enableDynamicIconColor
         dynamicIconColorStylePopUp.isEnabled = isEnabled
         dynamicIconColorStyleRow.isHidden = !isEnabled
+        
+        dynamicIconColorWindowRow.isHidden = !isEnabled
+        dynamicIconColorWindowField.doubleValue = StatsManager.shared.dynamicIconColorWindow
     }
 
     private func makeDynamicIconColorHelpPopover() -> NSPopover {
@@ -470,6 +502,11 @@ class SettingsViewController: NSViewController, NSTextFieldDelegate {
         applyThreshold(clickThresholdStepper.integerValue, for: .click)
     }
 
+    @objc private func dynamicIconColorWindowChanged(_ sender: NSTextField) {
+        let value = windowFormatter.number(from: sender.stringValue)?.doubleValue ?? 3.0
+        StatsManager.shared.dynamicIconColorWindow = value
+    }
+
     @objc private func thresholdFieldEdited(_ sender: NSTextField) {
         let value = thresholdFormatter.number(from: sender.stringValue)?.intValue ?? 0
         if sender == keyPressThresholdField {
@@ -481,7 +518,11 @@ class SettingsViewController: NSViewController, NSTextFieldDelegate {
 
     func controlTextDidEndEditing(_ notification: Notification) {
         guard let field = notification.object as? NSTextField else { return }
-        thresholdFieldEdited(field)
+        if field == dynamicIconColorWindowField {
+            dynamicIconColorWindowChanged(field)
+        } else {
+            thresholdFieldEdited(field)
+        }
     }
 
     // MARK: - Actions

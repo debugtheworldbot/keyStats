@@ -9,6 +9,7 @@
 "settings.dynamicIconColorStyle" = "Display When Enabled";
 "settings.dynamicIconColorStyle.icon" = "Tint Icon";
 "settings.dynamicIconColorStyle.dot" = "Status Dot";
+"settings.dynamicIconColorWindow" = "Time Window (sec)";
 "settings.dynamicIconColorHelp.title" = "Dynamic Color Guide";
 "settings.dynamicIconColorHelp.body" = "Colors are calculated from recent input rate and shown in the menu bar.\n\nAPM (events per minute) ranges:\n• < 80: no tint (default)\n• 80–160: light green → green\n• 160–240: yellow → red\n• ≥ 240: red";
 "settings.windowTitle" = "KeyStats Settings";

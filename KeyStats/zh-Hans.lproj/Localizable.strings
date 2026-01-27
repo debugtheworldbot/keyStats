@@ -9,6 +9,7 @@
 "settings.dynamicIconColorStyle" = "启用后显示方式";
 "settings.dynamicIconColorStyle.icon" = "图标着色";
 "settings.dynamicIconColorStyle.dot" = "状态圆点";
+"settings.dynamicIconColorWindow" = "统计时间窗口 (秒)";
 "settings.dynamicIconColorHelp.title" = "动态颜色说明";
 "settings.dynamicIconColorHelp.body" = "根据近期输入速率自动计算颜色，并在菜单栏实时展示。\n\nAPM（每分钟输入事件数）颜色范围：\n• < 80：不着色（保持默认）\n• 80–160：从浅绿渐变到绿\n• 160–240：从黄渐变到红\n• ≥ 240：红色";
 "settings.windowTitle" = "KeyStats设置";

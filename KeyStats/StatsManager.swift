@@ -232,6 +232,7 @@ class StatsManager {
     private let notificationsEnabledKey = "notificationsEnabled"
     private let enableDynamicIconColorKey = "enableDynamicIconColor"
     private let dynamicIconColorStyleKey = "dynamicIconColorStyle"
+    private let dynamicIconColorWindowKey = "dynamicIconColorWindow"
     private let dateFormatter: DateFormatter
     private var history: [String: DailyStats] = [:]
     private var saveTimer: Timer?
@@ -239,7 +240,12 @@ class StatsManager {
     private var midnightCheckTimer: Timer?
     private let saveInterval: TimeInterval = 2.0
     private let statsUpdateDebounceInterval: TimeInterval = 0.3
-    private let inputRateWindowSeconds: TimeInterval = 3.0
+    
+    private var inputRateWindowSeconds: TimeInterval {
+        let val = userDefaults.double(forKey: dynamicIconColorWindowKey)
+        return val > 0 ? val : 3.0
+    }
+    
     private let inputRateBucketInterval: TimeInterval = 0.5
     private let inputRateApmThresholds: [Double] = [0, 80, 160, 240]
     private let inputRateLock = NSLock()
@@ -250,6 +256,7 @@ class StatsManager {
     }()
     private var inputRateBucketIndex = 0
     private var inputRateTimer: Timer?
+    private var inputRateStartTime: Date?
     private(set) var currentInputRatePerSecond: Double = 0
     private(set) var currentIconTintColor: NSColor?
     var menuBarUpdateHandler: (() -> Void)?
@@ -307,6 +314,34 @@ class StatsManager {
         didSet {
             userDefaults.set(clickNotifyThreshold, forKey: clickNotifyThresholdKey)
             updateClickNotificationBaseline()
+        }
+    }
+
+    /// 设置：动态图标颜色时间窗口（秒）
+    var dynamicIconColorWindow: TimeInterval {
+        get {
+            let val = userDefaults.double(forKey: dynamicIconColorWindowKey)
+            return val > 0 ? val : 3.0
+        }
+        set {
+            let newVal = max(1.0, newValue) // Minimum 1 second
+            userDefaults.set(newVal, forKey: dynamicIconColorWindowKey)
+            
+            // Re-initialize buckets if enabled
+            if enableDynamicIconColor {
+                let applyChanges = { [weak self] in
+                    guard let self = self else { return }
+                    self.stopInputRateTracking()
+                    self.resetInputRateBuckets()
+                    self.startInputRateTracking()
+                    self.updateCurrentInputRate()
+                }
+                if Thread.isMainThread {
+                    applyChanges()
+                } else {
+                    DispatchQueue.main.async(execute: applyChanges)
+                }
+            }
         }
     }
 
@@ -469,7 +504,8 @@ class StatsManager {
 
     private func resetInputRateBuckets() {
         inputRateLock.lock()
-        inputRateBuckets = Array(repeating: 0, count: inputRateBuckets.count)
+        let bucketCount = max(1, Int(inputRateWindowSeconds / inputRateBucketInterval))
+        inputRateBuckets = Array(repeating: 0, count: bucketCount)
         inputRateBucketIndex = 0
         inputRateLock.unlock()
     }
@@ -482,6 +518,7 @@ class StatsManager {
             return
         }
 
+        inputRateStartTime = Date()
         inputRateTimer?.invalidate()
         inputRateTimer = Timer.scheduledTimer(withTimeInterval: inputRateBucketInterval, repeats: true) { [weak self] _ in
             self?.advanceInputRateBucket()
@@ -492,6 +529,7 @@ class StatsManager {
     }
 
     private func stopInputRateTracking() {
+        inputRateStartTime = nil
         inputRateTimer?.invalidate()
         inputRateTimer = nil
     }
@@ -508,7 +546,17 @@ class StatsManager {
         inputRateLock.lock()
         let totalEvents = inputRateBuckets.reduce(0, +)
         inputRateLock.unlock()
-        currentInputRatePerSecond = Double(totalEvents) / inputRateWindowSeconds
+        
+        var effectiveWindow = inputRateWindowSeconds
+        // Adjust window for initial ramp-up to avoid diluted rates when monitoring just started
+        if let startTime = inputRateStartTime {
+            let elapsed = Date().timeIntervalSince(startTime)
+            if elapsed < effectiveWindow {
+                effectiveWindow = max(inputRateBucketInterval, elapsed)
+            }
+        }
+        
+        currentInputRatePerSecond = Double(totalEvents) / effectiveWindow
         currentIconTintColor = enableDynamicIconColor ? colorForRate(currentInputRatePerSecond) : nil
         notifyMenuBarUpdate()
     }
