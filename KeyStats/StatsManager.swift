@@ -929,6 +929,53 @@ extension StatsManager {
             return formatScrollDistance(value)
         }
     }
+
+    // MARK: - 热力图数据
+
+    /// 返回从本周周起始日往前推 52 周，到今天为止的数据数组（不包含未来日期）
+    /// 缺失日期填充为 0
+    func heatmapActivityData() -> [(date: Date, keyPresses: Int, clicks: Int)] {
+        assert(Thread.isMainThread)
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        // 计算本周周起始日
+        let todayWeekday = calendar.component(.weekday, from: today)
+        let daysFromWeekStart = (todayWeekday - calendar.firstWeekday + 7) % 7
+        guard let weekStart = calendar.date(byAdding: .day, value: -daysFromWeekStart, to: today) else {
+            return []
+        }
+
+        // 向前推 52 周，当前周作为第 53 列（不包含未来日期）
+        let totalWeeks = 53
+        let startOffsetDays = (totalWeeks - 1) * 7
+        guard let startDate = calendar.date(byAdding: .day, value: -startOffsetDays, to: weekStart) else {
+            return []
+        }
+
+        var result: [(date: Date, keyPresses: Int, clicks: Int)] = []
+        var current = startDate
+
+        while current <= today {
+            let key = dateFormatter.string(from: current)
+
+            if calendar.isDate(current, inSameDayAs: currentStats.date) {
+                result.append((current, currentStats.keyPresses, currentStats.totalClicks))
+            } else if let stats = history[key] {
+                result.append((current, stats.keyPresses, stats.totalClicks))
+            } else {
+                result.append((current, 0, 0))
+            }
+
+            guard let next = calendar.date(byAdding: .day, value: 1, to: current) else {
+                assertionFailure("Failed to advance date when building heatmap data.")
+                break
+            }
+            current = next
+        }
+
+        return result
+    }
     
     private func datesInRange(_ range: HistoryRange) -> [Date] {
         let calendar = Calendar.current

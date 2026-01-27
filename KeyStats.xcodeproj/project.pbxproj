@@ -29,6 +29,7 @@
 		A1000023 /* AppActivityTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000023 /* AppActivityTracker.swift */; };
 		A1000024 /* AppStatsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000024 /* AppStatsWindowController.swift */; };
 		A1000025 /* AppStatsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000025 /* AppStatsViewController.swift */; };
+		A1000026 /* ActivityHeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000026 /* ActivityHeatmapView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -54,6 +55,7 @@
 		A2000023 /* AppActivityTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppActivityTracker.swift; sourceTree = "<group>"; };
 		A2000024 /* AppStatsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStatsWindowController.swift; sourceTree = "<group>"; };
 		A2000025 /* AppStatsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStatsViewController.swift; sourceTree = "<group>"; };
+		A2000026 /* ActivityHeatmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityHeatmapView.swift; sourceTree = "<group>"; };
 		A3000001 /* KeyStats.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KeyStats.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A3000002 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A3000003 /* KeyStats.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KeyStats.entitlements; sourceTree = "<group>"; };
@@ -98,6 +100,7 @@
 				A2000014 /* SettingsViewController.swift */,
 				A2000015 /* SettingsWindowController.swift */,
 				A2000020 /* AllTimeStatsWindowController.swift */,
+				A2000026 /* ActivityHeatmapView.swift */,
 				A2000021 /* AllTimeStatsViewController.swift */,
 				A2000013 /* LaunchAtLoginManager.swift */,
 				A2000012 /* Localizable.strings */,
@@ -208,6 +211,7 @@
 				A1000013 /* SettingsWindowController.swift in Sources */,
 				A1000020 /* AllTimeStatsWindowController.swift in Sources */,
 				A1000021 /* AllTimeStatsViewController.swift in Sources */,
+				A1000026 /* ActivityHeatmapView.swift in Sources */,
 				A1000014 /* HoverIconButton.swift in Sources */,
 				A1000015 /* NotificationManager.swift in Sources */,
 			);

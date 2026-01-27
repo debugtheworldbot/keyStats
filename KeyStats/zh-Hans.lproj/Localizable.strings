@@ -141,3 +141,9 @@
 "appStats.empty" = "暂无应用数据";
 "appStats.disabled" = "按应用统计已在设置中关闭";
 "appStats.unknownApp" = "未知应用";
+
+"allTimeStats.heatmap" = "活动热力图";
+"heatmap.less" = "少";
+"heatmap.more" = "多";
+"heatmap.totalFormat" = "%d 次活动";
+"heatmap.detailFormat" = "%d 按键 · %d 点击";

@@ -141,3 +141,9 @@
 "appStats.empty" = "No app data yet";
 "appStats.disabled" = "App stats are disabled in Settings";
 "appStats.unknownApp" = "Unknown App";
+
+"allTimeStats.heatmap" = "Activity Heatmap";
+"heatmap.less" = "Less";
+"heatmap.more" = "More";
+"heatmap.totalFormat" = "%d activities";
+"heatmap.detailFormat" = "%d keys · %d clicks";

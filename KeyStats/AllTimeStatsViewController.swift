@@ -38,6 +38,12 @@ class AllTimeStatsViewController: NSViewController {
     private var keyListStack: NSStackView!
     private var keyListContainer: NSStackView!
     private var keyPieChartView: TopKeysPieChartView!
+    
+    // 热力图
+    private var heatmapSectionStack: NSStackView!
+    private var heatmapSectionTitle: NSTextField!
+    private var heatmapView: ActivityHeatmapView!
+    private var heatmapContainer: NSView!
 
     // MARK: - Animation Constants
     private let cardCascadeDelay: TimeInterval = 0.05
@@ -83,6 +89,7 @@ class AllTimeStatsViewController: NSViewController {
         isViewVisible = true
         scrollToTop()
         scheduleVisibilityChecks()
+        view.window?.acceptsMouseMovedEvents = true
     }
 
     override func viewWillDisappear() {
@@ -223,6 +230,46 @@ class AllTimeStatsViewController: NSViewController {
         insightsSectionStack.widthAnchor.constraint(equalTo: containerStack.widthAnchor, constant: -40).isActive = true
         insightsGrid.widthAnchor.constraint(equalTo: insightsSectionStack.widthAnchor).isActive = true
 
+        // 3.5 活动热力图区域
+        heatmapSectionStack = NSStackView()
+        heatmapSectionStack.translatesAutoresizingMaskIntoConstraints = false
+        heatmapSectionStack.orientation = .vertical
+        heatmapSectionStack.alignment = .leading
+        heatmapSectionStack.spacing = 16
+        heatmapSectionStack.wantsLayer = true
+        heatmapSectionStack.alphaValue = 0
+        heatmapSectionStack.layer?.transform = CATransform3DMakeTranslation(0, -10, 0)
+
+        heatmapSectionTitle = NSTextField(labelWithString: NSLocalizedString("allTimeStats.heatmap", comment: ""))
+        heatmapSectionTitle.font = NSFont.systemFont(ofSize: 18, weight: .semibold)
+        heatmapSectionTitle.textColor = .labelColor
+        heatmapSectionStack.addArrangedSubview(heatmapSectionTitle)
+
+        heatmapContainer = NSView()
+        heatmapContainer.translatesAutoresizingMaskIntoConstraints = false
+        heatmapContainer.wantsLayer = true
+        heatmapContainer.layer?.backgroundColor = resolvedCGColor(NSColor.controlBackgroundColor, for: view)
+        heatmapContainer.layer?.cornerRadius = 12
+        heatmapContainer.layer?.borderWidth = 1
+        heatmapContainer.layer?.borderColor = resolvedCGColor(NSColor.separatorColor.withAlphaComponent(0.2), for: view)
+
+        heatmapView = ActivityHeatmapView()
+        heatmapView.translatesAutoresizingMaskIntoConstraints = false
+        heatmapView.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        heatmapContainer.addSubview(heatmapView)
+        heatmapSectionStack.addArrangedSubview(heatmapContainer)
+
+        containerStack.addArrangedSubview(heatmapSectionStack)
+
+        NSLayoutConstraint.activate([
+            heatmapSectionStack.widthAnchor.constraint(equalTo: containerStack.widthAnchor, constant: -40),
+            heatmapContainer.widthAnchor.constraint(equalTo: heatmapSectionStack.widthAnchor),
+            heatmapView.leadingAnchor.constraint(equalTo: heatmapContainer.leadingAnchor, constant: 12),
+            heatmapView.trailingAnchor.constraint(equalTo: heatmapContainer.trailingAnchor, constant: -12),
+            heatmapView.topAnchor.constraint(equalTo: heatmapContainer.topAnchor, constant: 10),
+            heatmapView.bottomAnchor.constraint(equalTo: heatmapContainer.bottomAnchor, constant: -10)
+        ])
+
         // 4. 键位列表区域
         let listSectionStack = NSStackView()
         listSectionStack.translatesAutoresizingMaskIntoConstraints = false
@@ -289,6 +336,12 @@ class AllTimeStatsViewController: NSViewController {
         clickCard.setValue(formatNumber(stats.totalClicks))
         mouseDistCard.setValue(stats.formattedMouseDistance)
         scrollDistCard.setValue(stats.formattedScrollDistance)
+
+        // 更新热力图
+        let heatmapData = StatsManager.shared.heatmapActivityData()
+        heatmapView.activityData = heatmapData.map {
+            ActivityHeatmapView.DayActivity(date: $0.date, keyPresses: $0.keyPresses, clicks: $0.clicks)
+        }
 
         updateInsights(stats)
         updateTopKeys(stats.keyPressCounts)
@@ -594,6 +647,12 @@ class AllTimeStatsViewController: NSViewController {
                 keyRow.animateIn(delay: topKeyRowCascadeDelay * TimeInterval(index))
             }
         }
+
+        if let heatmapSectionStack, isViewInVisibleRect(heatmapSectionStack) {
+            animateOnce(heatmapSectionStack) {
+                animateHeatmapSection()
+            }
+        }
     }
 
     private func isViewInVisibleRect(_ view: NSView) -> Bool {
@@ -607,6 +666,23 @@ class AllTimeStatsViewController: NSViewController {
         guard !animatedViews.contains(identifier) else { return }
         animatedViews.insert(identifier)
         action()
+    }
+
+    private func animateHeatmapSection() {
+        guard let heatmapSectionStack = heatmapSectionStack else { return }
+        DispatchQueue.main.async {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.35
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                heatmapSectionStack.animator().alphaValue = 1.0
+            }
+
+            CATransaction.begin()
+            CATransaction.setAnimationDuration(0.35)
+            CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: .easeOut))
+            heatmapSectionStack.layer?.transform = CATransform3DIdentity
+            CATransaction.commit()
+        }
     }
 
     private func scheduleVisibilityChecks() {
@@ -669,6 +745,11 @@ class AllTimeStatsViewController: NSViewController {
         
         // 重新绘制饼图
         keyPieChartView.needsDisplay = true
+        
+        // 更新热力图容器
+        heatmapContainer.layer?.backgroundColor = resolvedCGColor(NSColor.controlBackgroundColor, for: view)
+        heatmapContainer.layer?.borderColor = resolvedCGColor(NSColor.separatorColor.withAlphaComponent(0.2), for: view)
+        heatmapView.needsDisplay = true
         
         // 通知所有子视图更新
         view.needsDisplay = true
