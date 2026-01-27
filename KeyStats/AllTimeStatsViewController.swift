@@ -13,6 +13,17 @@ private func resolvedColor(_ color: NSColor, for view: NSView) -> NSColor {
     return NSColor(cgColor: cgColor) ?? color
 }
 
+private func applyCardShadow(_ layer: CALayer?, for view: NSView) {
+    guard let layer = layer else { return }
+    layer.masksToBounds = false
+    layer.shadowColor = resolvedCGColor(NSColor.black.withAlphaComponent(0.07), for: view)
+    layer.shadowOpacity = 1
+    layer.shadowRadius = 8
+    layer.shadowOffset = NSSize(width: 0, height: -1)
+    layer.borderWidth = 0.5
+    layer.borderColor = resolvedCGColor(NSColor.separatorColor.withAlphaComponent(0.16), for: view)
+}
+
 class AllTimeStatsViewController: NSViewController {
     
     // MARK: - UI 组件
@@ -50,7 +61,7 @@ class AllTimeStatsViewController: NSViewController {
     private let insightRowCascadeDelay: TimeInterval = 0.08
     private let topKeyRowCascadeDelay: TimeInterval = 0.03
     private let visibilityCheckDelays: [TimeInterval] = [0, 0.05, 0.15, 0.3, 0.6]
-    private var animatedViews = Set<ObjectIdentifier>()
+    private let animatedViews = NSHashTable<NSView>.weakObjects()
     private var animationObserver: NSObjectProtocol?
     private var appearanceObservation: NSKeyValueObservation?
     private var isViewVisible = false
@@ -248,10 +259,11 @@ class AllTimeStatsViewController: NSViewController {
         heatmapContainer = NSView()
         heatmapContainer.translatesAutoresizingMaskIntoConstraints = false
         heatmapContainer.wantsLayer = true
-        heatmapContainer.layer?.backgroundColor = resolvedCGColor(NSColor.controlBackgroundColor, for: view)
+        heatmapContainer.layer?.backgroundColor = resolvedCGColor(NSColor.controlBackgroundColor.withAlphaComponent(0.85), for: view)
         heatmapContainer.layer?.cornerRadius = 12
-        heatmapContainer.layer?.borderWidth = 1
-        heatmapContainer.layer?.borderColor = resolvedCGColor(NSColor.separatorColor.withAlphaComponent(0.2), for: view)
+        heatmapContainer.layer?.borderWidth = 0
+        heatmapContainer.layer?.borderColor = nil
+        applyCardShadow(heatmapContainer.layer, for: view)
 
         heatmapView = ActivityHeatmapView()
         heatmapView.translatesAutoresizingMaskIntoConstraints = false
@@ -351,6 +363,7 @@ class AllTimeStatsViewController: NSViewController {
     private func updateInsights(_ stats: AllTimeStats) {
         let oldRows = insightsGrid.arrangedSubviews
         for row in oldRows {
+            unregisterAnimatedView(row)
             insightsGrid.removeArrangedSubview(row)
             row.removeFromSuperview()
         }
@@ -558,6 +571,7 @@ class AllTimeStatsViewController: NSViewController {
         // 清除旧视图
         let oldRows = keyListContainer.arrangedSubviews
         for row in oldRows {
+            unregisterAnimatedView(row)
             keyListContainer.removeArrangedSubview(row)
             row.removeFromSuperview()
         }
@@ -662,10 +676,13 @@ class AllTimeStatsViewController: NSViewController {
     }
 
     private func animateOnce(_ view: NSView, action: () -> Void) {
-        let identifier = ObjectIdentifier(view)
-        guard !animatedViews.contains(identifier) else { return }
-        animatedViews.insert(identifier)
+        guard !animatedViews.contains(view) else { return }
+        animatedViews.add(view)
         action()
+    }
+
+    private func unregisterAnimatedView(_ view: NSView) {
+        animatedViews.remove(view)
     }
 
     private func animateHeatmapSection() {
@@ -747,8 +764,10 @@ class AllTimeStatsViewController: NSViewController {
         keyPieChartView.needsDisplay = true
         
         // 更新热力图容器
-        heatmapContainer.layer?.backgroundColor = resolvedCGColor(NSColor.controlBackgroundColor, for: view)
-        heatmapContainer.layer?.borderColor = resolvedCGColor(NSColor.separatorColor.withAlphaComponent(0.2), for: view)
+        heatmapContainer.layer?.backgroundColor = resolvedCGColor(NSColor.controlBackgroundColor.withAlphaComponent(0.85), for: view)
+        heatmapContainer.layer?.borderColor = nil
+        heatmapContainer.layer?.borderWidth = 0
+        applyCardShadow(heatmapContainer.layer, for: view)
         heatmapView.needsDisplay = true
         
         // 通知所有子视图更新
@@ -774,15 +793,16 @@ class BigStatCard: NSView {
     private var useCustomFormat = false
     private var customFormatValue: String = ""
 
-    private let normalBackgroundColor = NSColor.controlBackgroundColor
+    private let normalBackgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.85)
 
     init(icon: String, title: String, color: NSColor) {
         super.init(frame: .zero)
         self.wantsLayer = true
         self.layer?.backgroundColor = normalBackgroundColor.cgColor
         self.layer?.cornerRadius = 12
-        self.layer?.borderWidth = 1
-        self.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.2).cgColor
+        self.layer?.borderWidth = 0
+        self.layer?.borderColor = nil
+        applyCardShadow(self.layer, for: self)
 
         // Initial state for entry animation
         self.alphaValue = 0
@@ -936,24 +956,25 @@ class BigStatCard: NSView {
     func updateAppearance() {
         // 更新背景色和边框
         layer?.backgroundColor = resolvedCGColor(normalBackgroundColor, for: self)
-        let borderColor = NSColor.separatorColor.withAlphaComponent(0.2)
-        layer?.borderColor = resolvedCGColor(borderColor, for: self)
-        layer?.shadowOpacity = 0
+        layer?.borderWidth = 0
+        layer?.borderColor = nil
+        applyCardShadow(layer, for: self)
     }
 }
 
 // MARK: - 组件：洞察分析项
 
 class InsightItemView: NSView {
-    private let normalBackgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.5)
+    private let normalBackgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.6)
 
     init(title: String, value: String, subtitle: String, icon: String, tooltip: String? = nil) {
         super.init(frame: .zero)
         self.wantsLayer = true
         self.layer?.backgroundColor = normalBackgroundColor.cgColor
         self.layer?.cornerRadius = 12
-        self.layer?.borderWidth = 1
-        self.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.25).cgColor
+        self.layer?.borderWidth = 0
+        self.layer?.borderColor = nil
+        applyCardShadow(self.layer, for: self)
 
         // Initial state for entry animation
         self.alphaValue = 0
@@ -997,9 +1018,9 @@ class InsightItemView: NSView {
     func updateAppearance() {
         // 更新背景色和边框
         layer?.backgroundColor = resolvedCGColor(normalBackgroundColor, for: self)
-        layer?.shadowOpacity = 0
-        let borderColor = NSColor.separatorColor.withAlphaComponent(0.25)
-        layer?.borderColor = resolvedCGColor(borderColor, for: self)
+        layer?.borderWidth = 0
+        layer?.borderColor = nil
+        applyCardShadow(layer, for: self)
     }
     
     private func setupUI(title: String, value: String, subtitle: String, icon: String) {
@@ -1093,10 +1114,11 @@ class ClickRatioView: NSView {
 
     private func setupUI(leftClicks: Int, rightClicks: Int) {
         self.wantsLayer = true
-        self.layer?.backgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.5).cgColor
+        self.layer?.backgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.6).cgColor
         self.layer?.cornerRadius = 12
-        self.layer?.borderWidth = 1
-        self.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.15).cgColor
+        self.layer?.borderWidth = 0
+        self.layer?.borderColor = nil
+        applyCardShadow(self.layer, for: self)
 
         // Initial state for entry animation
         self.alphaValue = 0
@@ -1192,10 +1214,11 @@ class ClickRatioView: NSView {
     
     func updateAppearance() {
         // 更新背景色和边框
-        let backgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.5)
+        let backgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.6)
         layer?.backgroundColor = resolvedCGColor(backgroundColor, for: self)
-        let borderColor = NSColor.separatorColor.withAlphaComponent(0.15)
-        layer?.borderColor = resolvedCGColor(borderColor, for: self)
+        layer?.borderColor = nil
+        layer?.borderWidth = 0
+        applyCardShadow(layer, for: self)
         barContainer?.layer?.backgroundColor = resolvedCGColor(barBackgroundColor, for: self)
         leftBar?.layer?.backgroundColor = resolvedCGColor(leftBarColor, for: self)
     }

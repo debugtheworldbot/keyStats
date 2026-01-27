@@ -292,6 +292,31 @@ func resetStats() {
 
 ---
 
+## UI Style (macOS Liquid Glass)
+
+### Design Rules
+- Prefer soft surfaces: use `controlBackgroundColor` with alpha ~0.6–0.85 for panels/cards
+- Avoid heavy borders: use thin 0.5pt separators with low alpha instead of 1pt strokes
+- Use subtle shadows: small radius, low opacity, slight upward offset
+- Keep corners consistent: 10–12pt for cards, smaller (6–8pt) for compact elements
+- Always resolve dynamic colors with `resolvedCGColor(...)` for dark mode consistency
+
+### Helper Pattern
+```swift
+private func applyGlassCardStyle(_ layer: CALayer?, for view: NSView) {
+    guard let layer = layer else { return }
+    layer.masksToBounds = false
+    layer.shadowColor = resolvedCGColor(NSColor.black.withAlphaComponent(0.07), for: view)
+    layer.shadowOpacity = 1
+    layer.shadowRadius = 8
+    layer.shadowOffset = NSSize(width: 0, height: -1)
+    layer.borderWidth = 0.5
+    layer.borderColor = resolvedCGColor(NSColor.separatorColor.withAlphaComponent(0.16), for: view)
+}
+```
+
+---
+
 ## Threading & Performance
 
 ### Thread Safety Rules
