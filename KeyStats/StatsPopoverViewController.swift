@@ -706,6 +706,7 @@ struct AnimatedStatValueView: View {
                     .foregroundStyle(Color(nsColor: .systemBlue))
             }
         }
+        .fixedSize(horizontal: true, vertical: false)
         .animation(.default, value: viewModel.text)
     }
 }
@@ -736,6 +737,7 @@ struct AnimatedKeyCountView: View {
                     .foregroundStyle(Color(nsColor: .secondaryLabelColor))
             }
         }
+        .fixedSize(horizontal: true, vertical: false)
         .animation(.default, value: viewModel.text)
     }
 }

@@ -265,7 +265,9 @@ final class AppStatsViewController: NSViewController {
                 maxClicks: maxClicks,
                 maxScroll: maxScroll,
                 keysFormatted: formatNumber(item.keyPresses),
+                keysCompact: formatCompact(item.keyPresses),
                 clicksFormatted: formatNumber(item.totalClicks),
+                clicksCompact: formatCompact(item.totalClicks),
                 scrollFormatted: formatScrollDistance(item.scrollDistance)
             )
             listStack.addArrangedSubview(row)
@@ -313,6 +315,18 @@ final class AppStatsViewController: NSViewController {
 
     private func formatNumber(_ number: Int) -> String {
         return numberFormatter.string(from: NSNumber(value: number)) ?? "\(number)"
+    }
+    
+    private func formatCompact(_ number: Int) -> String {
+        let num = Double(number)
+        if num >= 1_000_000 {
+            // 1.2M
+            return String(format: "%.1fM", num / 1_000_000)
+        } else if num >= 10_000 {
+            // 12K (no decimal for K to be more compact)
+            return String(format: "%.0fK", num / 1_000)
+        }
+        return formatNumber(number)
     }
 
     private func formatScrollDistance(_ distance: Double) -> String {
@@ -717,14 +731,17 @@ private final class AppStatsRowView: NSView {
         icon: NSImage?,
         keys: Double, clicks: Double, scroll: Double,
         maxKeys: Double, maxClicks: Double, maxScroll: Double,
-        keysFormatted: String, clicksFormatted: String, scrollFormatted: String
+        keysFormatted: String, keysCompact: String,
+        clicksFormatted: String, clicksCompact: String,
+        scrollFormatted: String
     ) {
         iconView.image = icon
         nameLabel.stringValue = name
         nameLabel.toolTip = name
-        keysBar.update(value: keys, maxValue: maxKeys, formatted: keysFormatted)
-        clicksBar.update(value: clicks, maxValue: maxClicks, formatted: clicksFormatted)
-        scrollBar.update(value: scroll, maxValue: maxScroll, formatted: scrollFormatted)
+        keysBar.update(value: keys, maxValue: maxKeys, formatted: keysFormatted, compact: keysCompact)
+        clicksBar.update(value: clicks, maxValue: maxClicks, formatted: clicksFormatted, compact: clicksCompact)
+        // Scroll distance uses same formatted string for compact as it's already compact (kPx)
+        scrollBar.update(value: scroll, maxValue: maxScroll, formatted: scrollFormatted, compact: nil)
     }
 
     func animateBars(delay: TimeInterval) {
@@ -763,6 +780,7 @@ private final class SingleBarView: NSView {
     private var value: Double = 0
     private var maxValue: Double = 1
     private var formattedValue: String = ""
+    private var compactValue: String?
     private var targetBarWidth: CGFloat = 0
     private let labelPadding: CGFloat = 4
     private let animationDuration: TimeInterval = 0.35
@@ -801,6 +819,8 @@ private final class SingleBarView: NSView {
         valueLabel.drawsBackground = false
         valueLabel.isBezeled = false
         valueLabel.isEditable = false
+        valueLabel.lineBreakMode = .byTruncatingTail
+        valueLabel.usesSingleLineMode = true
         addSubview(valueLabel)
     }
 
@@ -811,10 +831,11 @@ private final class SingleBarView: NSView {
         updateLabelPosition()
     }
 
-    func update(value: Double, maxValue: Double, formatted: String) {
+    func update(value: Double, maxValue: Double, formatted: String, compact: String?) {
         self.value = value
         self.maxValue = max(1, maxValue)
         self.formattedValue = formatted
+        self.compactValue = compact
         valueLabel.stringValue = formatted
         recalculateBarWidth()
     }
@@ -873,22 +894,87 @@ private final class SingleBarView: NSView {
     }
 
     private func updateLabelPosition() {
+        // Reset to default font to measure preferred width
+        let defaultFontSize: CGFloat = 10
+        let minReadableFontSize: CGFloat = 9.0
+        let minAbsoluteFontSize: CGFloat = 7.0
+        
+        // Ensure tooltip is set for accessibility/checking truncated values
+        valueLabel.toolTip = formattedValue
+        
+        // 1. Try Full Text
+        valueLabel.stringValue = formattedValue
+        valueLabel.font = NSFont.monospacedDigitSystemFont(ofSize: defaultFontSize, weight: .medium)
         valueLabel.sizeToFit()
-        let labelSize = valueLabel.frame.size
-        let labelY = (bounds.height - labelSize.height) / 2
-        let minWidthForLabel = labelSize.width + labelPadding * 2
+        var preferredSize = valueLabel.frame.size
 
-        if targetBarWidth >= minWidthForLabel {
-            // 显示在柱状图内部靠右
-            // 使用白色文字，系统颜色（systemBlue/systemPurple/systemOrange）会自动适配 dark mode
-            let labelX = targetBarWidth - labelSize.width - labelPadding
-            valueLabel.frame = CGRect(x: labelX, y: labelY, width: labelSize.width, height: labelSize.height)
+        // Calculate available space
+        let spaceInside = max(0, targetBarWidth - labelPadding * 2)
+        let spaceOutside = max(0, bounds.width - targetBarWidth - labelPadding)
+        
+        // Determine placement strategy (prefer inside if space allows, else larger space)
+        var placeInside = spaceInside >= preferredSize.width
+        if !placeInside {
+            if spaceOutside >= preferredSize.width {
+                placeInside = false
+            } else {
+                placeInside = spaceInside > spaceOutside
+            }
+        }
+
+        var availableWidth = placeInside ? spaceInside : spaceOutside
+
+        // 2. Adaptive Logic
+        // If full text is too wide, check if we should switch to compact
+        if preferredSize.width > availableWidth {
+            // Check what font size would be needed
+            let scale = availableWidth / max(1, preferredSize.width)
+            let projectedFontSize = floor(defaultFontSize * scale)
+            
+            // If projected font is too small, AND we have a compact string, switch to it
+            if projectedFontSize < minReadableFontSize, let compact = compactValue {
+                valueLabel.stringValue = compact
+                valueLabel.font = NSFont.monospacedDigitSystemFont(ofSize: defaultFontSize, weight: .medium)
+                valueLabel.sizeToFit()
+                preferredSize = valueLabel.frame.size
+                
+                // Re-evaluate placement for compact string
+                let compactFitsInside = spaceInside >= preferredSize.width
+                if compactFitsInside {
+                    placeInside = true
+                } else if spaceOutside >= preferredSize.width {
+                    placeInside = false
+                } else {
+                    placeInside = spaceInside > spaceOutside
+                }
+                availableWidth = placeInside ? spaceInside : spaceOutside
+            }
+            
+            // 3. Final Scaling (works for both full or compact)
+            if preferredSize.width > availableWidth {
+                let finalScale = availableWidth / max(1, preferredSize.width)
+                let finalFontSize = max(minAbsoluteFontSize, floor(defaultFontSize * finalScale))
+                valueLabel.font = NSFont.monospacedDigitSystemFont(ofSize: finalFontSize, weight: .medium)
+                valueLabel.sizeToFit()
+            }
+        }
+
+        let finalSize = valueLabel.frame.size
+        // Ensure width doesn't exceed available even after scaling
+        let finalWidth = min(finalSize.width, availableWidth)
+        let finalHeight = finalSize.height
+        let finalY = (bounds.height - finalHeight) / 2
+
+        if placeInside {
+            let labelX = targetBarWidth - finalWidth - labelPadding
+            valueLabel.frame = CGRect(x: labelX, y: finalY, width: finalWidth, height: finalHeight)
             valueLabel.textColor = .white
+            valueLabel.alignment = .right
         } else {
-            // 显示在柱状图右侧
             let labelX = targetBarWidth + labelPadding
-            valueLabel.frame = CGRect(x: labelX, y: labelY, width: labelSize.width, height: labelSize.height)
+            valueLabel.frame = CGRect(x: labelX, y: finalY, width: finalWidth, height: finalHeight)
             valueLabel.textColor = .secondaryLabelColor
+            valueLabel.alignment = .left
         }
     }
 }
