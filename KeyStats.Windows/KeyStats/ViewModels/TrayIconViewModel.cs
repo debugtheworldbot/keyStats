@@ -189,6 +189,11 @@ public class TrayIconViewModel : ViewModelBase
 
     public void ShowStats()
     {
+        ShowStats(null);
+    }
+
+    public void ShowStats(System.Drawing.Point? anchorPoint)
+    {
         try
         {
             Console.WriteLine("ShowStats called...");
@@ -199,7 +204,7 @@ public class TrayIconViewModel : ViewModelBase
             }
 
             Console.WriteLine("Creating StatsPopupWindow...");
-            _popupWindow = new StatsPopupWindow();
+            _popupWindow = new StatsPopupWindow(anchorPoint);
             _popupWindow.Closed += (_, _) => _popupWindow = null;
             Console.WriteLine("Showing window...");
             _popupWindow.Show();

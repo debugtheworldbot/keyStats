@@ -225,7 +225,7 @@ public class StatsPopupViewModel : ViewModelBase
     private void UpdateAppStats()
     {
         var manager = StatsManager.Instance;
-        var sortedApps = manager.GetAppStatsSorted(5);
+        var sortedApps = manager.GetAppStatsSorted(int.MaxValue);
 
         AppStatsItems.Clear();
 

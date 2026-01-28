@@ -11,14 +11,16 @@ public partial class StatsPopupWindow : Window
 {
     private readonly StatsPopupViewModel _viewModel;
     private bool _isFullyLoaded;
+    private readonly System.Drawing.Point? _anchorPoint;
 
-    public StatsPopupWindow()
+    public StatsPopupWindow(System.Drawing.Point? anchorPoint = null)
     {
         Console.WriteLine("StatsPopupWindow constructor...");
         InitializeComponent();
         Console.WriteLine("InitializeComponent done");
 
         _viewModel = (StatsPopupViewModel)DataContext;
+        _anchorPoint = anchorPoint;
 
         Loaded += OnLoaded;
         Closed += OnClosed;
@@ -223,8 +225,8 @@ public partial class StatsPopupWindow : Window
 
     private void PositionNearTray()
     {
-        // 获取鼠标当前位置（用户点击的位置）
-        var mousePos = System.Windows.Forms.Control.MousePosition;
+        // 获取鼠标当前位置（优先使用点击时的锚点，避免异步延迟导致位置偏移）
+        var mousePos = _anchorPoint ?? System.Windows.Forms.Control.MousePosition;
         var mouseX = mousePos.X;
         var mouseY = mousePos.Y;
 

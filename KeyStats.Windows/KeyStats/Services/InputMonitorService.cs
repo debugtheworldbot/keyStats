@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading;
 using KeyStats.Helpers;
 
 namespace KeyStats.Services;
@@ -121,7 +122,8 @@ public class InputMonitorService : IDisposable
                     _pressedKeys.Add(vkCode);
                     var keyName = KeyNameMapper.GetKeyName(vkCode);
                     var appName = ActiveWindowManager.GetActiveProcessName();
-                    KeyPressed?.Invoke(keyName, appName);
+                    // 异步触发事件，避免阻塞低级钩子回调
+                    ThreadPool.QueueUserWorkItem(_ => KeyPressed?.Invoke(keyName, appName));
                 }
             }
             else if (message == NativeInterop.WM_KEYUP || message == NativeInterop.WM_SYSKEYUP)
@@ -144,11 +146,18 @@ public class InputMonitorService : IDisposable
             switch (message)
             {
                 case NativeInterop.WM_LBUTTONDOWN:
-                    LeftMouseClicked?.Invoke(ActiveWindowManager.GetActiveProcessName());
+                    {
+                        // 在钩子回调中获取进程名，然后异步触发事件
+                        var appName = ActiveWindowManager.GetActiveProcessName();
+                        ThreadPool.QueueUserWorkItem(_ => LeftMouseClicked?.Invoke(appName));
+                    }
                     break;
 
                 case NativeInterop.WM_RBUTTONDOWN:
-                    RightMouseClicked?.Invoke(ActiveWindowManager.GetActiveProcessName());
+                    {
+                        var appName = ActiveWindowManager.GetActiveProcessName();
+                        ThreadPool.QueueUserWorkItem(_ => RightMouseClicked?.Invoke(appName));
+                    }
                     break;
 
                 case NativeInterop.WM_MOUSEMOVE:
@@ -157,7 +166,11 @@ public class InputMonitorService : IDisposable
 
                 case NativeInterop.WM_MOUSEWHEEL:
                 case NativeInterop.WM_MOUSEHWHEEL:
-                    HandleScroll(hookStruct.mouseData);
+                    {
+                        var appName = ActiveWindowManager.GetActiveProcessName();
+                        var mouseData = hookStruct.mouseData;
+                        ThreadPool.QueueUserWorkItem(_ => HandleScroll(mouseData, appName));
+                    }
                     break;
             }
         }
@@ -255,7 +268,9 @@ public class InputMonitorService : IDisposable
                 // 过滤异常值：距离过大或速度过快
                 if (reportedDistance <= maxReportedDistance && speed <= maxSpeed)
                 {
-                    MouseMoved?.Invoke(reportedDistance);
+                    // 使用线程池异步触发事件，避免阻塞低级钩子回调
+                    var distance = reportedDistance;
+                    ThreadPool.QueueUserWorkItem(_ => MouseMoved?.Invoke(distance));
                 }
                 else
                 {
@@ -280,13 +295,13 @@ public class InputMonitorService : IDisposable
         }
     }
 
-    private void HandleScroll(uint mouseData)
+    private void HandleScroll(uint mouseData, string appName)
     {
         // mouseData contains the scroll delta in the high-order word
         // WHEEL_DELTA is 120, so divide by 120 to get wheel ticks
         var delta = NativeInterop.HiWord((int)mouseData);
         var scrollDistance = Math.Abs(delta) / 120.0;
-        MouseScrolled?.Invoke(scrollDistance, ActiveWindowManager.GetActiveProcessName());
+        MouseScrolled?.Invoke(scrollDistance, appName);
     }
 
     public void ResetLastMousePosition()

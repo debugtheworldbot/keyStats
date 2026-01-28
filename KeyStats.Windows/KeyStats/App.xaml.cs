@@ -93,9 +93,10 @@ public partial class App : System.Windows.Application
                         // Ignore analytics failures.
                     }
                 });
+                var anchorPoint = System.Windows.Forms.Control.MousePosition;
                 Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    _trayIconViewModel?.ShowStats();
+                    _trayIconViewModel?.ShowStats(anchorPoint);
                 }));
             };
 
