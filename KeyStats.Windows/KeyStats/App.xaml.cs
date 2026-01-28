@@ -5,11 +5,13 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Data;
+using System.Threading.Tasks;
 using Hardcodet.Wpf.TaskbarNotification;
 using KeyStats.Services;
 using KeyStats.ViewModels;
 using DotPostHog;
 using DotPostHog.Model;
+using Microsoft.Toolkit.Uwp.Notifications;
 using Microsoft.Win32;
 
 namespace KeyStats;
@@ -80,11 +82,21 @@ public partial class App : System.Windows.Application
             _trayIcon.TrayLeftMouseDown += (s, e) =>
             {
                 Console.WriteLine("TrayLeftMouseDown event fired - showing stats");
-                TrackClick("tray_icon");
-                Application.Current?.Dispatcher.Invoke(() =>
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        TrackClick("tray_icon");
+                    }
+                    catch
+                    {
+                        // Ignore analytics failures.
+                    }
+                });
+                Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
                 {
                     _trayIconViewModel?.ShowStats();
-                });
+                }));
             };
 
             Console.WriteLine("Tray icon created successfully!");
@@ -210,7 +222,12 @@ public partial class App : System.Windows.Application
 
                 var data = StatsManager.Instance.ExportStatsData();
                 File.WriteAllBytes(dialog.FileName, data);
-                MessageBox.Show("导出成功", "导出数据", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // 使用 Toast 通知显示导出成功
+                new ToastContentBuilder()
+                    .AddText("导出成功")
+                    .AddText($"数据已保存到 {Path.GetFileName(dialog.FileName)}")
+                    .Show();
             }
             finally
             {
@@ -219,7 +236,10 @@ public partial class App : System.Windows.Application
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"无法导出数据：{ex.Message}", "导出失败", MessageBoxButton.OK, MessageBoxImage.Warning);
+            new ToastContentBuilder()
+                .AddText("导出失败")
+                .AddText($"无法导出数据：{ex.Message}")
+                .Show();
         }
     }
 

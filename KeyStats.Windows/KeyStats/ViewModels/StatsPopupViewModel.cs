@@ -4,6 +4,8 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
+using KeyStats.Helpers;
 using KeyStats.Models;
 using KeyStats.Services;
 using KeyStats.Views;
@@ -21,6 +23,8 @@ public class AppStatsItem
     public string Name { get; set; } = "";
     public string KeyPresses { get; set; } = "0";
     public string Clicks { get; set; } = "0";
+    public ImageSource? Icon { get; set; }
+    public bool HasIcon => Icon != null;
 }
 
 public class ChartDataPoint
@@ -231,7 +235,8 @@ public class StatsPopupViewModel : ViewModelBase
             {
                 Name = app.DisplayName,
                 KeyPresses = manager.FormatNumber(app.KeyPresses),
-                Clicks = manager.FormatNumber(app.TotalClicks)
+                Clicks = manager.FormatNumber(app.TotalClicks),
+                Icon = AppIconHelper.GetAppIcon(app.AppName)
             });
         }
     }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -346,33 +346,39 @@ public class StatsManager : IDisposable
 
     private void SaveStats()
     {
+        DailyStats statsSnapshot;
+        Dictionary<string, DailyStats> historySnapshot;
+
         lock (_lock)
         {
-            try
-            {
-                var json = JsonSerializer.Serialize(CurrentStats, new JsonSerializerOptions { WriteIndented = true });
-                var tempPath = _statsFilePath + ".tmp";
-                var backupPath = _statsFilePath + ".bak";
-                File.WriteAllText(tempPath, json);
-
-                if (File.Exists(_statsFilePath))
-                {
-                    // 原子替换：临时文件 → 目标文件，原文件 → 备份文件
-                    File.Replace(tempPath, _statsFilePath, backupPath);
-                }
-                else
-                {
-                    File.Move(tempPath, _statsFilePath);
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error saving stats: {ex.Message}");
-            }
-
+            statsSnapshot = CloneDailyStats(CurrentStats, CurrentStats.Date.Date);
             RecordCurrentStatsToHistory();
-            SaveHistory();
+            historySnapshot = CloneHistorySnapshot(History);
         }
+
+        try
+        {
+            var json = JsonSerializer.Serialize(statsSnapshot, new JsonSerializerOptions { WriteIndented = true });
+            var tempPath = _statsFilePath + ".tmp";
+            var backupPath = _statsFilePath + ".bak";
+            File.WriteAllText(tempPath, json);
+
+            if (File.Exists(_statsFilePath))
+            {
+                // Atomic replace: temp -> target, target -> backup
+                File.Replace(tempPath, _statsFilePath, backupPath);
+            }
+            else
+            {
+                File.Move(tempPath, _statsFilePath);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error saving stats: {ex.Message}");
+        }
+
+        SaveHistorySnapshot(historySnapshot);
     }
 
     private DailyStats? LoadStats()
@@ -409,11 +415,18 @@ public class StatsManager : IDisposable
         History[key] = statsCopy;
     }
 
-    private void SaveHistory()
+    private Dictionary<string, DailyStats> CloneHistorySnapshot(Dictionary<string, DailyStats> source)
+    {
+        return source.ToDictionary(
+            kvp => kvp.Key,
+            kvp => CloneDailyStats(kvp.Value, kvp.Value.Date.Date));
+    }
+
+    private void SaveHistorySnapshot(Dictionary<string, DailyStats> historySnapshot)
     {
         try
         {
-            var json = JsonSerializer.Serialize(History, new JsonSerializerOptions { WriteIndented = true });
+            var json = JsonSerializer.Serialize(historySnapshot, new JsonSerializerOptions { WriteIndented = true });
             var tempPath = _historyFilePath + ".tmp";
             var backupPath = _historyFilePath + ".bak";
             File.WriteAllText(tempPath, json);
@@ -607,11 +620,13 @@ public class StatsManager : IDisposable
             ResetStats(now);
         }
         // Also prune old history entries during midnight reset
+        Dictionary<string, DailyStats> historySnapshot;
         lock (_lock)
         {
             PruneOldHistory(History);
-            SaveHistory();
+            historySnapshot = CloneHistorySnapshot(History);
         }
+        SaveHistorySnapshot(historySnapshot);
         ScheduleNextMidnightReset();
     }
 
@@ -622,16 +637,18 @@ public class StatsManager : IDisposable
 
     private void ResetStats(DateTime date)
     {
+        Dictionary<string, DailyStats> historySnapshot;
         lock (_lock)
         {
             // 先保存旧数据到 History，避免丢失最后一次保存后的增量
             RecordCurrentStatsToHistory();
-            SaveHistory();
+            historySnapshot = CloneHistorySnapshot(History);
 
             // 然后创建新的统计对象
             CurrentStats = new DailyStats(date);
         }
 
+        SaveHistorySnapshot(historySnapshot);
         UpdateNotificationBaselines();
         NotifyTrayUpdate();
         NotifyStatsUpdate();
