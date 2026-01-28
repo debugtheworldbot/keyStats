@@ -40,15 +40,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     // MARK: - 权限检查
     
-    private func checkAndRequestPermission() {
+    private func checkAndRequestPermission(retryCount: Int = 0) {
         if InputMonitor.shared.hasAccessibilityPermission() {
             // 已有权限，直接开始监听
             InputMonitor.shared.startMonitoring()
             promptLaunchAtLoginIfNeeded()
+        } else if retryCount < 5 {
+            // 开机启动时 TCC 服务可能还没完全初始化，快速重试几次
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                self?.checkAndRequestPermission(retryCount: retryCount + 1)
+            }
         } else {
-            // 请求权限并显示提示
+            // 重试后仍无权限，显示提示
             showPermissionAlert()
-            
+
             // 定期检查权限状态（最多5分钟）
             permissionCheckCount = 0
             permissionCheckTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] timer in

@@ -77,6 +77,9 @@ class MenuBarController {
     }
     
     private func showPopover() {
+        // 先激活应用，确保弹窗可以接收焦点
+        NSApp.activate(ignoringOtherApps: true)
+
         if let button = statusItem.button {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         } else if let view = statusItem.view {
@@ -85,8 +88,8 @@ class MenuBarController {
             return
         }
 
-        // 激活应用以确保弹窗可以接收焦点
-        NSApp.activate(ignoringOtherApps: true)
+        // 确保 popover 窗口成为 key window
+        popover.contentViewController?.view.window?.makeKey()
         PostHogSDK.shared.capture("popoverOpened")
     }
     

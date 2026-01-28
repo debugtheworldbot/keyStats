@@ -9,7 +9,9 @@
       "Bash(gh pr list:*)",
       "Bash(git show:*)",
       "Bash(git fetch:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
