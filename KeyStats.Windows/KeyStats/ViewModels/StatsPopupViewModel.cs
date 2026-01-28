@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
+using KeyStats.Models;
 using KeyStats.Services;
 using KeyStats.Views;
 
@@ -13,6 +14,13 @@ public class KeyCountItem
 {
     public string Key { get; set; } = "";
     public string Count { get; set; } = "";
+}
+
+public class AppStatsItem
+{
+    public string Name { get; set; } = "";
+    public string KeyPresses { get; set; } = "0";
+    public string Clicks { get; set; } = "0";
 }
 
 public class ChartDataPoint
@@ -133,6 +141,8 @@ public class StatsPopupViewModel : ViewModelBase
     public ObservableCollection<KeyCountItem> Column1Items { get; } = new();
     public ObservableCollection<KeyCountItem> Column2Items { get; } = new();
     public ObservableCollection<KeyCountItem> Column3Items { get; } = new();
+    
+    public ObservableCollection<AppStatsItem> AppStatsItems { get; } = new();
 
     public ObservableCollection<ChartDataPoint> ChartData { get; } = new();
 
@@ -144,6 +154,7 @@ public class StatsPopupViewModel : ViewModelBase
 
         UpdateStats();
         UpdateKeyBreakdown();
+        UpdateAppStats();
         UpdateHistorySection();
 
         StatsManager.Instance.StatsUpdateRequested += OnStatsUpdateRequested;
@@ -155,6 +166,7 @@ public class StatsPopupViewModel : ViewModelBase
         {
             UpdateStats();
             UpdateKeyBreakdown();
+            UpdateAppStats();
             UpdateHistorySection();
         });
     }
@@ -203,6 +215,24 @@ public class StatsPopupViewModel : ViewModelBase
                     Column3Items.Add(item);
                     break;
             }
+        }
+    }
+
+    private void UpdateAppStats()
+    {
+        var manager = StatsManager.Instance;
+        var sortedApps = manager.GetAppStatsSorted(5);
+
+        AppStatsItems.Clear();
+
+        foreach (var app in sortedApps)
+        {
+            AppStatsItems.Add(new AppStatsItem
+            {
+                Name = app.DisplayName,
+                KeyPresses = manager.FormatNumber(app.KeyPresses),
+                Clicks = manager.FormatNumber(app.TotalClicks)
+            });
         }
     }
 

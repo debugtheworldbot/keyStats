@@ -29,6 +29,9 @@ public class DailyStats
     [JsonPropertyName("scrollDistance")]
     public double ScrollDistance { get; set; }
 
+    [JsonPropertyName("appStats")]
+    public Dictionary<string, AppStats> AppStats { get; set; } = new();
+
     [JsonIgnore]
     public int TotalClicks => LeftClicks + RightClicks;
 

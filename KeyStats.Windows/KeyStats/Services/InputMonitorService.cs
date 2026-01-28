@@ -24,11 +24,11 @@ public class InputMonitorService : IDisposable
     private System.Drawing.Point? _lastSampledPosition;
     private double _accumulatedDistance = 0.0;
 
-    public event Action<string>? KeyPressed;
-    public event Action? LeftMouseClicked;
-    public event Action? RightMouseClicked;
+    public event Action<string, string>? KeyPressed;
+    public event Action<string>? LeftMouseClicked;
+    public event Action<string>? RightMouseClicked;
     public event Action<double>? MouseMoved;
-    public event Action<double>? MouseScrolled;
+    public event Action<double, string>? MouseScrolled;
 
     private InputMonitorService() { }
 
@@ -120,7 +120,8 @@ public class InputMonitorService : IDisposable
                 {
                     _pressedKeys.Add(vkCode);
                     var keyName = KeyNameMapper.GetKeyName(vkCode);
-                    KeyPressed?.Invoke(keyName);
+                    var appName = ActiveWindowManager.GetActiveProcessName();
+                    KeyPressed?.Invoke(keyName, appName);
                 }
             }
             else if (message == NativeInterop.WM_KEYUP || message == NativeInterop.WM_SYSKEYUP)
@@ -143,11 +144,11 @@ public class InputMonitorService : IDisposable
             switch (message)
             {
                 case NativeInterop.WM_LBUTTONDOWN:
-                    LeftMouseClicked?.Invoke();
+                    LeftMouseClicked?.Invoke(ActiveWindowManager.GetActiveProcessName());
                     break;
 
                 case NativeInterop.WM_RBUTTONDOWN:
-                    RightMouseClicked?.Invoke();
+                    RightMouseClicked?.Invoke(ActiveWindowManager.GetActiveProcessName());
                     break;
 
                 case NativeInterop.WM_MOUSEMOVE:
@@ -285,7 +286,7 @@ public class InputMonitorService : IDisposable
         // WHEEL_DELTA is 120, so divide by 120 to get wheel ticks
         var delta = NativeInterop.HiWord((int)mouseData);
         var scrollDistance = Math.Abs(delta) / 120.0;
-        MouseScrolled?.Invoke(scrollDistance);
+        MouseScrolled?.Invoke(scrollDistance, ActiveWindowManager.GetActiveProcessName());
     }
 
     public void ResetLastMousePosition()

@@ -102,7 +102,20 @@ public class StatsManager : IDisposable
         monitor.MouseScrolled += OnMouseScrolled;
     }
 
-    private void OnKeyPressed(string keyName)
+    private void UpdateAppStats(string appName, Action<AppStats> updateAction)
+    {
+        if (string.IsNullOrEmpty(appName)) return;
+
+        if (!CurrentStats.AppStats.TryGetValue(appName, out var appStats))
+        {
+            appStats = new AppStats(appName);
+            CurrentStats.AppStats[appName] = appStats;
+        }
+        
+        updateAction(appStats);
+    }
+
+    private void OnKeyPressed(string keyName, string appName)
     {
         lock (_lock)
         {
@@ -116,6 +129,7 @@ public class StatsManager : IDisposable
                 }
                 CurrentStats.KeyPressCounts[keyName]++;
             }
+            UpdateAppStats(appName, stats => stats.RecordKeyPress());
         }
 
         RegisterInputEvent();
@@ -124,12 +138,13 @@ public class StatsManager : IDisposable
         NotifyKeyPressThresholdIfNeeded();
     }
 
-    private void OnLeftClick()
+    private void OnLeftClick(string appName)
     {
         lock (_lock)
         {
             EnsureCurrentDay();
             CurrentStats.LeftClicks++;
+            UpdateAppStats(appName, stats => stats.RecordLeftClick());
         }
 
         RegisterInputEvent();
@@ -138,12 +153,13 @@ public class StatsManager : IDisposable
         NotifyClickThresholdIfNeeded();
     }
 
-    private void OnRightClick()
+    private void OnRightClick(string appName)
     {
         lock (_lock)
         {
             EnsureCurrentDay();
             CurrentStats.RightClicks++;
+            UpdateAppStats(appName, stats => stats.RecordRightClick());
         }
 
         RegisterInputEvent();
@@ -164,12 +180,13 @@ public class StatsManager : IDisposable
         ScheduleSave();
     }
 
-    private void OnMouseScrolled(double distance)
+    private void OnMouseScrolled(double distance, string appName)
     {
         lock (_lock)
         {
             EnsureCurrentDay();
             CurrentStats.ScrollDistance += Math.Abs(distance);
+            UpdateAppStats(appName, stats => stats.AddScrollDistance(Math.Abs(distance)));
         }
 
         ScheduleDebouncedStatsUpdate();
@@ -386,7 +403,8 @@ public class StatsManager : IDisposable
             RightClicks = CurrentStats.RightClicks,
             MouseDistance = CurrentStats.MouseDistance,
             ScrollDistance = CurrentStats.ScrollDistance,
-            KeyPressCounts = new Dictionary<string, int>(CurrentStats.KeyPressCounts)
+            KeyPressCounts = new Dictionary<string, int>(CurrentStats.KeyPressCounts),
+            AppStats = CurrentStats.AppStats.ToDictionary(k => k.Key, v => new AppStats(v.Value))
         };
         History[key] = statsCopy;
     }
@@ -544,7 +562,8 @@ public class StatsManager : IDisposable
             RightClicks = source.RightClicks,
             MouseDistance = source.MouseDistance,
             ScrollDistance = source.ScrollDistance,
-            KeyPressCounts = new Dictionary<string, int>(source.KeyPressCounts)
+            KeyPressCounts = new Dictionary<string, int>(source.KeyPressCounts),
+            AppStats = source.AppStats.ToDictionary(k => k.Key, v => new AppStats(v.Value))
         };
     }
 
@@ -713,6 +732,18 @@ public class StatsManager : IDisposable
                 .OrderByDescending(x => x.Value)
                 .ThenBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
                 .Select(x => (x.Key, x.Value))
+                .ToList();
+        }
+    }
+
+    public List<AppStats> GetAppStatsSorted(int limit = 5)
+    {
+        lock (_lock)
+        {
+            return CurrentStats.AppStats.Values
+                .OrderByDescending(a => a.KeyPresses + a.TotalClicks + a.ScrollDistance)
+                .Take(limit)
+                .Select(a => new AppStats(a))
                 .ToList();
         }
     }
