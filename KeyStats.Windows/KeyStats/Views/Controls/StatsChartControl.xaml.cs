@@ -382,11 +382,11 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
         // 根据当前选择的指标类型使用不同的格式化方法
         var metric = SelectedMetricIndex switch
         {
-            0 => StatsManager.HistoryMetric.KeyPresses,
-            1 => StatsManager.HistoryMetric.Clicks,
+            0 => StatsManager.HistoryMetric.Clicks,
+            1 => StatsManager.HistoryMetric.KeyPresses,
             2 => StatsManager.HistoryMetric.MouseDistance,
             3 => StatsManager.HistoryMetric.ScrollDistance,
-            _ => StatsManager.HistoryMetric.KeyPresses
+            _ => StatsManager.HistoryMetric.Clicks
         };
 
         return StatsManager.Instance.FormatHistoryValue(metric, value);

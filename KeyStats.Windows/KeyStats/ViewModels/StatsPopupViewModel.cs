@@ -247,11 +247,11 @@ public class StatsPopupViewModel : ViewModelBase
 
         var metric = SelectedMetricIndex switch
         {
-            0 => StatsManager.HistoryMetric.KeyPresses,
-            1 => StatsManager.HistoryMetric.Clicks,
+            0 => StatsManager.HistoryMetric.Clicks,
+            1 => StatsManager.HistoryMetric.KeyPresses,
             2 => StatsManager.HistoryMetric.MouseDistance,
             3 => StatsManager.HistoryMetric.ScrollDistance,
-            _ => StatsManager.HistoryMetric.KeyPresses
+            _ => StatsManager.HistoryMetric.Clicks
         };
 
         var series = StatsManager.Instance.GetHistorySeries(range, metric);
