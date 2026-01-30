@@ -147,3 +147,13 @@
 "heatmap.more" = "More";
 "heatmap.totalFormat" = "%d activities";
 "heatmap.detailFormat" = "%d keys · %d clicks";
+
+"setting.iCloudSyncEnabled" = "Enable iCloud Sync";
+"iCloud.restore.title" = "Restore from iCloud?";
+"iCloud.restore.message" = "iCloud contains previous statistics data. Would you like to restore it?";
+"iCloud.restore.yes" = "Restore";
+"iCloud.restore.no" = "Skip";
+"iCloud.restore.success.title" = "Restore Successful";
+"iCloud.restore.success.message" = "Statistics have been successfully restored from iCloud.";
+"iCloud.restore.error.title" = "Restore Failed";
+"iCloud.restore.error.message" = "Could not restore statistics from iCloud. Please check your connection and iCloud settings.";

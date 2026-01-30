@@ -28,6 +28,7 @@ class SettingsViewController: NSViewController, NSTextFieldDelegate {
     private var keyPressThresholdStepper: NSStepper!
     private var clickThresholdField: NSTextField!
     private var clickThresholdStepper: NSStepper!
+    private var iCloudSyncButton: NSButton!
 
     private let thresholdMinimum = 0
     private let thresholdMaximum = 1_000_000
@@ -114,6 +115,10 @@ class SettingsViewController: NSViewController, NSTextFieldDelegate {
                                         target: self,
                                         action: #selector(toggleShowThresholds))
 
+        iCloudSyncButton = NSButton(checkboxWithTitle: NSLocalizedString("setting.iCloudSyncEnabled", comment: ""),
+                                   target: self,
+                                   action: #selector(toggleiCloudSync))
+
         dynamicIconColorButton = NSButton(checkboxWithTitle: NSLocalizedString("settings.dynamicIconColor", comment: ""),
                                           target: self,
                                           action: #selector(toggleDynamicIconColor))
@@ -168,7 +173,7 @@ class SettingsViewController: NSViewController, NSTextFieldDelegate {
         windowRow.translatesAutoresizingMaskIntoConstraints = false
         dynamicIconColorWindowRow = windowRow
 
-        let optionsStack = NSStackView(views: [showKeyPressesButton, showMouseClicksButton, appStatsEnabledButton, launchAtLoginButton, dynamicIconColorRow, styleRow, windowRow, showThresholdsButton])
+        let optionsStack = NSStackView(views: [showKeyPressesButton, showMouseClicksButton, appStatsEnabledButton, launchAtLoginButton, iCloudSyncButton, dynamicIconColorRow, styleRow, windowRow, showThresholdsButton])
         optionsStack.orientation = .vertical
         optionsStack.alignment = .leading
         optionsStack.spacing = 8
@@ -239,6 +244,8 @@ class SettingsViewController: NSViewController, NSTextFieldDelegate {
         showMouseClicksButton.state = StatsManager.shared.showMouseClicksInMenuBar ? .on : .off
         appStatsEnabledButton.state = StatsManager.shared.appStatsEnabled ? .on : .off
         launchAtLoginButton.state = LaunchAtLoginManager.shared.isEnabled ? .on : .off
+        let iCloudSyncEnabled = UserDefaults.standard.bool(forKey: "iCloudSyncEnabled")
+        iCloudSyncButton.state = iCloudSyncEnabled ? .on : .off
         dynamicIconColorButton.state = StatsManager.shared.enableDynamicIconColor ? .on : .off
         updateDynamicIconColorStyleSelection()
         let notificationsEnabled = StatsManager.shared.notificationsEnabled
@@ -553,6 +560,21 @@ class SettingsViewController: NSViewController, NSTextFieldDelegate {
         updateDynamicIconColorStyleSelection()
     }
 
+    @objc private func toggleiCloudSync() {
+        let enabled = iCloudSyncButton.state == .on
+        UserDefaults.standard.set(enabled, forKey: "iCloudSyncEnabled")
+        
+        if enabled {
+            // 检查是否有 iCloud 备份，如果有则询问用户是否要恢复
+            if iCloudManager.shared.hasCloudBackup() {
+                showRestoreFromiCloudAlert()
+            }
+        } else {
+            // 如果禁用，停止同步但保留数据
+            print("☁️ iCloud 同步已禁用")
+        }
+    }
+
     @objc private func dynamicIconColorStyleChanged() {
         guard let rawValue = dynamicIconColorStylePopUp.selectedItem?.representedObject as? String else { return }
         UserDefaults.standard.set(rawValue, forKey: dynamicIconColorStyleKey)
@@ -639,5 +661,38 @@ class SettingsViewController: NSViewController, NSTextFieldDelegate {
         alert.alertStyle = .warning
         alert.addButton(withTitle: NSLocalizedString("button.ok", comment: ""))
         alert.runModal()
+    }
+    
+    private func showRestoreFromiCloudAlert() {
+        let alert = NSAlert()
+        alert.messageText = NSLocalizedString("iCloud.restore.title", comment: "")
+        alert.informativeText = NSLocalizedString("iCloud.restore.message", comment: "")
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: NSLocalizedString("iCloud.restore.yes", comment: ""))
+        alert.addButton(withTitle: NSLocalizedString("iCloud.restore.no", comment: ""))
+        
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            // 用户选择从 iCloud 恢复数据
+            StatsManager.shared.downloadFromiCloud { success in
+                DispatchQueue.main.async {
+                    if success {
+                        let successAlert = NSAlert()
+                        successAlert.messageText = NSLocalizedString("iCloud.restore.success.title", comment: "")
+                        successAlert.informativeText = NSLocalizedString("iCloud.restore.success.message", comment: "")
+                        successAlert.alertStyle = .informational
+                        successAlert.addButton(withTitle: NSLocalizedString("button.ok", comment: ""))
+                        successAlert.runModal()
+                    } else {
+                        let errorAlert = NSAlert()
+                        errorAlert.messageText = NSLocalizedString("iCloud.restore.error.title", comment: "")
+                        errorAlert.informativeText = NSLocalizedString("iCloud.restore.error.message", comment: "")
+                        errorAlert.alertStyle = .warning
+                        errorAlert.addButton(withTitle: NSLocalizedString("button.ok", comment: ""))
+                        errorAlert.runModal()
+                    }
+                }
+            }
+        }
     }
 }

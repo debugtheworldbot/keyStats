@@ -1,7 +1,6 @@
 import Foundation
 import Cocoa
 import UserNotifications
-import CloudKit
 
 private let metersPerPixel: Double = 0.000264583
 
@@ -268,10 +267,6 @@ class StatsManager {
     private var cachedWeekdayStats: [Int: (total: Int, count: Int)]?
     private var cachedForDateKey: String?
     
-    // iCloud sync properties
-    private var iCloudSyncTimer: Timer?
-    private let iCloudSyncInterval: TimeInterval = 300 // 5 minutes
-    
     /// 设置：是否在菜单栏显示按键数
     var showKeyPressesInMenuBar: Bool {
         didSet {
@@ -422,7 +417,6 @@ class StatsManager {
         }
         
         setupMidnightReset()
-        setupiCloudSync()
     }
     
     // MARK: - 数据更新方法
@@ -1140,156 +1134,6 @@ extension StatsManager {
             total.lastDate = date
         }
         total.activeDays += 1
-    }
-}
-
-// MARK: - iCloud Sync
-
-extension StatsManager {
-    private func setupiCloudSync() {
-        // 设置定时同步
-        startiCloudSyncTimer()
-        
-        // 应用进入前台时也同步
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(appWillBecomeActive),
-            name: NSApplication.willBecomeActiveNotification,
-            object: nil
-        )
-    }
-    
-    @objc private func appWillBecomeActive() {
-        // 应用激活时同步 iCloud 数据
-        DispatchQueue.global(qos: .background).async {
-            // 延迟一小段时间再同步，确保应用完全就绪
-            Thread.sleep(forTimeInterval: 1.0)
-            self.syncWithiCloud()
-        }
-    }
-    
-    private func startiCloudSyncTimer() {
-        iCloudSyncTimer?.invalidate()
-        iCloudSyncTimer = Timer.scheduledTimer(
-            timeInterval: iCloudSyncInterval,
-            target: self,
-            selector: #selector(syncWithiCloud),
-            userInfo: nil,
-            repeats: true
-        )
-        
-        // 确保 timer 在所有 RunLoop 模式下都能运行
-        if let timer = iCloudSyncTimer {
-            RunLoop.main.add(timer, forMode: .common)
-        }
-    }
-    
-    @objc private func syncWithiCloud() {
-        // 检查用户是否启用了 iCloud 同步
-        let iCloudSyncEnabled = UserDefaults.standard.bool(forKey: "iCloudSyncEnabled")
-        guard iCloudSyncEnabled else {
-            return // 如果未启用，则不执行同步
-        }
-        
-        // 检查 iCloud 可用性
-        CKContainer.default().accountStatus { [weak self] (status, error) in
-            guard let self = self else { return }
-            
-            if status == .available {
-                DispatchQueue.main.async {
-                    self.uploadStatsToiCloud()
-                }
-            } else {
-                print("☁️ iCloud 不可用: \(error?.localizedDescription ?? "Account status: \(status.rawValue)")")
-            }
-        }
-    }
-    
-    private func uploadStatsToiCloud() {
-        guard let ubiquityURL = FileManager.default.url(forUbiquityContainerIdentifier: nil) else {
-            print("☁️ 无法获取 iCloud 容器 URL")
-            return
-        }
-        
-        let iCloudDocumentsURL = ubiquityURL.appendingPathComponent("Documents")
-        
-        // 确保目录存在
-        do {
-            try FileManager.default.createDirectory(at: iCloudDocumentsURL, withIntermediateDirectories: true)
-        } catch {
-            print("☁️ 创建 iCloud 目录失败: \(error)")
-            return
-        }
-        
-        // 获取当前统计数据
-        let userDefaults = UserDefaults.standard
-        guard let currentStatsData = userDefaults.data(forKey: "dailyStats"),
-              let historyData = userDefaults.data(forKey: "dailyStatsHistory") else {
-            print("☁️ 无法获取本地统计数据")
-            return
-        }
-        
-        // 上传当前统计数据
-        let currentStatsURL = iCloudDocumentsURL.appendingPathComponent("dailyStats.json")
-        let historyStatsURL = iCloudDocumentsURL.appendingPathComponent("dailyStatsHistory.json")
-        
-        do {
-            try currentStatsData.write(to: currentStatsURL)
-            try historyData.write(to: historyStatsURL)
-            
-            print("☁️ 统计数据已上传到 iCloud")
-            
-            // 通知其他设备有更新
-            let ubiquityKVStore = NSUbiquitousKeyValueStore.default
-            ubiquityKVStore.set(Date().timeIntervalSince1970, forKey: "statsSyncTrigger")
-            let success = ubiquityKVStore.synchronize()
-            if !success {
-                print("☁️ 同步键值存储失败")
-            }
-        } catch {
-            print("☁️ 上传到 iCloud 失败: \(error)")
-        }
-    }
-    
-    func downloadFromiCloud(completion: @escaping (Bool) -> Void) {
-        guard let ubiquityURL = FileManager.default.url(forUbiquityContainerIdentifier: nil) else {
-            completion(false)
-            return
-        }
-        
-        let iCloudDocumentsURL = ubiquityURL.appendingPathComponent("Documents")
-        let currentStatsURL = iCloudDocumentsURL.appendingPathComponent("dailyStats.json")
-        let historyStatsURL = iCloudDocumentsURL.appendingPathComponent("dailyStatsHistory.json")
-        
-        var hasDownloaded = false
-        
-        // 下载并合并统计数据
-        if let currentStatsData = try? Data(contentsOf: currentStatsURL) {
-            UserDefaults.standard.set(currentStatsData, forKey: "dailyStats")
-            hasDownloaded = true
-        }
-        
-        if let historyData = try? Data(contentsOf: historyStatsURL) {
-            UserDefaults.standard.set(historyData, forKey: "dailyStatsHistory")
-            hasDownloaded = true
-        }
-        
-        if hasDownloaded {
-            print("☁️ 从 iCloud 下载统计数据成功")
-            // 重新加载数据
-            if let updatedStats = self.loadStats() {
-                self.currentStats = updatedStats
-            }
-            self.history = self.loadHistory()
-        } else {
-            print("☁️ iCloud 中未找到统计数据")
-        }
-        
-        completion(hasDownloaded)
-    }
-    
-    func hasiCloudBackup() -> Bool {
-        return iCloudManager.shared.hasCloudBackup()
     }
 }
 
