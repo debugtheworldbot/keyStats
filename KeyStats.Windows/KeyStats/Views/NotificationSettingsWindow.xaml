@@ -19,6 +19,7 @@
         <!-- Enable toggle -->
         <CheckBox x:Name="EnableCheckBox" Content="启用通知"
                   FontSize="13" Margin="0,0,0,20"
+                  Foreground="{DynamicResource TextPrimaryBrush}"
                   Checked="OnSettingChanged" Unchecked="OnSettingChanged"/>
 
         <!-- Key press threshold -->

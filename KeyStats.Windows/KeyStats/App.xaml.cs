@@ -77,11 +77,21 @@ public partial class App : System.Windows.Application
             Console.WriteLine("Creating tray icon...");
             // Create tray icon
             _trayIconViewModel = new TrayIconViewModel();
+            var contextMenu = CreateContextMenu();
             _trayIcon = new TaskbarIcon
             {
                 Icon = _trayIconViewModel.TrayIcon,
                 ToolTipText = _trayIconViewModel.TooltipText,
-                ContextMenu = CreateContextMenu()
+            };
+
+            // Manually handle right-click context menu instead of using TaskbarIcon.ContextMenu.
+            // Hardcodet.NotifyIcon.Wpf uses GetPhysicalCursorPos + AbsolutePoint placement,
+            // which miscalculates coordinates on the first show (Popup HWND doesn't exist yet
+            // for proper DPI conversion). Using MousePoint lets WPF resolve coordinates itself.
+            _trayIcon.TrayRightMouseUp += (s, e) =>
+            {
+                contextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.MousePoint;
+                contextMenu.IsOpen = true;
             };
             
             // 使用 TrayLeftMouseDown 事件处理左键单击（按下时立即触发，不需要双击）

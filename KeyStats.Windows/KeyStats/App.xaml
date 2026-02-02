@@ -94,7 +94,7 @@
                                     <Setter TargetName="border" Property="Background" Value="{DynamicResource SubtleHoverBrush}"/>
                                 </Trigger>
                                 <Trigger Property="IsChecked" Value="True">
-                                    <Setter TargetName="border" Property="Background" Value="{DynamicResource CardBrush}"/>
+                                    <Setter TargetName="border" Property="Background" Value="{DynamicResource SegmentedSelectedBrush}"/>
                                     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
