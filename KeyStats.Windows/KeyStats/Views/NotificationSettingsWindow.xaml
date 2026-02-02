@@ -1,0 +1,69 @@
+<Window x:Class="KeyStats.Views.NotificationSettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="通知设置 - KeyStats"
+        Width="340" SizeToContent="Height"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="{StaticResource SurfaceBrush}"
+        ShowInTaskbar="True">
+
+    <StackPanel Margin="24,20">
+        <!-- Header -->
+        <TextBlock Text="通知设置" FontSize="16" FontWeight="SemiBold"
+                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,4"/>
+        <TextBlock Text="当按键或点击次数每达到设定值时发送通知"
+                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                   TextWrapping="Wrap" Margin="0,0,0,20"/>
+
+        <!-- Enable toggle -->
+        <CheckBox x:Name="EnableCheckBox" Content="启用通知"
+                  FontSize="13" Margin="0,0,0,20"
+                  Checked="OnSettingChanged" Unchecked="OnSettingChanged"/>
+
+        <!-- Key press threshold -->
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,8" Padding="14,12">
+            <StackPanel>
+                <TextBlock Text="按键次数通知" FontSize="13" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="每 " FontSize="12"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               VerticalAlignment="Center"/>
+                    <TextBox x:Name="KeyPressThresholdBox" Width="80" TextAlignment="Center"
+                             FontSize="12" Padding="4,4" VerticalContentAlignment="Center"
+                             PreviewTextInput="NumericOnly_PreviewTextInput"
+                             TextChanged="OnThresholdTextChanged"/>
+                    <TextBlock Text=" 次通知一次" FontSize="12"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Click threshold -->
+        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,8" Padding="14,12">
+            <StackPanel>
+                <TextBlock Text="鼠标点击通知" FontSize="13" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="每 " FontSize="12"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               VerticalAlignment="Center"/>
+                    <TextBox x:Name="ClickThresholdBox" Width="80" TextAlignment="Center"
+                             FontSize="12" Padding="4,4" VerticalContentAlignment="Center"
+                             PreviewTextInput="NumericOnly_PreviewTextInput"
+                             TextChanged="OnThresholdTextChanged"/>
+                    <TextBlock Text=" 次通知一次" FontSize="12"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Hint -->
+        <TextBlock Text="例如：设为 1000，则在 1000、2000、3000… 次时通知。"
+                   Foreground="{StaticResource TextTertiaryBrush}" FontSize="11"
+                   TextWrapping="Wrap" Margin="0,8,0,0"/>
+    </StackPanel>
+</Window>

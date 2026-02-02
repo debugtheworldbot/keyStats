@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Hardcodet.Wpf.TaskbarNotification;
 using KeyStats.Services;
 using KeyStats.ViewModels;
+using KeyStats.Views;
 using DotPostHog;
 using DotPostHog.Model;
 using Microsoft.Toolkit.Uwp.Notifications;
@@ -20,6 +21,7 @@ public partial class App : System.Windows.Application
 {
     private TaskbarIcon? _trayIcon;
     private TrayIconViewModel? _trayIconViewModel;
+    private NotificationSettingsWindow? _settingsWindow;
     private System.Threading.Mutex? _singleInstanceMutex;
     private string? _appVersion;
     private IPostHogAnalytics? _postHogClient;
@@ -144,6 +146,14 @@ public partial class App : System.Windows.Application
         };
         menu.Items.Add(exportItem);
 
+        var notifySettingsItem = new System.Windows.Controls.MenuItem { Header = "通知设置" };
+        notifySettingsItem.Click += (s, e) =>
+        {
+            TrackClick("context_menu_notification_settings");
+            ShowNotificationSettings();
+        };
+        menu.Items.Add(notifySettingsItem);
+
         var startupItem = new System.Windows.Controls.MenuItem
         {
             Header = "开机启动",
@@ -180,6 +190,19 @@ public partial class App : System.Windows.Application
         menu.Items.Add(quitItem);
 
         return menu;
+    }
+
+    private void ShowNotificationSettings()
+    {
+        if (_settingsWindow != null && _settingsWindow.IsVisible)
+        {
+            _settingsWindow.Activate();
+            return;
+        }
+
+        _settingsWindow = new NotificationSettingsWindow();
+        _settingsWindow.Closed += (_, _) => _settingsWindow = null;
+        _settingsWindow.Show();
     }
 
     private void ExportData()
