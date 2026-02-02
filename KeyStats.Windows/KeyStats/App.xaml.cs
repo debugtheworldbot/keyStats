@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Data;
 using System.Threading.Tasks;
 using Hardcodet.Wpf.TaskbarNotification;
+using KeyStats.Helpers;
 using KeyStats.Services;
 using KeyStats.ViewModels;
 using KeyStats.Views;
@@ -62,6 +63,9 @@ public partial class App : System.Windows.Application
             _singleInstanceMutex = mutex;
 
             EnsureStartMenuShortcut();
+
+            Console.WriteLine("Applying theme...");
+            ThemeManager.Instance.Initialize();
 
             Console.WriteLine("Initializing services...");
             // Initialize services
@@ -280,6 +284,7 @@ public partial class App : System.Windows.Application
         _trayIcon?.Dispose();
         InputMonitorService.Instance.StopMonitoring();
         StatsManager.Instance.FlushPendingSave();
+        ThemeManager.Instance.Dispose();
         _singleInstanceMutex?.ReleaseMutex();
         _singleInstanceMutex?.Dispose();
         base.OnExit(e);

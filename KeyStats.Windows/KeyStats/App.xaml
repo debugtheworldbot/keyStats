@@ -12,7 +12,7 @@
             <helpers:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
             <helpers:InverseBoolConverter x:Key="InverseBoolConverter"/>
 
-            <!-- Windows 11 Colors -->
+            <!-- Windows 11 Colors (light defaults, overridden at runtime by ThemeManager) -->
             <Color x:Key="AccentColor">#0067C0</Color>
             <Color x:Key="AccentLightColor">#60CDFF</Color>
             <Color x:Key="TextPrimaryColor">#1A1A1A</Color>
@@ -37,33 +37,38 @@
             <SolidColorBrush x:Key="ChartLineBrush" Color="{StaticResource AccentColor}"/>
             <SolidColorBrush x:Key="ChartFillBrush" Color="#200067C0"/>
 
+            <!-- Theme-aware brushes for context menu (overridden by ThemeManager) -->
+            <SolidColorBrush x:Key="ContextMenuBackgroundBrush" Color="#F9F9F9"/>
+            <SolidColorBrush x:Key="MenuItemHoverBrush" Color="#0A000000"/>
+            <SolidColorBrush x:Key="ChartAreaBrush" Color="#15808080"/>
+
             <!-- Global Styles -->
             <Style x:Key="SectionTitle" TargetType="TextBlock">
                 <Setter Property="FontSize" Value="11"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="Foreground" Value="{StaticResource TextTertiaryBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextTertiaryBrush}"/>
                 <Setter Property="Margin" Value="0,8,0,6"/>
             </Style>
 
             <Style x:Key="StatValue" TargetType="TextBlock">
                 <Setter Property="FontSize" Value="18"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
             </Style>
 
             <Style x:Key="StatLabel" TargetType="TextBlock">
                 <Setter Property="FontSize" Value="12"/>
-                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
             </Style>
 
             <Style x:Key="SecondaryText" TargetType="TextBlock">
                 <Setter Property="FontSize" Value="12"/>
-                <Setter Property="Foreground" Value="{StaticResource TextTertiaryBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextTertiaryBrush}"/>
             </Style>
 
             <Style x:Key="KeyBadge" TargetType="Border">
-                <Setter Property="Background" Value="{StaticResource SubtleFillBrush}"/>
-                <Setter Property="BorderBrush" Value="{StaticResource DividerBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource SubtleFillBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}"/>
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="CornerRadius" Value="4"/>
                 <Setter Property="Padding" Value="6,2"/>
@@ -72,7 +77,7 @@
             <!-- Windows 11 Segmented Button Style -->
             <Style x:Key="SegmentedButton" TargetType="RadioButton">
                 <Setter Property="Background" Value="Transparent"/>
-                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
                 <Setter Property="BorderThickness" Value="0"/>
                 <Setter Property="Padding" Value="12,6"/>
                 <Setter Property="Cursor" Value="Hand"/>
@@ -86,11 +91,11 @@
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="border" Property="Background" Value="{StaticResource SubtleHoverBrush}"/>
+                                    <Setter TargetName="border" Property="Background" Value="{DynamicResource SubtleHoverBrush}"/>
                                 </Trigger>
                                 <Trigger Property="IsChecked" Value="True">
-                                    <Setter TargetName="border" Property="Background" Value="{StaticResource CardBrush}"/>
-                                    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                    <Setter TargetName="border" Property="Background" Value="{DynamicResource CardBrush}"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -100,7 +105,7 @@
 
             <!-- Card Style -->
             <Style x:Key="CardBorder" TargetType="Border">
-                <Setter Property="Background" Value="{StaticResource CardBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
                 <Setter Property="CornerRadius" Value="6"/>
                 <Setter Property="Padding" Value="10"/>
                 <Setter Property="Effect">
@@ -123,8 +128,8 @@
 
             <!-- Windows 11 Context Menu Style -->
             <Style TargetType="ContextMenu">
-                <Setter Property="Background" Value="#F9F9F9"/>
-                <Setter Property="BorderBrush" Value="#E5E5E5"/>
+                <Setter Property="Background" Value="{DynamicResource ContextMenuBackgroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}"/>
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="Padding" Value="4"/>
                 <Setter Property="FontSize" Value="12"/>
@@ -149,7 +154,7 @@
             <!-- Windows 11 MenuItem Style -->
             <Style TargetType="MenuItem">
                 <Setter Property="Background" Value="Transparent"/>
-                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
                 <Setter Property="Padding" Value="12,8"/>
                 <Setter Property="FontSize" Value="12"/>
                 <Setter Property="Template">
@@ -166,7 +171,7 @@
                                     <TextBlock x:Name="CheckMark" Grid.Column="0" Text="&#xE73E;"
                                                FontFamily="Segoe MDL2 Assets" FontSize="12"
                                                VerticalAlignment="Center" HorizontalAlignment="Center"
-                                               Foreground="{StaticResource AccentBrush}"
+                                               Foreground="{DynamicResource AccentBrush}"
                                                Visibility="Collapsed"/>
                                     <!-- Header -->
                                     <ContentPresenter Grid.Column="1" ContentSource="Header"
@@ -179,10 +184,10 @@
                                     <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
                                 </Trigger>
                                 <Trigger Property="IsHighlighted" Value="True">
-                                    <Setter TargetName="Border" Property="Background" Value="#0A000000"/>
+                                    <Setter TargetName="Border" Property="Background" Value="{DynamicResource MenuItemHoverBrush}"/>
                                 </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
-                                    <Setter Property="Foreground" Value="{StaticResource TextTertiaryBrush}"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource TextTertiaryBrush}"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -194,7 +199,7 @@
             <Style TargetType="Separator">
                 <Setter Property="Height" Value="1"/>
                 <Setter Property="Margin" Value="12,4"/>
-                <Setter Property="Background" Value="{StaticResource DividerBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource DividerBrush}"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Separator">

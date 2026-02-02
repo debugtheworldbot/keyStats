@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using KeyStats.Helpers;
 using KeyStats.Services;
 using KeyStats.ViewModels;
 
@@ -45,20 +46,20 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
         set => SetValue(SelectedMetricIndexProperty, value);
     }
 
-    private readonly SolidColorBrush _lineBrush = new(Color.FromRgb(0, 120, 212));
-    private readonly SolidColorBrush _fillBrush = new(Color.FromArgb(50, 0, 120, 212));
-    private readonly SolidColorBrush _gridBrush = new(Color.FromArgb(60, 128, 128, 128));
-    private readonly SolidColorBrush _axisBrush = new(Color.FromArgb(100, 128, 128, 128));
-    private readonly SolidColorBrush _textBrush;
-    private readonly SolidColorBrush _highlightBrush = new(Color.FromRgb(255, 100, 50));
-    
+    private SolidColorBrush _lineBrush = new(Color.FromRgb(0, 120, 212));
+    private SolidColorBrush _fillBrush = new(Color.FromArgb(50, 0, 120, 212));
+    private SolidColorBrush _gridBrush = new(Color.FromArgb(60, 128, 128, 128));
+    private SolidColorBrush _axisBrush = new(Color.FromArgb(100, 128, 128, 128));
+    private SolidColorBrush _textBrush = new(SystemColors.GrayTextColor);
+    private SolidColorBrush _highlightBrush = new(Color.FromRgb(255, 100, 50));
+
     // 存储数据点位置信息，用于鼠标悬停检测
     private List<PointData> _dataPoints = new();
 
     // 悬停标签（使用 Border 包裹以遮挡静态标签）
     private Border? _hoverYContainer;
     private Border? _hoverXContainer;
-    private readonly SolidColorBrush _hoverBgBrush = new(Color.FromArgb(230, 248, 248, 248));
+    private SolidColorBrush _hoverBgBrush = new(Color.FromArgb(230, 248, 248, 248));
     
     // 绘图区域参数（用于 hover 检测）
     private double _plotLeft;
@@ -69,14 +70,51 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
     public StatsChartControl()
     {
         InitializeComponent();
-        // 使用 SystemColors 直接获取颜色，更安全
-        var grayTextColor = SystemColors.GrayTextColor;
-        _textBrush = new SolidColorBrush(grayTextColor);
+        UpdateBrushesFromTheme();
         SizeChanged += OnSizeChanged;
-        
+
         // 添加鼠标移动事件处理
         ChartCanvas.MouseMove += OnCanvasMouseMove;
         ChartCanvas.MouseLeave += OnCanvasMouseLeave;
+
+        ThemeManager.Instance.ThemeChanged += OnThemeChanged;
+    }
+
+    private void OnThemeChanged()
+    {
+        UpdateBrushesFromTheme();
+        DrawChart();
+    }
+
+    private void UpdateBrushesFromTheme()
+    {
+        var isDark = ThemeManager.Instance.IsDarkTheme;
+
+        var res = Application.Current?.Resources;
+        if (res?["ChartLineBrush"] is SolidColorBrush chartLine)
+            _lineBrush = chartLine;
+
+        _fillBrush = isDark
+            ? new SolidColorBrush(Color.FromArgb(50, 0, 120, 212))
+            : new SolidColorBrush(Color.FromArgb(50, 0, 120, 212));
+
+        _gridBrush = isDark
+            ? new SolidColorBrush(Color.FromArgb(40, 255, 255, 255))
+            : new SolidColorBrush(Color.FromArgb(60, 128, 128, 128));
+
+        _axisBrush = isDark
+            ? new SolidColorBrush(Color.FromArgb(60, 255, 255, 255))
+            : new SolidColorBrush(Color.FromArgb(100, 128, 128, 128));
+
+        _textBrush = isDark
+            ? new SolidColorBrush(Color.FromRgb(170, 170, 170))
+            : new SolidColorBrush(SystemColors.GrayTextColor);
+
+        _highlightBrush = new SolidColorBrush(Color.FromRgb(255, 100, 50));
+
+        _hoverBgBrush = isDark
+            ? new SolidColorBrush(Color.FromArgb(230, 45, 45, 45))
+            : new SolidColorBrush(Color.FromArgb(230, 248, 248, 248));
     }
 
     private static void OnChartDataChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

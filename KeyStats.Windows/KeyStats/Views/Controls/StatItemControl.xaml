@@ -13,13 +13,13 @@
 
         <!-- Icon -->
         <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
-                Background="{StaticResource SubtleFillBrush}"
+                Background="{DynamicResource SubtleFillBrush}"
                 CornerRadius="5" Width="32" Height="32"
                 VerticalAlignment="Center" Margin="0,0,10,0">
             <TextBlock x:Name="IconText"
                        FontFamily="Segoe MDL2 Assets"
                        FontSize="14"
-                       Foreground="{StaticResource AccentBrush}"
+                       Foreground="{DynamicResource AccentBrush}"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"/>
         </Border>
@@ -27,13 +27,13 @@
         <!-- Title -->
         <TextBlock x:Name="TitleText" Grid.Row="0" Grid.Column="1"
                    FontSize="11"
-                   Foreground="{StaticResource TextSecondaryBrush}"
+                   Foreground="{DynamicResource TextSecondaryBrush}"
                    VerticalAlignment="Bottom"/>
 
         <!-- Value -->
         <TextBlock x:Name="ValueText" Grid.Row="1" Grid.Column="1"
                    FontSize="17" FontWeight="SemiBold"
-                   Foreground="{StaticResource TextPrimaryBrush}"
+                   Foreground="{DynamicResource TextPrimaryBrush}"
                    VerticalAlignment="Top" Margin="0,1,0,0"/>
     </Grid>
 </UserControl>
