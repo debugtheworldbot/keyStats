@@ -29,7 +29,7 @@ public class StatsManagerTests : IDisposable
     public void Dispose()
     {
         // Cleanup
-        StatsManager.ResetInstanceForTesting(null);
+        StatsManager.DisposeInstance();
         try
         {
             if (Directory.Exists(_testDataFolder))

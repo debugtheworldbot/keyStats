@@ -18,8 +18,14 @@ public class StatsManager : IDisposable
 
     internal static void ResetInstanceForTesting(string? dataFolder = null)
     {
-        _instance?.Dispose();
+        DisposeInstance();
         _instance = new StatsManager(dataFolder);
+    }
+
+    internal static void DisposeInstance()
+    {
+        _instance?.Dispose();
+        _instance = null;
     }
 
     private const double DefaultMetersPerPixel = AppSettings.DefaultMouseMetersPerPixel;
