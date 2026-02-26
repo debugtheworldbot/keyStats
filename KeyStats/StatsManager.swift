@@ -243,7 +243,7 @@ class StatsManager {
         case failure(pixels: Double)
     }
     
-    private let userDefaults = UserDefaults.standard
+    private let userDefaults: UserDefaults
     private let statsKey = "dailyStats"
     private let historyKey = "dailyStatsHistory"
     private let showKeyPressesKey = "showKeyPressesInMenuBar"
@@ -435,7 +435,8 @@ class StatsManager {
     /// 上次鼠标位置（用于计算移动距离）
     var lastMousePosition: NSPoint?
     
-    private init() {
+    init(userDefaults: UserDefaults = .standard) {
+        self.userDefaults = userDefaults
         dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
 

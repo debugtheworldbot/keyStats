@@ -33,6 +33,36 @@ public class InputMonitorService : IDisposable
     public event Action<double>? MouseMoved;
     public event Action<double, string, string>? MouseScrolled;
 
+    internal void SimulateKeyPress(string key, string appName, string displayName)
+    {
+        KeyPressed?.Invoke(key, appName, displayName);
+    }
+
+    internal void SimulateLeftClick(string appName, string displayName)
+    {
+        LeftMouseClicked?.Invoke(appName, displayName);
+    }
+
+    internal void SimulateRightClick(string appName, string displayName)
+    {
+        RightMouseClicked?.Invoke(appName, displayName);
+    }
+
+    internal void SimulateSideBackClick(string appName, string displayName)
+    {
+        SideBackMouseClicked?.Invoke(appName, displayName);
+    }
+
+    internal void SimulateSideForwardClick(string appName, string displayName)
+    {
+        SideForwardMouseClicked?.Invoke(appName, displayName);
+    }
+
+    internal void SimulateMouseMove(double distance)
+    {
+        MouseMoved?.Invoke(distance);
+    }
+
     private InputMonitorService() { }
 
     public void StartMonitoring()

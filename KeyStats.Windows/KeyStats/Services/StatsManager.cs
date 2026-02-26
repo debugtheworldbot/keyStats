@@ -16,6 +16,12 @@ public class StatsManager : IDisposable
     private static StatsManager? _instance;
     public static StatsManager Instance => _instance ??= new StatsManager();
 
+    internal static void ResetInstanceForTesting(string? dataFolder = null)
+    {
+        _instance?.Dispose();
+        _instance = new StatsManager(dataFolder);
+    }
+
     private const double DefaultMetersPerPixel = AppSettings.DefaultMouseMetersPerPixel;
 
     private readonly string _dataFolder;
@@ -42,12 +48,20 @@ public class StatsManager : IDisposable
 
     public event Action? StatsUpdateRequested;
 
-    private StatsManager()
+    private StatsManager(string? dataFolder = null)
     {
-        _dataFolder = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "KeyStats");
-        Directory.CreateDirectory(_dataFolder);
+        if (dataFolder != null)
+        {
+            _dataFolder = dataFolder;
+            Directory.CreateDirectory(_dataFolder);
+        }
+        else
+        {
+            _dataFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "KeyStats");
+            Directory.CreateDirectory(_dataFolder);
+        }
 
         _statsFilePath = Path.Combine(_dataFolder, "daily_stats.json");
         _historyFilePath = Path.Combine(_dataFolder, "history.json");
