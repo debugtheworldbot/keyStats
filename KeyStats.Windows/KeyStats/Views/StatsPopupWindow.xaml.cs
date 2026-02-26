@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media.Animation;
@@ -16,11 +17,11 @@ public partial class StatsPopupWindow : Window
     public StatsPopupWindow(System.Drawing.Point? anchorPoint = null)
     {
 #if DEBUG
-        Console.WriteLine("StatsPopupWindow constructor...");
+        Debug.WriteLine("StatsPopupWindow constructor...");
 #endif
         InitializeComponent();
 #if DEBUG
-        Console.WriteLine("InitializeComponent done");
+        Debug.WriteLine("InitializeComponent done");
 #endif
 
         _viewModel = (StatsPopupViewModel)DataContext;
@@ -29,14 +30,14 @@ public partial class StatsPopupWindow : Window
         Loaded += OnLoaded;
         Closed += OnClosed;
 #if DEBUG
-        Console.WriteLine("StatsPopupWindow constructor done");
+        Debug.WriteLine("StatsPopupWindow constructor done");
 #endif
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
 #if DEBUG
-        Console.WriteLine("Window loaded, positioning...");
+        Debug.WriteLine("Window loaded, positioning...");
 #endif
         PositionNearTray();
         
@@ -94,7 +95,7 @@ public partial class StatsPopupWindow : Window
         
         _isFullyLoaded = true;
 #if DEBUG
-        Console.WriteLine($"Window positioned at {Left}, {Top}");
+        Debug.WriteLine($"Window positioned at {Left}, {Top}");
 #endif
         Activate();
     }
@@ -143,7 +144,7 @@ public partial class StatsPopupWindow : Window
     private void Window_Deactivated(object sender, EventArgs e)
     {
 #if DEBUG
-        Console.WriteLine($"Window_Deactivated called, _isFullyLoaded={_isFullyLoaded}");
+        Debug.WriteLine($"Window_Deactivated called, _isFullyLoaded={_isFullyLoaded}");
 #endif
         if (_isFullyLoaded)
         {
