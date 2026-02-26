@@ -60,8 +60,6 @@ struct DailyStats: Codable {
         case rightClicks
         case sideBackClicks
         case sideForwardClicks
-        // legacy field
-        case otherClicks
         case mouseDistance
         case scrollDistance
         case appStats
@@ -76,10 +74,6 @@ struct DailyStats: Codable {
         rightClicks = try container.decodeIfPresent(Int.self, forKey: .rightClicks) ?? 0
         sideBackClicks = try container.decodeIfPresent(Int.self, forKey: .sideBackClicks) ?? 0
         sideForwardClicks = try container.decodeIfPresent(Int.self, forKey: .sideForwardClicks) ?? 0
-        // Backward compatibility: old builds stored all side clicks in `otherClicks`.
-        if !container.contains(.sideBackClicks) && !container.contains(.sideForwardClicks) {
-            sideBackClicks = try container.decodeIfPresent(Int.self, forKey: .otherClicks) ?? 0
-        }
         mouseDistance = try container.decodeIfPresent(Double.self, forKey: .mouseDistance) ?? 0
         scrollDistance = try container.decodeIfPresent(Double.self, forKey: .scrollDistance) ?? 0
         appStats = try container.decodeIfPresent([String: AppStats].self, forKey: .appStats) ?? [:]
