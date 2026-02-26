@@ -26,6 +26,24 @@ final class ActivityHeatmapView: NSView {
     private var gridOffsetX: CGFloat = 0
     private var gridWidth: CGFloat = 0
 
+    // MARK: - 缓存
+    private lazy var calendar = Calendar.current
+    private lazy var monthFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM"
+        return formatter
+    }()
+    private lazy var weekdaySymbols: [String] = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale.current
+        return formatter.shortWeekdaySymbols ?? ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    }()
+    private lazy var tooltipDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        return formatter
+    }()
+
     // MARK: - 翻转坐标系
     override var isFlipped: Bool { true }
 
@@ -111,7 +129,6 @@ final class ActivityHeatmapView: NSView {
         gridOffsetX = max(0, floor((bounds.width - contentWidth) / 2))
 
         cellRects.removeAll()
-        let calendar = Calendar.current
 
         for (index, activity) in activityData.enumerated() {
             let weekday = calendar.component(.weekday, from: activity.date)
@@ -218,10 +235,6 @@ final class ActivityHeatmapView: NSView {
     }
 
     private func drawMonthLabels() {
-        let calendar = Calendar.current
-        let monthFormatter = DateFormatter()
-        monthFormatter.dateFormat = "MMM"
-
         var lastMonth = -1
         var lastLabelMaxX: CGFloat = -CGFloat.greatestFiniteMagnitude
         for (index, activity) in activityData.enumerated() {
@@ -244,11 +257,6 @@ final class ActivityHeatmapView: NSView {
     }
 
     private func drawWeekdayLabels() {
-        let calendar = Calendar.current
-        let formatter = DateFormatter()
-        formatter.locale = Locale.current
-        let symbols = formatter.shortWeekdaySymbols ?? ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-
         let displayRows = [0, 2, 4]
         let attrs: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: 9),
@@ -257,7 +265,7 @@ final class ActivityHeatmapView: NSView {
 
         for row in displayRows {
             let symbolIndex = (row + calendar.firstWeekday - 1) % 7
-            let label = String(symbols[symbolIndex].prefix(3))
+            let label = String(weekdaySymbols[symbolIndex].prefix(3))
             let y = monthLabelHeight + CGFloat(row) * (cellSize + cellSpacing)
             label.draw(at: NSPoint(x: gridOffsetX, y: y + 1), withAttributes: attrs)
         }
@@ -312,9 +320,7 @@ final class ActivityHeatmapView: NSView {
         let activity = activityData[index]
         let tooltip = ensureTooltipView(in: host)
 
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateStyle = .medium
-        let dateStr = dateFormatter.string(from: activity.date)
+        let dateStr = tooltipDateFormatter.string(from: activity.date)
         let totalFormat = NSLocalizedString("heatmap.totalFormat", comment: "")
         let detailFormat = NSLocalizedString("heatmap.detailFormat", comment: "")
 
