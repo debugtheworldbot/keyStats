@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using System.Reflection;
@@ -75,11 +74,8 @@ public class TrayIconViewModel : ViewModelBase
                 return;
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-#if DEBUG
-            Debug.WriteLine($"Error loading tray icon: {ex.Message}");
-#endif
         }
 
         // 如果加载失败，尝试从文件系统加载
@@ -102,11 +98,8 @@ public class TrayIconViewModel : ViewModelBase
                 return;
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-#if DEBUG
-            Debug.WriteLine($"Error loading tray icon from file: {ex.Message}");
-#endif
         }
     }
 
@@ -150,32 +143,20 @@ public class TrayIconViewModel : ViewModelBase
 
     private void TogglePopup()
     {
-#if DEBUG
-        Debug.WriteLine("=== TogglePopup called ===");
-#endif
         try
         {
             if (_popupWindow != null && _popupWindow.IsVisible)
             {
-#if DEBUG
-                Debug.WriteLine("Closing existing window");
-#endif
                 _popupWindow.Close();
                 _popupWindow = null;
             }
             else
             {
-#if DEBUG
-                Debug.WriteLine("Calling ShowStats...");
-#endif
                 ShowStats();
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-#if DEBUG
-            Debug.WriteLine($"TogglePopup error: {ex}");
-#endif
         }
     }
 
@@ -208,35 +189,18 @@ public class TrayIconViewModel : ViewModelBase
     {
         try
         {
-#if DEBUG
-            Debug.WriteLine("ShowStats called...");
-#endif
             if (_popupWindow != null)
             {
                 _popupWindow.Activate();
                 return;
             }
 
-#if DEBUG
-            Debug.WriteLine("Creating StatsPopupWindow...");
-#endif
             _popupWindow = new StatsPopupWindow(anchorPoint);
             _popupWindow.Closed += (_, _) => _popupWindow = null;
-#if DEBUG
-            Debug.WriteLine("Showing window...");
-#endif
             _popupWindow.Show();
-#if DEBUG
-            Debug.WriteLine("Window shown.");
-#endif
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-#if DEBUG
-            Debug.WriteLine("=== ERROR IN SHOWSTATS ===");
-            Debug.WriteLine(ex.ToString());
-            Debug.WriteLine("=== END ERROR ===");
-#endif
         }
     }
 

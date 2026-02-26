@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media.Animation;
@@ -16,29 +15,17 @@ public partial class StatsPopupWindow : Window
 
     public StatsPopupWindow(System.Drawing.Point? anchorPoint = null)
     {
-#if DEBUG
-        Debug.WriteLine("StatsPopupWindow constructor...");
-#endif
         InitializeComponent();
-#if DEBUG
-        Debug.WriteLine("InitializeComponent done");
-#endif
 
         _viewModel = (StatsPopupViewModel)DataContext;
         _anchorPoint = anchorPoint;
 
         Loaded += OnLoaded;
         Closed += OnClosed;
-#if DEBUG
-        Debug.WriteLine("StatsPopupWindow constructor done");
-#endif
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-#if DEBUG
-        Debug.WriteLine("Window loaded, positioning...");
-#endif
         PositionNearTray();
         
         // 追踪页面浏览
@@ -94,9 +81,6 @@ public partial class StatsPopupWindow : Window
         }
         
         _isFullyLoaded = true;
-#if DEBUG
-        Debug.WriteLine($"Window positioned at {Left}, {Top}");
-#endif
         Activate();
     }
     
@@ -143,9 +127,6 @@ public partial class StatsPopupWindow : Window
 
     private void Window_Deactivated(object sender, EventArgs e)
     {
-#if DEBUG
-        Debug.WriteLine($"Window_Deactivated called, _isFullyLoaded={_isFullyLoaded}");
-#endif
         if (_isFullyLoaded)
         {
             SlideOut();

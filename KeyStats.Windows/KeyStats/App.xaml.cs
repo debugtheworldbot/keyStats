@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -34,33 +33,19 @@ public partial class App : System.Windows.Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
-#if DEBUG
-        // 在 Debug 模式下分配控制台窗口，方便查看输出
-        AllocConsole();
-        Console.WriteLine("=== KeyStats Debug Console ===");
-#endif
         base.OnStartup(e);
 
         // Global exception handlers
         AppDomain.CurrentDomain.UnhandledException += (s, args) =>
         {
-#if DEBUG
-            Debug.WriteLine($"=== UNHANDLED EXCEPTION ===\n{args.ExceptionObject}");
-#endif
         };
         DispatcherUnhandledException += (s, args) =>
         {
-#if DEBUG
-            Debug.WriteLine($"=== DISPATCHER EXCEPTION ===\n{args.Exception}");
-#endif
             args.Handled = true;
         };
 
         try
         {
-#if DEBUG
-            Debug.WriteLine("KeyStats starting...");
-#endif
 
             // Ensure single instance
             var mutex = new System.Threading.Mutex(true, "KeyStats_SingleInstance", out bool createdNew);
@@ -75,23 +60,14 @@ public partial class App : System.Windows.Application
 
             EnsureStartMenuShortcut();
 
-#if DEBUG
-            Debug.WriteLine("Applying theme...");
-#endif
             ThemeManager.Instance.Initialize();
 
-#if DEBUG
-            Debug.WriteLine("Initializing services...");
-#endif
             // Initialize services
             var statsManager = StatsManager.Instance;
             _appVersion = typeof(App).Assembly.GetName().Version?.ToString() ?? "0.0.0";
             InitializeAnalytics(statsManager);
             InputMonitorService.Instance.StartMonitoring();
 
-#if DEBUG
-            Debug.WriteLine("Creating tray icon...");
-#endif
             // Create tray icon
             _trayIconViewModel = new TrayIconViewModel();
             var contextMenu = CreateContextMenu();
@@ -114,9 +90,6 @@ public partial class App : System.Windows.Application
             // 使用 TrayLeftMouseDown 事件处理左键单击（按下时立即触发，不需要双击）
             _trayIcon.TrayLeftMouseDown += (s, e) =>
             {
-#if DEBUG
-                Debug.WriteLine("TrayLeftMouseDown event fired - showing stats");
-#endif
                 Task.Run(() =>
                 {
                     try
@@ -135,11 +108,6 @@ public partial class App : System.Windows.Application
                 }));
             };
 
-#if DEBUG
-            Debug.WriteLine("Tray icon created successfully!");
-            Debug.WriteLine("App is running. Look for the icon in the system tray.");
-#endif
-
             // Bind icon and tooltip updates
             _trayIconViewModel.PropertyChanged += (s, ev) =>
             {
@@ -155,9 +123,6 @@ public partial class App : System.Windows.Application
         }
         catch (Exception ex)
         {
-#if DEBUG
-            Debug.WriteLine($"Error during startup: {ex}");
-#endif
             MessageBox.Show($"启动错误: {ex.Message}", "按键统计错误", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown();
         }
@@ -491,11 +456,6 @@ public partial class App : System.Windows.Application
         }
     }
 
-#if DEBUG
-    [DllImport("kernel32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool AllocConsole();
-#endif
 
     private void InitializeAnalytics(StatsManager statsManager)
     {
@@ -550,11 +510,8 @@ public partial class App : System.Windows.Application
                 {
                     _postHogClient.Identify(distinctId, null);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-#if DEBUG
-                    Debug.WriteLine($"Failed to identify user: {ex}");
-#endif
                 }
             }
 
@@ -570,11 +527,8 @@ public partial class App : System.Windows.Application
 
             CaptureEvent("app_open", statsManager, null);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-#if DEBUG
-            Debug.WriteLine($"Failed to initialize analytics: {ex}");
-#endif
             // 分析初始化失败不应阻止应用启动
         }
     }
@@ -624,11 +578,8 @@ public partial class App : System.Windows.Application
                 postHogProperties
             );
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-#if DEBUG
-            Debug.WriteLine($"Failed to capture event {eventName}: {ex}");
-#endif
             // 事件发送失败不应影响应用运行
         }
     }
@@ -719,11 +670,8 @@ public partial class App : System.Windows.Application
             // DotPostHog 需要调用 Flush() 确保所有事件都被发送
             _postHogClient.Flush();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-#if DEBUG
-            Debug.WriteLine($"Failed to track exit analytics: {ex}");
-#endif
         }
     }
 
