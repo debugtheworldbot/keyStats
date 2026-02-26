@@ -43,17 +43,23 @@ public partial class App : System.Windows.Application
         // Global exception handlers
         AppDomain.CurrentDomain.UnhandledException += (s, args) =>
         {
+#if DEBUG
             Console.WriteLine($"=== UNHANDLED EXCEPTION ===\n{args.ExceptionObject}");
+#endif
         };
         DispatcherUnhandledException += (s, args) =>
         {
+#if DEBUG
             Console.WriteLine($"=== DISPATCHER EXCEPTION ===\n{args.Exception}");
+#endif
             args.Handled = true;
         };
 
         try
         {
+#if DEBUG
             Console.WriteLine("KeyStats starting...");
+#endif
 
             // Ensure single instance
             var mutex = new System.Threading.Mutex(true, "KeyStats_SingleInstance", out bool createdNew);
@@ -68,17 +74,23 @@ public partial class App : System.Windows.Application
 
             EnsureStartMenuShortcut();
 
+#if DEBUG
             Console.WriteLine("Applying theme...");
+#endif
             ThemeManager.Instance.Initialize();
 
+#if DEBUG
             Console.WriteLine("Initializing services...");
+#endif
             // Initialize services
             var statsManager = StatsManager.Instance;
             _appVersion = typeof(App).Assembly.GetName().Version?.ToString() ?? "0.0.0";
             InitializeAnalytics(statsManager);
             InputMonitorService.Instance.StartMonitoring();
 
+#if DEBUG
             Console.WriteLine("Creating tray icon...");
+#endif
             // Create tray icon
             _trayIconViewModel = new TrayIconViewModel();
             var contextMenu = CreateContextMenu();
@@ -101,7 +113,9 @@ public partial class App : System.Windows.Application
             // 使用 TrayLeftMouseDown 事件处理左键单击（按下时立即触发，不需要双击）
             _trayIcon.TrayLeftMouseDown += (s, e) =>
             {
+#if DEBUG
                 Console.WriteLine("TrayLeftMouseDown event fired - showing stats");
+#endif
                 Task.Run(() =>
                 {
                     try
@@ -120,8 +134,10 @@ public partial class App : System.Windows.Application
                 }));
             };
 
+#if DEBUG
             Console.WriteLine("Tray icon created successfully!");
             Console.WriteLine("App is running. Look for the icon in the system tray.");
+#endif
 
             // Bind icon and tooltip updates
             _trayIconViewModel.PropertyChanged += (s, ev) =>
@@ -138,7 +154,9 @@ public partial class App : System.Windows.Application
         }
         catch (Exception ex)
         {
+#if DEBUG
             Console.WriteLine($"Error during startup: {ex}");
+#endif
             MessageBox.Show($"启动错误: {ex.Message}", "按键统计错误", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown();
         }
@@ -533,7 +551,9 @@ public partial class App : System.Windows.Application
                 }
                 catch (Exception ex)
                 {
+#if DEBUG
                     Console.WriteLine($"Failed to identify user: {ex}");
+#endif
                 }
             }
 
@@ -551,7 +571,9 @@ public partial class App : System.Windows.Application
         }
         catch (Exception ex)
         {
+#if DEBUG
             Console.WriteLine($"Failed to initialize analytics: {ex}");
+#endif
             // 分析初始化失败不应阻止应用启动
         }
     }
@@ -603,7 +625,9 @@ public partial class App : System.Windows.Application
         }
         catch (Exception ex)
         {
+#if DEBUG
             Console.WriteLine($"Failed to capture event {eventName}: {ex}");
+#endif
             // 事件发送失败不应影响应用运行
         }
     }
@@ -696,7 +720,9 @@ public partial class App : System.Windows.Application
         }
         catch (Exception ex)
         {
+#if DEBUG
             Console.WriteLine($"Failed to track exit analytics: {ex}");
+#endif
         }
     }
 

@@ -76,7 +76,9 @@ public class TrayIconViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+#if DEBUG
             Console.WriteLine($"Error loading tray icon: {ex.Message}");
+#endif
         }
 
         // 如果加载失败，尝试从文件系统加载
@@ -101,7 +103,9 @@ public class TrayIconViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+#if DEBUG
             Console.WriteLine($"Error loading tray icon from file: {ex.Message}");
+#endif
         }
     }
 
@@ -145,24 +149,32 @@ public class TrayIconViewModel : ViewModelBase
 
     private void TogglePopup()
     {
+#if DEBUG
         Console.WriteLine("=== TogglePopup called ===");
+#endif
         try
         {
             if (_popupWindow != null && _popupWindow.IsVisible)
             {
+#if DEBUG
                 Console.WriteLine("Closing existing window");
+#endif
                 _popupWindow.Close();
                 _popupWindow = null;
             }
             else
             {
+#if DEBUG
                 Console.WriteLine("Calling ShowStats...");
+#endif
                 ShowStats();
             }
         }
         catch (Exception ex)
         {
+#if DEBUG
             Console.WriteLine($"TogglePopup error: {ex}");
+#endif
         }
     }
 
@@ -195,25 +207,35 @@ public class TrayIconViewModel : ViewModelBase
     {
         try
         {
+#if DEBUG
             Console.WriteLine("ShowStats called...");
+#endif
             if (_popupWindow != null)
             {
                 _popupWindow.Activate();
                 return;
             }
 
+#if DEBUG
             Console.WriteLine("Creating StatsPopupWindow...");
+#endif
             _popupWindow = new StatsPopupWindow(anchorPoint);
             _popupWindow.Closed += (_, _) => _popupWindow = null;
+#if DEBUG
             Console.WriteLine("Showing window...");
+#endif
             _popupWindow.Show();
+#if DEBUG
             Console.WriteLine("Window shown.");
+#endif
         }
         catch (Exception ex)
         {
+#if DEBUG
             Console.WriteLine("=== ERROR IN SHOWSTATS ===");
             Console.WriteLine(ex.ToString());
             Console.WriteLine("=== END ERROR ===");
+#endif
         }
     }
 
