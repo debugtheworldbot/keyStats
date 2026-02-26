@@ -1,9 +1,5 @@
 import XCTest
-
-// Assuming the module name is KeyStats
-// If not, this line might need adjustment, but since we are just creating the file, it's fine.
-// In a real Xcode project, we'd ensure the test target can import the main target.
-// Since the user might need to adjust project settings, we assume standard behavior.
+@testable import KeyStats
 
 class StatsManagerTests: XCTestCase {
     var statsManager: StatsManager!

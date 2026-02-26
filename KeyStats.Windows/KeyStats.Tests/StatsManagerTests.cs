@@ -52,16 +52,6 @@ public class StatsManagerTests : IDisposable
     {
         _inputMonitor.SimulateKeyPress("A", "TestApp", "Test App");
 
-        // Allow some time for async processing if any (InputMonitor uses ThreadPool, but invokes delegate directly in SimulateKeyPress?)
-        // Wait, SimulateKeyPress invokes KeyPressed event.
-        // StatsManager subscribes to KeyPressed.
-        // StatsManager.OnKeyPressed handles it inside a lock.
-        // However, InputMonitorService.KeyboardHookCallback uses ThreadPool.QueueUserWorkItem.
-        // But my SimulateKeyPress calls Invoke directly on the current thread.
-        // So it should be synchronous unless StatsManager handles it asynchronously?
-        // StatsManager.OnKeyPressed is synchronous.
-        // So no wait needed.
-
         Assert.Equal(1, _statsManager.CurrentStats.KeyPresses);
         Assert.True(_statsManager.CurrentStats.KeyPressCounts.ContainsKey("A"));
         Assert.Equal(1, _statsManager.CurrentStats.KeyPressCounts["A"]);
@@ -84,8 +74,7 @@ public class StatsManagerTests : IDisposable
     {
         _inputMonitor.SimulateKeyPress("SaveTest", "TestApp", "Test App");
 
-        // Force save (StatsManager saves on schedule, but we can trigger it via Dispose or public method if any)
-        // StatsManager.FlushPendingSave is public.
+        // Force save
         _statsManager.FlushPendingSave();
 
         // Reset instance to simulate restart

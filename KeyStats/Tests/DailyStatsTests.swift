@@ -1,4 +1,5 @@
 import XCTest
+@testable import KeyStats
 
 class DailyStatsTests: XCTestCase {
 
