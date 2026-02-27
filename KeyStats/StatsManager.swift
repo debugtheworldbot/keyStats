@@ -458,9 +458,24 @@ class StatsManager {
 
         // 优先加载 dailyStats；如果缺失或不是今天，回退到 history 里的今天数据。
         let loadedCurrent = loadStats().map(normalizedDailyStats)
-        if let savedStats = loadedCurrent, calendar.isDate(savedStats.date, inSameDayAs: today) {
-            currentStats = savedStats
-        } else {
+
+        if let savedStats = loadedCurrent {
+            if calendar.isDate(savedStats.date, inSameDayAs: today) {
+                currentStats = savedStats
+            } else {
+                // If loaded stats are from a previous day (e.g. app crashed or wasn't closed properly),
+                // merge them into history before starting a new day.
+                let key = dateFormatter.string(from: savedStats.date)
+                history[key] = savedStats
+                cachedHistoryStats = nil
+                cachedWeekdayStats = nil
+                cachedForDateKey = nil
+                saveHistory()
+            }
+        }
+
+        // If currentStats wasn't set from today's saved data, try history or defaults
+        if !calendar.isDate(currentStats.date, inSameDayAs: today) {
             let todayKey = dateFormatter.string(from: today)
             if let todayHistory = history[todayKey] {
                 currentStats = normalizedDailyStats(todayHistory)
@@ -469,8 +484,16 @@ class StatsManager {
 
         updateNotificationBaselines()
         
+        // Ensure in-memory history reflects the initialized currentStats, but don't trigger a disk save
+        // unless we just recovered from a crash/old-state scenario.
+        updateInMemoryHistory()
+
         isReadyForUpdates = true
-        saveStats()
+        // Only save current stats to disk; no need to save full history again unless we recovered data.
+        if let encoded = try? JSONEncoder().encode(currentStats) {
+            userDefaults.set(encoded, forKey: statsKey)
+        }
+
         if enableDynamicIconColor {
             resetInputRateBuckets()
             startInputRateTracking()
@@ -836,7 +859,7 @@ class StatsManager {
         if let encoded = try? JSONEncoder().encode(currentStats) {
             userDefaults.set(encoded, forKey: statsKey)
         }
-        recordCurrentStatsToHistory()
+        updateInMemoryHistory()
     }
     
     private func loadStats() -> DailyStats? {
@@ -847,7 +870,10 @@ class StatsManager {
         return stats
     }
 
-    private func recordCurrentStatsToHistory() {
+    /// Update the in-memory history dictionary with the current day's stats.
+    /// Note: This does NOT save history to disk to avoid O(N) performance penalties on every update.
+    /// History is only saved to disk on specific triggers (app termination, day change, import).
+    private func updateInMemoryHistory() {
         let calendar = Calendar.current
         let normalizedDate = calendar.startOfDay(for: currentStats.date)
         let key = dateFormatter.string(from: normalizedDate)
@@ -857,7 +883,6 @@ class StatsManager {
         cachedHistoryStats = nil
         cachedWeekdayStats = nil
         cachedForDateKey = nil
-        saveHistory()
     }
     
     private func loadHistory() -> [String: DailyStats] {
@@ -1162,6 +1187,7 @@ class StatsManager {
         inputRateTimer?.invalidate()
         inputRateTimer = nil
         saveStats()
+        saveHistory() // Ensure history is persisted on exit
     }
     
     // MARK: - 午夜重置
@@ -1203,6 +1229,9 @@ class StatsManager {
         print("🌙 午夜重置触发：\(now)")
 
         if !Calendar.current.isDate(currentStats.date, inSameDayAs: now) {
+            // Before resetting, ensure the previous day's data is finalized in history and saved to disk.
+            updateInMemoryHistory()
+            saveHistory()
             resetStats(for: now)
         }
 
@@ -1216,15 +1245,21 @@ class StatsManager {
     private func ensureCurrentDay() {
         let now = Date()
         if !Calendar.current.isDate(currentStats.date, inSameDayAs: now) {
+            // Day changed during active use. Save current day's history before switching.
+            updateInMemoryHistory()
+            saveHistory()
             resetStats(for: now)
         }
     }
 
     private func resetStats(for date: Date) {
         currentStats = DailyStats(date: date)
+        // Ensure the new empty stats are tracked in history immediately
+        updateInMemoryHistory()
         updateNotificationBaselines()
         notifyMenuBarUpdate()
         notifyStatsUpdate()
+        saveStats() // Save the new day's initial state
     }
     
     // MARK: - 格式化显示
