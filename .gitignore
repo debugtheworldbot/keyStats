@@ -40,3 +40,4 @@ fastlane/test_output
 # Archives
 *.xcarchive
 .entire/logs/entire.log
+.gstack/
