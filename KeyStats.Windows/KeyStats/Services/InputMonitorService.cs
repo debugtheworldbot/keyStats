@@ -31,6 +31,7 @@ public class InputMonitorService : IDisposable
     // hook 健康检查：watchdog 定时检测 hook 是否被 Windows 静默移除
     private Timer? _watchdogTimer;
     private int _lastMouseHookTick;
+    private int _isReinstallingHooks;
     private NativeInterop.POINT _lastCursorPos;
     private const int WatchdogIntervalMs = 3000;
     private const int HookDeadThresholdMs = 5000;
@@ -205,8 +206,20 @@ public class InputMonitorService : IDisposable
         var elapsed = unchecked((uint)(Environment.TickCount - Volatile.Read(ref _lastMouseHookTick)));
         if (elapsed > HookDeadThresholdMs)
         {
+            if (Interlocked.CompareExchange(ref _isReinstallingHooks, 1, 0) != 0)
+            {
+                return;
+            }
+
             Debug.WriteLine($"Watchdog: mouse hook appears dead (no callback for {elapsed}ms), reinstalling...");
-            ReinstallHooks();
+            try
+            {
+                ReinstallHooks();
+            }
+            finally
+            {
+                Volatile.Write(ref _isReinstallingHooks, 0);
+            }
         }
     }
 
