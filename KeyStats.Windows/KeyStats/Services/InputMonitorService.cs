@@ -24,6 +24,17 @@ public class InputMonitorService : IDisposable
     private System.Drawing.Point? _lastMousePosition;
     private double _accumulatedDistance = 0.0;
 
+    // 专用 hook 线程，避免 UI 线程卡顿导致 hook 超时
+    private Thread? _hookThread;
+    private uint _hookThreadId;
+
+    // hook 健康检查：watchdog 定时检测 hook 是否被 Windows 静默移除
+    private Timer? _watchdogTimer;
+    private long _lastMouseHookTick;
+    private NativeInterop.POINT _lastCursorPos;
+    private const int WatchdogIntervalMs = 3000;
+    private const int HookDeadThresholdMs = 5000;
+
     public event Action<string, string, string>? KeyPressed;
     public event Action<string, string>? LeftMouseClicked;
     public event Action<string, string>? RightMouseClicked;
@@ -42,52 +53,177 @@ public class InputMonitorService : IDisposable
         _keyboardProc = KeyboardHookCallback;
         _mouseProc = MouseHookCallback;
 
-        using var curProcess = Process.GetCurrentProcess();
-        using var curModule = curProcess.MainModule;
+        _lastMouseHookTick = Environment.TickCount64;
 
-        if (curModule != null)
+        // 在专用线程上安装 hook 并运行消息循环，使 hook 回调不受 UI 线程阻塞影响
+        var readyEvent = new ManualResetEventSlim(false);
+        Exception? hookError = null;
+
+        _hookThread = new Thread(() =>
         {
-            var moduleHandle = NativeInterop.GetModuleHandle(curModule.ModuleName);
-            _keyboardHookId = NativeInterop.SetWindowsHookEx(
-                NativeInterop.WH_KEYBOARD_LL,
-                _keyboardProc,
-                moduleHandle,
-                0);
-
-            if (_keyboardHookId == IntPtr.Zero)
+            try
             {
-                var error = Marshal.GetLastWin32Error();
-                Debug.WriteLine($"Failed to install keyboard hook. Error code: {error}");
-                throw new System.ComponentModel.Win32Exception(error, "Failed to install keyboard hook");
-            }
+                _hookThreadId = NativeInterop.GetCurrentThreadId();
+                InstallHooks();
+                readyEvent.Set();
 
-            _mouseHookId = NativeInterop.SetWindowsHookEx(
-                NativeInterop.WH_MOUSE_LL,
-                _mouseProc,
-                moduleHandle,
-                0);
-
-            if (_mouseHookId == IntPtr.Zero)
-            {
-                var error = Marshal.GetLastWin32Error();
-                Debug.WriteLine($"Failed to install mouse hook. Error code: {error}");
-                // Clean up keyboard hook before throwing
-                if (_keyboardHookId != IntPtr.Zero)
+                // 低级钩子需要消息循环来分发回调
+                while (NativeInterop.GetMessage(out var msg, IntPtr.Zero, 0, 0) > 0)
                 {
-                    NativeInterop.UnhookWindowsHookEx(_keyboardHookId);
-                    _keyboardHookId = IntPtr.Zero;
+                    NativeInterop.TranslateMessage(ref msg);
+                    NativeInterop.DispatchMessage(ref msg);
                 }
-                throw new System.ComponentModel.Win32Exception(error, "Failed to install mouse hook");
             }
+            catch (Exception ex)
+            {
+                hookError = ex;
+                readyEvent.Set();
+            }
+        });
+        _hookThread.IsBackground = true;
+        _hookThread.Name = "InputHookThread";
+        _hookThread.Start();
+
+        readyEvent.Wait();
+        if (hookError != null)
+        {
+            throw hookError;
         }
 
         _isMonitoring = true;
-        Debug.WriteLine("Input monitoring started successfully");
+
+        // 启动 watchdog 定时检测 hook 是否存活
+        _watchdogTimer = new Timer(WatchdogCallback, null, WatchdogIntervalMs, WatchdogIntervalMs);
+
+        Debug.WriteLine("Input monitoring started successfully (dedicated hook thread)");
+    }
+
+    private void InstallHooks()
+    {
+        var moduleHandle = NativeInterop.GetModuleHandle(null);
+
+        _keyboardHookId = NativeInterop.SetWindowsHookEx(
+            NativeInterop.WH_KEYBOARD_LL,
+            _keyboardProc!,
+            moduleHandle,
+            0);
+
+        if (_keyboardHookId == IntPtr.Zero)
+        {
+            var error = Marshal.GetLastWin32Error();
+            Debug.WriteLine($"Failed to install keyboard hook. Error code: {error}");
+            throw new System.ComponentModel.Win32Exception(error, "Failed to install keyboard hook");
+        }
+
+        _mouseHookId = NativeInterop.SetWindowsHookEx(
+            NativeInterop.WH_MOUSE_LL,
+            _mouseProc!,
+            moduleHandle,
+            0);
+
+        if (_mouseHookId == IntPtr.Zero)
+        {
+            var error = Marshal.GetLastWin32Error();
+            Debug.WriteLine($"Failed to install mouse hook. Error code: {error}");
+            if (_keyboardHookId != IntPtr.Zero)
+            {
+                NativeInterop.UnhookWindowsHookEx(_keyboardHookId);
+                _keyboardHookId = IntPtr.Zero;
+            }
+            throw new System.ComponentModel.Win32Exception(error, "Failed to install mouse hook");
+        }
+    }
+
+    private void ReinstallHooks()
+    {
+        Debug.WriteLine("Watchdog: reinstalling hooks...");
+
+        // 在 hook 线程上卸载旧 hook 并重新安装
+        if (_hookThreadId != 0)
+        {
+            // 终止旧的消息循环
+            NativeInterop.PostThreadMessage(_hookThreadId, NativeInterop.WM_QUIT, IntPtr.Zero, IntPtr.Zero);
+        }
+
+        _hookThread?.Join(2000);
+
+        // 清理可能残留的 hook handle
+        if (_keyboardHookId != IntPtr.Zero)
+        {
+            NativeInterop.UnhookWindowsHookEx(_keyboardHookId);
+            _keyboardHookId = IntPtr.Zero;
+        }
+        if (_mouseHookId != IntPtr.Zero)
+        {
+            NativeInterop.UnhookWindowsHookEx(_mouseHookId);
+            _mouseHookId = IntPtr.Zero;
+        }
+
+        _lastMouseHookTick = Environment.TickCount64;
+
+        var readyEvent = new ManualResetEventSlim(false);
+
+        _hookThread = new Thread(() =>
+        {
+            try
+            {
+                _hookThreadId = NativeInterop.GetCurrentThreadId();
+                InstallHooks();
+                readyEvent.Set();
+
+                while (NativeInterop.GetMessage(out var msg, IntPtr.Zero, 0, 0) > 0)
+                {
+                    NativeInterop.TranslateMessage(ref msg);
+                    NativeInterop.DispatchMessage(ref msg);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Watchdog: hook reinstall failed: {ex.Message}");
+                readyEvent.Set();
+            }
+        });
+        _hookThread.IsBackground = true;
+        _hookThread.Name = "InputHookThread";
+        _hookThread.Start();
+
+        readyEvent.Wait();
+        Debug.WriteLine("Watchdog: hooks reinstalled");
+    }
+
+    private void WatchdogCallback(object? state)
+    {
+        if (!_isMonitoring) return;
+
+        NativeInterop.GetCursorPos(out var currentPos);
+        var cursorMoved = currentPos.x != _lastCursorPos.x || currentPos.y != _lastCursorPos.y;
+        _lastCursorPos = currentPos;
+
+        if (!cursorMoved) return;
+
+        // 光标在移动，但 hook 回调长时间未被触发 → hook 可能已被 Windows 静默移除
+        var elapsed = Environment.TickCount64 - Interlocked.Read(ref _lastMouseHookTick);
+        if (elapsed > HookDeadThresholdMs)
+        {
+            Debug.WriteLine($"Watchdog: mouse hook appears dead (no callback for {elapsed}ms), reinstalling...");
+            ReinstallHooks();
+        }
     }
 
     public void StopMonitoring()
     {
         if (!_isMonitoring) return;
+
+        _watchdogTimer?.Dispose();
+        _watchdogTimer = null;
+
+        // 终止 hook 线程的消息循环
+        if (_hookThreadId != 0)
+        {
+            NativeInterop.PostThreadMessage(_hookThreadId, NativeInterop.WM_QUIT, IntPtr.Zero, IntPtr.Zero);
+        }
+
+        _hookThread?.Join(2000);
 
         if (_keyboardHookId != IntPtr.Zero)
         {
@@ -101,7 +237,6 @@ public class InputMonitorService : IDisposable
             _mouseHookId = IntPtr.Zero;
         }
 
-        // 清空按下的键集合
         _pressedKeys.Clear();
 
         _isMonitoring = false;
@@ -118,19 +253,23 @@ public class InputMonitorService : IDisposable
 
             if (message == NativeInterop.WM_KEYDOWN || message == NativeInterop.WM_SYSKEYDOWN)
             {
-                // 只在键第一次按下时记录，忽略长按时的重复按下事件
                 if (!_pressedKeys.Contains(vkCode))
                 {
                     _pressedKeys.Add(vkCode);
+                    // GetKeyName 需在 hook 回调中同步调用以准确获取修饰键状态
                     var keyName = KeyNameMapper.GetKeyName(vkCode);
-                    var activeApp = ActiveWindowManager.GetActiveAppInfo();
-                    // 异步触发事件，避免阻塞低级钩子回调
-                    ThreadPool.QueueUserWorkItem(_ => KeyPressed?.Invoke(keyName, activeApp.AppName, activeApp.DisplayName));
+                    // 捕获前台窗口句柄和进程 ID（轻量 P/Invoke），完整解析异步进行
+                    var hWnd = NativeInterop.GetForegroundWindow();
+                    NativeInterop.GetWindowThreadProcessId(hWnd, out uint pid);
+                    ThreadPool.QueueUserWorkItem(_ =>
+                    {
+                        var activeApp = ActiveWindowManager.ResolveAppInfo(hWnd, pid);
+                        KeyPressed?.Invoke(keyName, activeApp.AppName, activeApp.DisplayName);
+                    });
                 }
             }
             else if (message == NativeInterop.WM_KEYUP || message == NativeInterop.WM_SYSKEYUP)
             {
-                // 键释放时，从集合中移除
                 _pressedKeys.Remove(vkCode);
             }
         }
@@ -142,46 +281,49 @@ public class InputMonitorService : IDisposable
     {
         if (nCode >= 0)
         {
+            Interlocked.Exchange(ref _lastMouseHookTick, Environment.TickCount64);
+
             var message = (int)wParam;
             var hookStruct = Marshal.PtrToStructure<NativeInterop.MSLLHOOKSTRUCT>(lParam);
 
             switch (message)
             {
                 case NativeInterop.WM_LBUTTONDOWN:
-                    {
-                        // 在钩子回调中获取进程名，然后异步触发事件
-                        var activeApp = ActiveWindowManager.GetActiveAppInfo();
-                        ThreadPool.QueueUserWorkItem(_ => LeftMouseClicked?.Invoke(activeApp.AppName, activeApp.DisplayName));
-                    }
-                    break;
-
                 case NativeInterop.WM_RBUTTONDOWN:
-                    {
-                        var activeApp = ActiveWindowManager.GetActiveAppInfo();
-                        ThreadPool.QueueUserWorkItem(_ => RightMouseClicked?.Invoke(activeApp.AppName, activeApp.DisplayName));
-                    }
-                    break;
-
                 case NativeInterop.WM_MBUTTONDOWN:
                     {
-                        var activeApp = ActiveWindowManager.GetActiveAppInfo();
-                        ThreadPool.QueueUserWorkItem(_ => MiddleMouseClicked?.Invoke(activeApp.AppName, activeApp.DisplayName));
+                        var msg = message;
+                        var hWnd = NativeInterop.GetForegroundWindow();
+                        NativeInterop.GetWindowThreadProcessId(hWnd, out uint pid);
+                        ThreadPool.QueueUserWorkItem(_ =>
+                        {
+                            var activeApp = ActiveWindowManager.ResolveAppInfo(hWnd, pid);
+                            var appName = activeApp.AppName;
+                            var displayName = activeApp.DisplayName;
+                            if (msg == NativeInterop.WM_LBUTTONDOWN)
+                                LeftMouseClicked?.Invoke(appName, displayName);
+                            else if (msg == NativeInterop.WM_RBUTTONDOWN)
+                                RightMouseClicked?.Invoke(appName, displayName);
+                            else
+                                MiddleMouseClicked?.Invoke(appName, displayName);
+                        });
                     }
                     break;
 
                 case NativeInterop.WM_XBUTTONDOWN:
                     {
-                        var activeApp = ActiveWindowManager.GetActiveAppInfo();
-                        var button = NativeInterop.HiWord((int)hookStruct.mouseData);
-                        if (button == NativeInterop.XBUTTON2)
+                        var mouseData = hookStruct.mouseData;
+                        var hWnd = NativeInterop.GetForegroundWindow();
+                        NativeInterop.GetWindowThreadProcessId(hWnd, out uint pid);
+                        ThreadPool.QueueUserWorkItem(_ =>
                         {
-                            ThreadPool.QueueUserWorkItem(_ => SideForwardMouseClicked?.Invoke(activeApp.AppName, activeApp.DisplayName));
-                        }
-                        else
-                        {
-                            // Default unknown/legacy side buttons to back.
-                            ThreadPool.QueueUserWorkItem(_ => SideBackMouseClicked?.Invoke(activeApp.AppName, activeApp.DisplayName));
-                        }
+                            var activeApp = ActiveWindowManager.ResolveAppInfo(hWnd, pid);
+                            var button = NativeInterop.HiWord((int)mouseData);
+                            if (button == NativeInterop.XBUTTON2)
+                                SideForwardMouseClicked?.Invoke(activeApp.AppName, activeApp.DisplayName);
+                            else
+                                SideBackMouseClicked?.Invoke(activeApp.AppName, activeApp.DisplayName);
+                        });
                     }
                     break;
 
@@ -192,9 +334,14 @@ public class InputMonitorService : IDisposable
                 case NativeInterop.WM_MOUSEWHEEL:
                 case NativeInterop.WM_MOUSEHWHEEL:
                     {
-                        var activeApp = ActiveWindowManager.GetActiveAppInfo();
                         var mouseData = hookStruct.mouseData;
-                        ThreadPool.QueueUserWorkItem(_ => HandleScroll(mouseData, activeApp.AppName, activeApp.DisplayName));
+                        var hWnd = NativeInterop.GetForegroundWindow();
+                        NativeInterop.GetWindowThreadProcessId(hWnd, out uint pid);
+                        ThreadPool.QueueUserWorkItem(_ =>
+                        {
+                            var activeApp = ActiveWindowManager.ResolveAppInfo(hWnd, pid);
+                            HandleScroll(mouseData, activeApp.AppName, activeApp.DisplayName);
+                        });
                     }
                     break;
             }
@@ -205,38 +352,33 @@ public class InputMonitorService : IDisposable
 
     private void HandleMouseMove(NativeInterop.POINT pt)
     {
-        var now = DateTime.Now;
+        var now = Environment.TickCount64;
         var currentPosition = new System.Drawing.Point(pt.x, pt.y);
 
-        // 初始化位置
         if (!_lastMousePosition.HasValue)
         {
             _lastMousePosition = currentPosition;
-            _lastMouseSampleTime = now;
+            _lastMouseSampleTime = DateTime.MinValue;
             return;
         }
 
-        // 计算本次移动的距离
         var dx = currentPosition.X - _lastMousePosition.Value.X;
         var dy = currentPosition.Y - _lastMousePosition.Value.Y;
         var segmentDistance = Math.Sqrt(dx * dx + dy * dy);
 
-        // 过滤异常大的单次移动（可能是鼠标跳跃或系统事件）
-        // 保留真实路径累计，但仍丢弃明显不合理的跳点，避免污染统计。
         const double maxSegmentDistance = 250.0;
         if (segmentDistance > maxSegmentDistance)
         {
             _accumulatedDistance = 0.0;
             _lastMousePosition = currentPosition;
-            _lastMouseSampleTime = now;
+            _lastMouseSampleTime = DateTime.Now;
             return;
         }
 
-        // 直接累计每一小段位移，统计真实走过的路径长度。
         _accumulatedDistance += segmentDistance;
         _lastMousePosition = currentPosition;
 
-        var elapsed = (now - _lastMouseSampleTime).TotalSeconds;
+        var elapsed = (DateTime.Now - _lastMouseSampleTime).TotalSeconds;
         if (elapsed < _mouseSampleInterval)
         {
             return;
@@ -244,7 +386,7 @@ public class InputMonitorService : IDisposable
 
         var reportedDistance = _accumulatedDistance;
         _accumulatedDistance = 0.0;
-        _lastMouseSampleTime = now;
+        _lastMouseSampleTime = DateTime.Now;
 
         if (reportedDistance <= 0)
         {
@@ -257,8 +399,6 @@ public class InputMonitorService : IDisposable
 
     private void HandleScroll(uint mouseData, string appName, string displayName)
     {
-        // mouseData contains the scroll delta in the high-order word
-        // WHEEL_DELTA is 120, so divide by 120 to get wheel ticks
         var delta = NativeInterop.HiWord((int)mouseData);
         var scrollDistance = Math.Abs(delta) / 120.0;
         MouseScrolled?.Invoke(scrollDistance, appName, displayName);

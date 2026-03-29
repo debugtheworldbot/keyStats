@@ -33,6 +33,11 @@ public static class ActiveWindowManager
     private static IntPtr _lastWindowHandle = IntPtr.Zero;
     private static ActiveAppInfo _lastAppInfo = ActiveAppInfo.Unknown;
 
+    // Cache process name + display name by process ID to avoid repeated
+    // Process.GetProcessById / FileVersionInfo lookups inside the hook callback.
+    private static readonly Dictionary<uint, (string ProcessName, string DisplayName)> _processCache = new();
+    private const int MaxProcessCacheSize = 64;
+
     /// <summary>
     /// Gets the foreground app identity for attribution and display.
     /// </summary>
@@ -72,6 +77,39 @@ public static class ActiveWindowManager
     }
 
     /// <summary>
+    /// Resolves app info from a pre-captured window handle and process ID.
+    /// Use this when hWnd/pid were captured in a time-critical path (e.g. hook callback)
+    /// and the expensive resolution is deferred to a background thread.
+    /// </summary>
+    public static ActiveAppInfo ResolveAppInfo(IntPtr hWnd, uint processId)
+    {
+        if (hWnd == IntPtr.Zero || processId == 0)
+        {
+            return ActiveAppInfo.Unknown;
+        }
+
+        try
+        {
+            lock (_lock)
+            {
+                if (hWnd == _lastWindowHandle && _lastAppInfo.IsKnown)
+                {
+                    return _lastAppInfo;
+                }
+
+                var appInfo = BuildAppInfo(hWnd, processId);
+                _lastWindowHandle = hWnd;
+                _lastAppInfo = appInfo;
+                return appInfo;
+            }
+        }
+        catch
+        {
+            return ActiveAppInfo.Unknown;
+        }
+    }
+
+    /// <summary>
     /// Backward-compatible accessor when only process identity is needed.
     /// </summary>
     public static string GetActiveProcessName()
@@ -83,14 +121,28 @@ public static class ActiveWindowManager
     {
         var windowTitle = GetWindowTitle(windowHandle);
 
+        // Use cached process identity when available to avoid expensive
+        // Process.GetProcessById + FileVersionInfo on every window switch.
+        if (_processCache.TryGetValue(processId, out var cached))
+        {
+            var displayName = ResolveDisplayName(cached.ProcessName, cached.DisplayName, windowTitle);
+            return new ActiveAppInfo(cached.ProcessName, displayName, windowTitle, processId, windowHandle);
+        }
+
         try
         {
             using var process = Process.GetProcessById((int)processId);
             var processName = NormalizeProcessName(process.ProcessName);
             var fileDisplayName = GetFileDisplayName(process, processName);
-            var displayName = ResolveDisplayName(processName, fileDisplayName, windowTitle);
 
-            return new ActiveAppInfo(processName, displayName, windowTitle, processId, windowHandle);
+            if (_processCache.Count >= MaxProcessCacheSize)
+            {
+                _processCache.Clear();
+            }
+            _processCache[processId] = (processName, fileDisplayName);
+
+            var resolvedDisplayName = ResolveDisplayName(processName, fileDisplayName, windowTitle);
+            return new ActiveAppInfo(processName, resolvedDisplayName, windowTitle, processId, windowHandle);
         }
         catch
         {
