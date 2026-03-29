@@ -22,7 +22,8 @@
         <viewmodels:StatsPopupViewModel/>
     </Window.DataContext>
 
-    <Border Background="{DynamicResource SurfaceBrush}"
+    <Border x:Name="RootBorder"
+            Background="{DynamicResource SurfaceBrush}"
             BorderThickness="0"
             CornerRadius="8">
         <ScrollViewer VerticalScrollBarVisibility="Auto"

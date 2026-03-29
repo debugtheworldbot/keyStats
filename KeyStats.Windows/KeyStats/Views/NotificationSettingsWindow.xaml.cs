@@ -1,6 +1,8 @@
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Interop;
+using KeyStats.Helpers;
 using KeyStats.Services;
 
 namespace KeyStats.Views;
@@ -14,6 +16,30 @@ public partial class NotificationSettingsWindow : Window
         InitializeComponent();
         LoadSettings();
         _isLoading = false;
+        Loaded += OnLoaded;
+        Closed += OnClosed;
+        ThemeManager.Instance.ThemeChanged += OnThemeChanged;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        ApplyWindowTitleBarTheme();
+    }
+
+    private void OnClosed(object? sender, System.EventArgs e)
+    {
+        ThemeManager.Instance.ThemeChanged -= OnThemeChanged;
+    }
+
+    private void OnThemeChanged()
+    {
+        Dispatcher.BeginInvoke(new System.Action(ApplyWindowTitleBarTheme));
+    }
+
+    private void ApplyWindowTitleBarTheme()
+    {
+        var handle = new WindowInteropHelper(this).Handle;
+        NativeInterop.TrySetImmersiveDarkMode(handle, ThemeManager.Instance.IsDarkTheme);
     }
 
     private void LoadSettings()

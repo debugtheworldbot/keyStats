@@ -441,6 +441,11 @@ public partial class StatsPopupWindow : Window
 
     private void ConfigureWindowForMode()
     {
+        if (FindName("RootBorder") is System.Windows.Controls.Border rootBorder)
+        {
+            rootBorder.CornerRadius = _isWindowMode ? new CornerRadius(0) : new CornerRadius(8);
+        }
+
         if (_isWindowMode)
         {
             WindowStyle = WindowStyle.SingleBorderWindow;

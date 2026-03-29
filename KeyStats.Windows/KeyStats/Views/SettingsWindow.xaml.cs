@@ -1,5 +1,7 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Windows;
+using System.Windows.Interop;
+using KeyStats.Helpers;
 
 namespace KeyStats.Views;
 
@@ -10,6 +12,30 @@ public partial class SettingsWindow : Window
     public SettingsWindow()
     {
         InitializeComponent();
+        Loaded += OnLoaded;
+        Closed += OnClosed;
+        ThemeManager.Instance.ThemeChanged += OnThemeChanged;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        ApplyWindowTitleBarTheme();
+    }
+
+    private void OnClosed(object? sender, System.EventArgs e)
+    {
+        ThemeManager.Instance.ThemeChanged -= OnThemeChanged;
+    }
+
+    private void OnThemeChanged()
+    {
+        Dispatcher.BeginInvoke(new System.Action(ApplyWindowTitleBarTheme));
+    }
+
+    private void ApplyWindowTitleBarTheme()
+    {
+        var handle = new WindowInteropHelper(this).Handle;
+        NativeInterop.TrySetImmersiveDarkMode(handle, ThemeManager.Instance.IsDarkTheme);
     }
 
     private void OpenStats_Click(object sender, RoutedEventArgs e)
