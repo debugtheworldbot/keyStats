@@ -30,7 +30,7 @@ public class InputMonitorService : IDisposable
 
     // hook 健康检查：watchdog 定时检测 hook 是否被 Windows 静默移除
     private Timer? _watchdogTimer;
-    private long _lastMouseHookTick;
+    private int _lastMouseHookTick;
     private NativeInterop.POINT _lastCursorPos;
     private const int WatchdogIntervalMs = 3000;
     private const int HookDeadThresholdMs = 5000;
@@ -53,7 +53,7 @@ public class InputMonitorService : IDisposable
         _keyboardProc = KeyboardHookCallback;
         _mouseProc = MouseHookCallback;
 
-        _lastMouseHookTick = Environment.TickCount64;
+        _lastMouseHookTick = Environment.TickCount;
 
         // 在专用线程上安装 hook 并运行消息循环，使 hook 回调不受 UI 线程阻塞影响
         var readyEvent = new ManualResetEventSlim(false);
@@ -159,7 +159,7 @@ public class InputMonitorService : IDisposable
             _mouseHookId = IntPtr.Zero;
         }
 
-        _lastMouseHookTick = Environment.TickCount64;
+        _lastMouseHookTick = Environment.TickCount;
 
         var readyEvent = new ManualResetEventSlim(false);
 
@@ -202,7 +202,7 @@ public class InputMonitorService : IDisposable
         if (!cursorMoved) return;
 
         // 光标在移动，但 hook 回调长时间未被触发 → hook 可能已被 Windows 静默移除
-        var elapsed = Environment.TickCount64 - Interlocked.Read(ref _lastMouseHookTick);
+        var elapsed = unchecked((uint)(Environment.TickCount - Volatile.Read(ref _lastMouseHookTick)));
         if (elapsed > HookDeadThresholdMs)
         {
             Debug.WriteLine($"Watchdog: mouse hook appears dead (no callback for {elapsed}ms), reinstalling...");
@@ -281,7 +281,7 @@ public class InputMonitorService : IDisposable
     {
         if (nCode >= 0)
         {
-            Interlocked.Exchange(ref _lastMouseHookTick, Environment.TickCount64);
+            Interlocked.Exchange(ref _lastMouseHookTick, Environment.TickCount);
 
             var message = (int)wParam;
             var hookStruct = Marshal.PtrToStructure<NativeInterop.MSLLHOOKSTRUCT>(lParam);
@@ -352,7 +352,6 @@ public class InputMonitorService : IDisposable
 
     private void HandleMouseMove(NativeInterop.POINT pt)
     {
-        var now = Environment.TickCount64;
         var currentPosition = new System.Drawing.Point(pt.x, pt.y);
 
         if (!_lastMousePosition.HasValue)
