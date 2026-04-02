@@ -25,5 +25,6 @@ final class MouseDistanceCalibrationWindowController: NSWindowController {
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
         window.orderFrontRegardless()
+        AppDelegate.trackPageView("mouse_calibration")
     }
 }

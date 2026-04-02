@@ -176,6 +176,7 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 -Configuration Release
 - Avoid forceful exception swallowing unless failure is intentionally non-fatal.
 - Use concise comments only where logic is non-obvious (hook/filter/math/interop sections).
 - Preserve existing Chinese-first user copy unless explicitly adding bilingual UI pattern.
+- When adding a new page/window/popup, add matching analytics in the same change: emit a `pageview` for the page and `click` events for key entry/actions, using the shared tracking helpers and stable cross-platform names.
 
 ## High-Risk Files (Review Carefully)
 

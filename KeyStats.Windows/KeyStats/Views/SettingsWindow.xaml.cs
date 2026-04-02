@@ -20,6 +20,7 @@ public partial class SettingsWindow : Window
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         ApplyWindowTitleBarTheme();
+        App.CurrentApp?.TrackPageView("settings");
     }
 
     private void OnClosed(object? sender, System.EventArgs e)
@@ -40,26 +41,31 @@ public partial class SettingsWindow : Window
 
     private void OpenStats_Click(object sender, RoutedEventArgs e)
     {
+        App.CurrentApp?.TrackClick("open_stats_popup");
         App.CurrentApp?.ShowStatsPanel();
     }
 
     private void ImportData_Click(object sender, RoutedEventArgs e)
     {
+        App.CurrentApp?.TrackClick("import_data");
         App.CurrentApp?.ImportData();
     }
 
     private void ExportData_Click(object sender, RoutedEventArgs e)
     {
+        App.CurrentApp?.TrackClick("export_data");
         App.CurrentApp?.ExportData();
     }
 
     private void NotificationSettings_Click(object sender, RoutedEventArgs e)
     {
+        App.CurrentApp?.TrackClick("open_notification_settings");
         App.CurrentApp?.ShowNotificationSettings();
     }
 
     private void MouseCalibration_Click(object sender, RoutedEventArgs e)
     {
+        App.CurrentApp?.TrackClick("open_mouse_calibration");
         App.CurrentApp?.ShowMouseCalibration();
     }
 

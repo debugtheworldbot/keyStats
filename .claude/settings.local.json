@@ -11,7 +11,10 @@
       "Bash(git fetch:*)",
       "Bash(grep:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "WebSearch",
+      "WebFetch(domain:posthog.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }

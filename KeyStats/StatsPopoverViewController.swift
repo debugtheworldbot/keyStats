@@ -1,5 +1,4 @@
 import Cocoa
-import PostHog
 import SwiftUI
 
 private func resolvedCGColor(_ color: NSColor, for view: NSView) -> CGColor {
@@ -713,6 +712,25 @@ class StatsPopoverViewController: NSViewController {
         } else {
             direction = .right
         }
+        if currentRange != lastRangeSegment {
+            AppDelegate.trackClick("chart_range", properties: [
+                "range": currentRange == 0 ? "7d" : "30d",
+                "range_index": currentRange
+            ])
+        }
+        if currentMetric != lastMetricSegment {
+            let metric = currentMetricName(for: currentMetric)
+            AppDelegate.trackClick("chart_metric", properties: [
+                "metric": metric,
+                "metric_index": currentMetric
+            ])
+        }
+        if currentStyle != lastChartStyleSegment {
+            AppDelegate.trackClick("chart_style", properties: [
+                "style": currentStyle == 0 ? "line" : "bar",
+                "style_index": currentStyle
+            ])
+        }
         lastRangeSegment = currentRange
         lastMetricSegment = currentMetric
         lastChartStyleSegment = currentStyle
@@ -788,24 +806,36 @@ class StatsPopoverViewController: NSViewController {
     // MARK: - 按钮操作
 
     @objc private func openSettings() {
-        PostHogSDK.shared.capture("settingsOpened")
+        AppDelegate.trackClick("open_settings")
         SettingsWindowController.shared.show()
         view.window?.performClose(nil)
     }
 
     @objc private func showAllTimeStats() {
+        AppDelegate.trackClick("open_all_time_stats")
         AllTimeStatsWindowController.shared.show()
         view.window?.performClose(nil)
     }
 
     @objc private func showAppStats() {
+        AppDelegate.trackClick("open_app_stats")
         AppStatsWindowController.shared.show()
         view.window?.performClose(nil)
     }
 
     @objc private func showKeyboardHeatmap() {
+        AppDelegate.trackClick("open_keyboard_heatmap")
         KeyboardHeatmapWindowController.shared.show()
         view.window?.performClose(nil)
+    }
+
+    private func currentMetricName(for index: Int) -> String {
+        switch index {
+        case 0: return "key_presses"
+        case 1: return "clicks"
+        case 2: return "mouse_distance"
+        default: return "scroll_distance"
+        }
     }
 
     @objc private func requestPermission() {

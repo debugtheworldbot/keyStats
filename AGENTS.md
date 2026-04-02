@@ -81,6 +81,7 @@ Issue type?
 - ✅ Use descriptive names, avoid magic numbers
 - ✅ Localize user-facing strings with `NSLocalizedString()`
 - ✅ Ensure UI colors adapt to dark mode (use dynamic colors + `resolvedCGColor`/`resolvedColor`)
+- ✅ When adding a new page/window/popover, add matching analytics at the same time: a `pageview` for the page itself and `click` events for key entry/actions, reusing the shared helper and stable event/property names
 
 ### 🌗 Dark/Light Theme Switching Notes (Critical)
 

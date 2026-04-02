@@ -46,5 +46,6 @@ final class KeyboardHeatmapWindowController: NSWindowController {
                 vc.resetToTodayAndRefresh()
             }
         }
+        AppDelegate.trackPageView("keyboard_heatmap")
     }
 }

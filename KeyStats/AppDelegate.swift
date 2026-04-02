@@ -9,6 +9,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var permissionCheckCount = 0
     private let maxPermissionChecks = 150 // 5分钟后停止（2秒间隔 × 150次）
     private let launchAtLoginPromptedKey = "launchAtLoginPrompted"
+    private let analyticsFirstOpenUTCKey = "analyticsFirstOpenUTC"
+    private let analyticsInstallTrackedKey = "analyticsInstallTracked"
     private var shouldShowAccessibilityPromptOnLaunch: Bool {
         #if DEBUG
         return false
@@ -23,7 +25,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         config.captureApplicationLifecycleEvents = true  // 自动采集应用生命周期事件
         config.captureScreenViews = true  // 自动采集屏幕视图
         PostHogSDK.shared.setup(config)
-        PostHogSDK.shared.register(["platform": "macOS"])  // 注册平台属性
+        PostHogSDK.shared.register(analyticsBaseProperties())  // 注册统一分析属性
+        trackInstallIfNeeded()
+        Self.trackEvent("app_open")
 
         // 初始化菜单栏控制器
         menuBarController = MenuBarController()
@@ -37,6 +41,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationWillTerminate(_ aNotification: Notification) {
+        Self.trackEvent("app_exit")
         // 停止输入监听
         InputMonitor.shared.stopMonitoring()
         permissionCheckTimer?.invalidate()
@@ -84,7 +89,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                     self.permissionCheckTimer = nil
                     InputMonitor.shared.startMonitoring()
                     self.promptLaunchAtLoginIfNeeded()
-                    PostHogSDK.shared.capture("permissionGranted", properties: ["permission": "accessibility"])
+                    Self.trackEvent("permission_granted", properties: ["permission": "accessibility"])
                     print("权限已授予，开始监听")
                     return
                 }
@@ -197,5 +202,70 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let insertIndex = min(1, mainMenu.items.count)
         mainMenu.insertItem(windowMenuItem, at: insertIndex)
         NSApp.windowsMenu = windowMenu
+    }
+
+    // MARK: - Analytics
+
+    private func analyticsBaseProperties() -> [String: Any] {
+        let info = Bundle.main.infoDictionary
+        let shortVersion = info?["CFBundleShortVersionString"] as? String ?? "0.0.0"
+        let buildVersion = info?["CFBundleVersion"] as? String ?? "0"
+        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
+        let osMajorVersion = "macOS \(osVersion.majorVersion)"
+        let osVersionString = "\(osVersion.majorVersion).\(osVersion.minorVersion).\(osVersion.patchVersion)"
+        let firstOpenUTC = analyticsFirstOpenUTC()
+
+        return [
+            "app_name": "KeyStats",
+            "app_version": shortVersion,
+            "app_build": buildVersion,
+            "platform": "macos",
+            "os": "macOS",
+            "os_major_version": osMajorVersion,
+            "os_version": osVersionString,
+            "first_open_utc": firstOpenUTC,
+            "$app_name": "KeyStats",
+            "$app_version": shortVersion,
+            "$os": "macOS",
+            "$os_version": osMajorVersion
+        ]
+    }
+
+    private func analyticsFirstOpenUTC() -> String {
+        let defaults = UserDefaults.standard
+        if let existing = defaults.string(forKey: analyticsFirstOpenUTCKey), !existing.isEmpty {
+            return existing
+        }
+
+        let value = ISO8601DateFormatter().string(from: Date())
+        defaults.set(value, forKey: analyticsFirstOpenUTCKey)
+        return value
+    }
+
+    private func trackInstallIfNeeded() {
+        let defaults = UserDefaults.standard
+        guard !defaults.bool(forKey: analyticsInstallTrackedKey) else { return }
+        Self.trackEvent("app_install", properties: ["install_utc": analyticsFirstOpenUTC()])
+        defaults.set(true, forKey: analyticsInstallTrackedKey)
+    }
+
+    static func trackEvent(_ eventName: String, properties: [String: Any]? = nil) {
+        if let properties {
+            PostHogSDK.shared.capture(eventName, properties: properties)
+        } else {
+            PostHogSDK.shared.capture(eventName)
+        }
+    }
+
+    static func trackPageView(_ pageName: String, properties: [String: Any]? = nil) {
+        var payload = properties ?? [:]
+        payload["page_name"] = pageName
+        trackEvent("pageview", properties: payload)
+    }
+
+    static func trackClick(_ elementName: String, properties: [String: Any]? = nil) {
+        var payload = properties ?? [:]
+        payload["element_name"] = elementName
+        trackEvent("click", properties: payload)
     }
 }

@@ -41,6 +41,7 @@ public partial class MouseCalibrationWindow : Window
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         ApplyWindowTitleBarTheme();
+        App.CurrentApp?.TrackPageView("mouse_calibration");
     }
 
     private void OnClosed(object? sender, EventArgs e)

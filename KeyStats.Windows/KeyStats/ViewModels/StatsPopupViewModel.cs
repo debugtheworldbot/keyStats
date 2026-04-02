@@ -118,10 +118,9 @@ public class StatsPopupViewModel : ViewModelBase
         {
             if (SetProperty(ref _selectedRangeIndex, value))
             {
-                var rangeName = value == 0 ? "7天" : "30天";
                 App.CurrentApp?.TrackClick("chart_range", new Dictionary<string, object?>
                 {
-                    ["range"] = rangeName,
+                    ["range"] = value == 0 ? "7d" : "30d",
                     ["range_index"] = value
                 });
                 UpdateHistorySection();
@@ -136,17 +135,16 @@ public class StatsPopupViewModel : ViewModelBase
         {
             if (SetProperty(ref _selectedMetricIndex, value))
             {
-                var metricName = value switch
-                {
-                    0 => "点击",
-                    1 => "按键",
-                    2 => "移动",
-                    3 => "滚动",
-                    _ => "未知"
-                };
                 App.CurrentApp?.TrackClick("chart_metric", new Dictionary<string, object?>
                 {
-                    ["metric"] = metricName,
+                    ["metric"] = value switch
+                    {
+                        0 => "clicks",
+                        1 => "key_presses",
+                        2 => "mouse_distance",
+                        3 => "scroll_distance",
+                        _ => "unknown"
+                    },
                     ["metric_index"] = value
                 });
                 UpdateHistorySection();
@@ -161,10 +159,9 @@ public class StatsPopupViewModel : ViewModelBase
         {
             if (SetProperty(ref _selectedChartStyleIndex, value))
             {
-                var styleName = value == 0 ? "折线" : "柱状";
                 App.CurrentApp?.TrackClick("chart_style", new Dictionary<string, object?>
                 {
-                    ["style"] = styleName,
+                    ["style"] = value == 0 ? "line" : "bar",
                     ["style_index"] = value
                 });
                 UpdateHistorySection();

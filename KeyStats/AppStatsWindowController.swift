@@ -31,6 +31,7 @@ final class AppStatsWindowController: NSWindowController {
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
         window.orderFrontRegardless()
+        AppDelegate.trackPageView("app_stats")
 
         if let vc = contentViewController as? AppStatsViewController {
             vc.refreshData()

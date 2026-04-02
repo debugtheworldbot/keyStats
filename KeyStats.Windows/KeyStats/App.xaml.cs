@@ -720,7 +720,13 @@ public partial class App : System.Windows.Application
         {
             ["app_name"] = "KeyStats",
             ["app_version"] = appVersion,
+            ["app_build"] = appVersion,
             ["platform"] = "windows",
+            ["os"] = "Windows",
+            ["os_major_version"] = windowsName,
+            ["os_version"] = $"{osVersion.Major}.{osVersion.Minor}.{osVersion.Build}",
+            ["$app_name"] = "KeyStats",
+            ["$app_version"] = appVersion,
             ["$os"] = "Windows",
             ["$os_version"] = windowsName,
             ["os_build"] = windowsBuild,

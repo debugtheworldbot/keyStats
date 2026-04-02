@@ -29,5 +29,6 @@ final class SettingsWindowController: NSWindowController {
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
         window.orderFrontRegardless()
+        AppDelegate.trackPageView("settings")
     }
 }

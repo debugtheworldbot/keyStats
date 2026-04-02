@@ -1,6 +1,4 @@
 import Cocoa
-import PostHog
-
 private func resolvedCGColor(_ color: NSColor, for view: NSView) -> CGColor {
     var resolved: CGColor = color.cgColor
     view.effectiveAppearance.performAsCurrentDrawingAppearance {
@@ -1018,7 +1016,7 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
         do {
             try LaunchAtLoginManager.shared.setEnabled(shouldEnable)
             updateState()
-            PostHogSDK.shared.capture("settingChanged", properties: ["setting": "launchAtLogin", "enabled": String(shouldEnable)])
+            AppDelegate.trackClick("setting_launch_at_login", properties: ["enabled": shouldEnable])
         } catch {
             updateState()
             showLaunchAtLoginError()
@@ -1026,11 +1024,13 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
     }
 
     @objc private func calibrateMouseDistance() {
+        AppDelegate.trackClick("open_mouse_calibration")
         MouseDistanceCalibrationWindowController.shared.show()
     }
 
     @objc private func openGitHubRepository() {
         guard let url = githubRepositoryURL else { return }
+        AppDelegate.trackClick("open_github_repository")
         NSWorkspace.shared.open(url)
     }
 
@@ -1046,11 +1046,12 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
 
         if alert.runModal() == .alertFirstButtonReturn {
             StatsManager.shared.resetStats()
-            PostHogSDK.shared.capture("statsReset")
+            AppDelegate.trackEvent("stats_reset")
         }
     }
 
     @objc private func exportData() {
+        AppDelegate.trackClick("export_data")
         let savePanel = NSSavePanel()
         savePanel.allowedFileTypes = ["json"]
         savePanel.canCreateDirectories = true
@@ -1073,6 +1074,7 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
     }
 
     @objc private func importData() {
+        AppDelegate.trackClick("import_data")
         let openPanel = NSOpenPanel()
         openPanel.allowedFileTypes = ["json"]
         openPanel.canChooseFiles = true
@@ -1189,7 +1191,7 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
         do {
             let data = try Data(contentsOf: url)
             try StatsManager.shared.importStatsData(from: data, mode: mode)
-            PostHogSDK.shared.capture("statsImported", properties: ["mode": mode == .overwrite ? "overwrite" : "merge"])
+            AppDelegate.trackEvent("stats_imported", properties: ["mode": mode == .overwrite ? "overwrite" : "merge"])
             showImportSuccess(mode: mode)
         } catch {
             showImportError(error)
