@@ -834,7 +834,8 @@ class StatsPopoverViewController: NSViewController {
         case 0: return "key_presses"
         case 1: return "clicks"
         case 2: return "mouse_distance"
-        default: return "scroll_distance"
+        case 3: return "scroll_distance"
+        default: return "unknown"
         }
     }
 
