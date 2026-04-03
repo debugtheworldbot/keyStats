@@ -120,8 +120,7 @@ public class StatsPopupViewModel : ViewModelBase
             {
                 App.CurrentApp?.TrackClick("chart_range", new Dictionary<string, object?>
                 {
-                    ["range"] = value == 0 ? "7d" : "30d",
-                    ["range_index"] = value
+                    ["range"] = value == 0 ? "7d" : "30d"
                 });
                 UpdateHistorySection();
             }
@@ -144,8 +143,7 @@ public class StatsPopupViewModel : ViewModelBase
                         2 => "mouse_distance",
                         3 => "scroll_distance",
                         _ => "unknown"
-                    },
-                    ["metric_index"] = value
+                    }
                 });
                 UpdateHistorySection();
             }
@@ -161,8 +159,7 @@ public class StatsPopupViewModel : ViewModelBase
             {
                 App.CurrentApp?.TrackClick("chart_style", new Dictionary<string, object?>
                 {
-                    ["style"] = value == 0 ? "line" : "bar",
-                    ["style_index"] = value
+                    ["style"] = value == 0 ? "line" : "bar"
                 });
                 UpdateHistorySection();
             }

@@ -714,21 +714,18 @@ class StatsPopoverViewController: NSViewController {
         }
         if currentRange != lastRangeSegment {
             AppDelegate.trackClick("chart_range", properties: [
-                "range": currentRange == 0 ? "7d" : "30d",
-                "range_index": currentRange
+                "range": currentRange == 0 ? "7d" : "30d"
             ])
         }
         if currentMetric != lastMetricSegment {
             let metric = currentMetricName(for: currentMetric)
             AppDelegate.trackClick("chart_metric", properties: [
-                "metric": metric,
-                "metric_index": currentMetric
+                "metric": metric
             ])
         }
         if currentStyle != lastChartStyleSegment {
             AppDelegate.trackClick("chart_style", properties: [
-                "style": currentStyle == 0 ? "line" : "bar",
-                "style_index": currentStyle
+                "style": currentStyle == 0 ? "line" : "bar"
             ])
         }
         lastRangeSegment = currentRange
