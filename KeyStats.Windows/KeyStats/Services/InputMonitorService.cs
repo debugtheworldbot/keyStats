@@ -35,6 +35,9 @@ public class InputMonitorService : IDisposable
     private NativeInterop.POINT _lastCursorPos;
     private const int WatchdogIntervalMs = 3000;
     private const int HookDeadThresholdMs = 5000;
+    private const int HookInstallReadyTimeoutMs = 5000;
+    private const int HookReinstallRetryCount = 3;
+    private const int HookReinstallRetryDelayMs = 750;
 
     public event Action<string, string, string>? KeyPressed;
     public event Action<string, string>? LeftMouseClicked;
@@ -53,43 +56,10 @@ public class InputMonitorService : IDisposable
 
         _keyboardProc = KeyboardHookCallback;
         _mouseProc = MouseHookCallback;
+        ResetTransientState();
 
         _lastMouseHookTick = Environment.TickCount;
-
-        // 在专用线程上安装 hook 并运行消息循环，使 hook 回调不受 UI 线程阻塞影响
-        var readyEvent = new ManualResetEventSlim(false);
-        Exception? hookError = null;
-
-        _hookThread = new Thread(() =>
-        {
-            try
-            {
-                _hookThreadId = NativeInterop.GetCurrentThreadId();
-                InstallHooks();
-                readyEvent.Set();
-
-                // 低级钩子需要消息循环来分发回调
-                while (NativeInterop.GetMessage(out var msg, IntPtr.Zero, 0, 0) > 0)
-                {
-                    NativeInterop.TranslateMessage(ref msg);
-                    NativeInterop.DispatchMessage(ref msg);
-                }
-            }
-            catch (Exception ex)
-            {
-                hookError = ex;
-                readyEvent.Set();
-            }
-        });
-        _hookThread.IsBackground = true;
-        _hookThread.Name = "InputHookThread";
-        _hookThread.Start();
-
-        readyEvent.Wait();
-        if (hookError != null)
-        {
-            throw hookError;
-        }
+        StartHookThread();
 
         _isMonitoring = true;
 
@@ -161,8 +131,16 @@ public class InputMonitorService : IDisposable
         }
 
         _lastMouseHookTick = Environment.TickCount;
+        StartHookThread();
+        ResetTransientState();
+        Debug.WriteLine("Watchdog: hooks reinstalled");
+    }
 
+    private void StartHookThread()
+    {
+        // 在专用线程上安装 hook 并运行消息循环，使 hook 回调不受 UI 线程阻塞影响
         var readyEvent = new ManualResetEventSlim(false);
+        Exception? hookError = null;
 
         _hookThread = new Thread(() =>
         {
@@ -172,6 +150,7 @@ public class InputMonitorService : IDisposable
                 InstallHooks();
                 readyEvent.Set();
 
+                // 低级钩子需要消息循环来分发回调
                 while (NativeInterop.GetMessage(out var msg, IntPtr.Zero, 0, 0) > 0)
                 {
                     NativeInterop.TranslateMessage(ref msg);
@@ -180,7 +159,7 @@ public class InputMonitorService : IDisposable
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Watchdog: hook reinstall failed: {ex.Message}");
+                hookError = ex;
                 readyEvent.Set();
             }
         });
@@ -188,8 +167,16 @@ public class InputMonitorService : IDisposable
         _hookThread.Name = "InputHookThread";
         _hookThread.Start();
 
-        readyEvent.Wait();
-        Debug.WriteLine("Watchdog: hooks reinstalled");
+        if (!readyEvent.Wait(HookInstallReadyTimeoutMs))
+        {
+            TryStopHookThread();
+            throw new TimeoutException($"Timed out waiting {HookInstallReadyTimeoutMs}ms for hook installation.");
+        }
+
+        if (hookError != null)
+        {
+            throw hookError;
+        }
     }
 
     private void WatchdogCallback(object? state)
@@ -199,8 +186,9 @@ public class InputMonitorService : IDisposable
         NativeInterop.GetCursorPos(out var currentPos);
         var cursorMoved = currentPos.x != _lastCursorPos.x || currentPos.y != _lastCursorPos.y;
         _lastCursorPos = currentPos;
+        var keyboardActivity = HasRecentKeyboardActivity();
 
-        if (!cursorMoved) return;
+        if (!cursorMoved && !keyboardActivity) return;
 
         // 光标在移动，但 hook 回调长时间未被触发 → hook 可能已被 Windows 静默移除
         var elapsed = unchecked((uint)(Environment.TickCount - Volatile.Read(ref _lastMouseHookTick)));
@@ -211,10 +199,14 @@ public class InputMonitorService : IDisposable
                 return;
             }
 
-            Debug.WriteLine($"Watchdog: mouse hook appears dead (no callback for {elapsed}ms), reinstalling...");
+            Debug.WriteLine($"Watchdog: hook appears dead (no callback for {elapsed}ms), reinstalling...");
             try
             {
-                ReinstallHooks();
+                RetryHookRecovery("watchdog");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Watchdog: recovery failed after retries. {ex.Message}");
             }
             finally
             {
@@ -231,12 +223,7 @@ public class InputMonitorService : IDisposable
         _watchdogTimer = null;
 
         // 终止 hook 线程的消息循环
-        if (_hookThreadId != 0)
-        {
-            NativeInterop.PostThreadMessage(_hookThreadId, NativeInterop.WM_QUIT, IntPtr.Zero, IntPtr.Zero);
-        }
-
-        _hookThread?.Join(2000);
+        TryStopHookThread();
 
         if (_keyboardHookId != IntPtr.Zero)
         {
@@ -250,7 +237,7 @@ public class InputMonitorService : IDisposable
             _mouseHookId = IntPtr.Zero;
         }
 
-        _pressedKeys.Clear();
+        ResetTransientState();
 
         _isMonitoring = false;
         Debug.WriteLine("Input monitoring stopped");
@@ -266,24 +253,30 @@ public class InputMonitorService : IDisposable
 
             if (message == NativeInterop.WM_KEYDOWN || message == NativeInterop.WM_SYSKEYDOWN)
             {
-                if (!_pressedKeys.Contains(vkCode))
+                lock (_pressedKeys)
                 {
-                    _pressedKeys.Add(vkCode);
-                    // GetKeyName 需在 hook 回调中同步调用以准确获取修饰键状态
-                    var keyName = KeyNameMapper.GetKeyName(vkCode);
-                    // 捕获前台窗口句柄和进程 ID（轻量 P/Invoke），完整解析异步进行
-                    var hWnd = NativeInterop.GetForegroundWindow();
-                    NativeInterop.GetWindowThreadProcessId(hWnd, out uint pid);
-                    ThreadPool.QueueUserWorkItem(_ =>
+                    if (!_pressedKeys.Contains(vkCode))
                     {
-                        var activeApp = ActiveWindowManager.ResolveAppInfo(hWnd, pid);
-                        KeyPressed?.Invoke(keyName, activeApp.AppName, activeApp.DisplayName);
-                    });
+                        _pressedKeys.Add(vkCode);
+                        // GetKeyName 需在 hook 回调中同步调用以准确获取修饰键状态
+                        var keyName = KeyNameMapper.GetKeyName(vkCode);
+                        // 捕获前台窗口句柄和进程 ID（轻量 P/Invoke），完整解析异步进行
+                        var hWnd = NativeInterop.GetForegroundWindow();
+                        NativeInterop.GetWindowThreadProcessId(hWnd, out uint pid);
+                        ThreadPool.QueueUserWorkItem(_ =>
+                        {
+                            var activeApp = ActiveWindowManager.ResolveAppInfo(hWnd, pid);
+                            KeyPressed?.Invoke(keyName, activeApp.AppName, activeApp.DisplayName);
+                        });
+                    }
                 }
             }
             else if (message == NativeInterop.WM_KEYUP || message == NativeInterop.WM_SYSKEYUP)
             {
-                _pressedKeys.Remove(vkCode);
+                lock (_pressedKeys)
+                {
+                    _pressedKeys.Remove(vkCode);
+                }
             }
         }
 
@@ -420,6 +413,111 @@ public class InputMonitorService : IDisposable
     {
         _lastMousePosition = null;
         _accumulatedDistance = 0.0;
+    }
+
+    public void HandleSystemResume()
+    {
+        if (!_isMonitoring)
+        {
+            StartMonitoring();
+            return;
+        }
+
+        if (Interlocked.CompareExchange(ref _isReinstallingHooks, 1, 0) != 0)
+        {
+            return;
+        }
+
+        try
+        {
+            Debug.WriteLine("Handling system resume: refreshing hooks and transient state.");
+            RetryHookRecovery("resume");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Resume recovery failed after retries. {ex.Message}");
+        }
+        finally
+        {
+            Volatile.Write(ref _isReinstallingHooks, 0);
+        }
+    }
+
+    private void RestartMonitoring()
+    {
+        StopMonitoring();
+        StartMonitoring();
+    }
+
+    private void RetryHookRecovery(string reason)
+    {
+        Exception? lastError = null;
+
+        for (var attempt = 1; attempt <= HookReinstallRetryCount; attempt++)
+        {
+            try
+            {
+                Debug.WriteLine($"Hook recovery attempt {attempt}/{HookReinstallRetryCount} ({reason}).");
+                ReinstallHooks();
+                return;
+            }
+            catch (Exception ex)
+            {
+                lastError = ex;
+                Debug.WriteLine($"Hook recovery attempt {attempt} failed: {ex.Message}");
+                if (attempt < HookReinstallRetryCount)
+                {
+                    Thread.Sleep(HookReinstallRetryDelayMs);
+                }
+            }
+        }
+
+        Debug.WriteLine("Hook reinstall retries exhausted, restarting monitoring.");
+        RestartMonitoring();
+
+        if (!_isMonitoring)
+        {
+            throw lastError ?? new InvalidOperationException("Hook recovery failed and monitoring did not restart.");
+        }
+    }
+
+    private bool HasRecentKeyboardActivity()
+    {
+        for (var vk = 0x08; vk <= 0xFE; vk++)
+        {
+            var state = NativeInterop.GetAsyncKeyState(vk);
+            if ((state & 0x0001) != 0 || (state & 0x8000) != 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void TryStopHookThread()
+    {
+        var threadId = _hookThreadId;
+        if (threadId != 0)
+        {
+            NativeInterop.PostThreadMessage(threadId, NativeInterop.WM_QUIT, IntPtr.Zero, IntPtr.Zero);
+        }
+
+        _hookThread?.Join(2000);
+        _hookThread = null;
+        _hookThreadId = 0;
+    }
+
+    private void ResetTransientState()
+    {
+        lock (_pressedKeys)
+        {
+            _pressedKeys.Clear();
+        }
+
+        _lastMousePosition = null;
+        _accumulatedDistance = 0.0;
+        _lastMouseSampleTime = DateTime.MinValue;
     }
 
     public void Dispose()

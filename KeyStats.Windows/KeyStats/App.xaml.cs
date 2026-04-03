@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -26,6 +27,7 @@ public partial class App : System.Windows.Application
     private Forms.NotifyIcon? _trayIcon;
     private TrayIconViewModel? _trayIconViewModel;
     private TrayContextMenuHost? _trayContextMenuHost;
+    private TaskbarCreatedWatcher? _taskbarCreatedWatcher;
     private SettingsWindow? _settingsWindow;
     private NotificationSettingsWindow? _notificationSettingsWindow;
     private MouseCalibrationWindow? _mouseCalibrationWindow;
@@ -35,6 +37,7 @@ public partial class App : System.Windows.Application
     private System.Threading.Mutex? _singleInstanceMutex;
     private string? _appVersion;
     private IPostHogAnalytics? _postHogClient;
+    private DateTime _lastResumeRecoveryUtc = DateTime.MinValue;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -75,6 +78,7 @@ public partial class App : System.Windows.Application
 
             Console.WriteLine("Applying theme...");
             ThemeManager.Instance.Initialize();
+            RegisterSystemEventHandlers();
 
             Console.WriteLine("Initializing services...");
             // Initialize services
@@ -85,66 +89,20 @@ public partial class App : System.Windows.Application
             InputMonitorService.Instance.StartMonitoring();
 
             Console.WriteLine("Creating tray icon...");
-            // Create tray icon
             _trayIconViewModel = new TrayIconViewModel();
-            var contextMenu = CreateContextMenu();
-            _trayContextMenuHost = new TrayContextMenuHost(contextMenu);
-            _trayIcon = new Forms.NotifyIcon
+            _trayIconViewModel.PropertyChanged += OnTrayIconViewModelPropertyChanged;
+            _taskbarCreatedWatcher = new TaskbarCreatedWatcher(() =>
             {
-                Icon = _trayIconViewModel.TrayIcon,
-                Text = _trayIconViewModel.TooltipText,
-                Visible = true
-            };
-            _trayIcon.MouseClick += (s, e) =>
-            {
-                if (e.Button == Forms.MouseButtons.Right)
+                Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        _trayContextMenuHost?.ShowAtCursor();
-                    }));
-                    return;
-                }
-
-                if (e.Button != Forms.MouseButtons.Left)
-                {
-                    return;
-                }
-
-                Console.WriteLine("NotifyIcon left click fired - showing stats");
-                Task.Run(() =>
-                {
-                    try
-                    {
-                        TrackClick("tray_icon");
-                    }
-                    catch
-                    {
-                        // Ignore analytics failures.
-                    }
-                });
-                var anchorPoint = Forms.Control.MousePosition;
-                Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    _trayIconViewModel?.ShowStats(anchorPoint);
+                    Console.WriteLine("TaskbarCreated received, recreating tray integration.");
+                    RecreateTrayIntegration();
                 }));
-            };
+            });
+            RecreateTrayIntegration();
 
             Console.WriteLine("Tray icon created successfully!");
             Console.WriteLine("App is running. Look for the icon in the system tray.");
-
-            // Bind icon and tooltip updates
-            _trayIconViewModel.PropertyChanged += (s, ev) =>
-            {
-                if (ev.PropertyName == nameof(TrayIconViewModel.TrayIcon))
-                {
-                    _trayIcon.Icon = _trayIconViewModel.TrayIcon;
-                }
-                else if (ev.PropertyName == nameof(TrayIconViewModel.TooltipText))
-                {
-                    _trayIcon.Text = _trayIconViewModel.TooltipText;
-                }
-            };
         }
         catch (Exception ex)
         {
@@ -458,13 +416,22 @@ public partial class App : System.Windows.Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        UnregisterSystemEventHandlers();
+        if (_trayIconViewModel != null)
+        {
+            _trayIconViewModel.PropertyChanged -= OnTrayIconViewModelPropertyChanged;
+        }
         TrackAnalyticsExit();
         _trayIconViewModel?.Cleanup();
         _trayContextMenuHost?.Dispose();
+        _taskbarCreatedWatcher?.Dispose();
+        _taskbarCreatedWatcher = null;
         if (_trayIcon != null)
         {
+            _trayIcon.MouseClick -= OnTrayIconMouseClick;
             _trayIcon.Visible = false;
             _trayIcon.Dispose();
+            _trayIcon = null;
         }
         InputMonitorService.Instance.StopMonitoring();
         StatsManager.Instance.FlushPendingSave();
@@ -874,6 +841,177 @@ public partial class App : System.Windows.Application
     /// </summary>
     public static App? CurrentApp => Current as App;
 
+    private void RegisterSystemEventHandlers()
+    {
+        SystemEvents.PowerModeChanged += OnPowerModeChanged;
+        SystemEvents.SessionSwitch += OnSessionSwitch;
+    }
+
+    private void UnregisterSystemEventHandlers()
+    {
+        SystemEvents.PowerModeChanged -= OnPowerModeChanged;
+        SystemEvents.SessionSwitch -= OnSessionSwitch;
+    }
+
+    private void OnPowerModeChanged(object? sender, PowerModeChangedEventArgs e)
+    {
+        switch (e.Mode)
+        {
+            case PowerModes.Suspend:
+                Console.WriteLine("System suspend detected, flushing pending stats.");
+                StatsManager.Instance.FlushPendingSave();
+                InputMonitorService.Instance.ResetLastMousePosition();
+                break;
+            case PowerModes.Resume:
+                ScheduleResumeRecovery("power_resume");
+                break;
+        }
+    }
+
+    private void OnSessionSwitch(object? sender, SessionSwitchEventArgs e)
+    {
+        switch (e.Reason)
+        {
+            case SessionSwitchReason.SessionLock:
+                Console.WriteLine("Session lock detected, flushing pending stats.");
+                StatsManager.Instance.FlushPendingSave();
+                break;
+            case SessionSwitchReason.SessionUnlock:
+            case SessionSwitchReason.ConsoleConnect:
+            case SessionSwitchReason.RemoteConnect:
+                ScheduleResumeRecovery($"session_{e.Reason}");
+                break;
+        }
+    }
+
+    private void ScheduleResumeRecovery(string trigger)
+    {
+        var nowUtc = DateTime.UtcNow;
+        if (nowUtc - _lastResumeRecoveryUtc < TimeSpan.FromSeconds(5))
+        {
+            return;
+        }
+
+        _lastResumeRecoveryUtc = nowUtc;
+        Dispatcher.BeginInvoke(new Action(() => RecoverAfterResume(trigger)));
+    }
+
+    private void RecoverAfterResume(string trigger)
+    {
+        Console.WriteLine($"Running resume recovery triggered by {trigger}.");
+
+        try
+        {
+            StatsManager.Instance.HandleSystemResume();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Stats resume recovery failed: {ex}");
+        }
+
+        // HandleSystemResume 包含 Thread.Join / readyEvent.Wait 等阻塞操作，
+        // 不能在 Dispatcher 线程执行，否则 UI 会冻结 15-20 秒。
+        Task.Run(() =>
+        {
+            try
+            {
+                InputMonitorService.Instance.HandleSystemResume();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Input monitor resume recovery failed: {ex}");
+            }
+        });
+
+        try
+        {
+            RecreateTrayIntegration();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Tray icon resume recovery failed: {ex}");
+        }
+    }
+
+    private void RecreateTrayIntegration()
+    {
+        if (_trayIconViewModel == null)
+        {
+            return;
+        }
+
+        _trayContextMenuHost?.Dispose();
+        _trayContextMenuHost = new TrayContextMenuHost(CreateContextMenu());
+
+        if (_trayIcon != null)
+        {
+            _trayIcon.MouseClick -= OnTrayIconMouseClick;
+            _trayIcon.Visible = false;
+            _trayIcon.Dispose();
+            _trayIcon = null;
+        }
+
+        _trayIcon = new Forms.NotifyIcon
+        {
+            Icon = _trayIconViewModel.TrayIcon,
+            Text = _trayIconViewModel.TooltipText,
+            Visible = true
+        };
+        _trayIcon.MouseClick += OnTrayIconMouseClick;
+    }
+
+    private void OnTrayIconMouseClick(object? sender, Forms.MouseEventArgs e)
+    {
+        if (e.Button == Forms.MouseButtons.Right)
+        {
+            Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _trayContextMenuHost?.ShowAtCursor();
+            }));
+            return;
+        }
+
+        if (e.Button != Forms.MouseButtons.Left)
+        {
+            return;
+        }
+
+        Console.WriteLine("NotifyIcon left click fired - showing stats");
+        Task.Run(() =>
+        {
+            try
+            {
+                TrackClick("tray_icon");
+            }
+            catch
+            {
+                // Ignore analytics failures.
+            }
+        });
+        var anchorPoint = Forms.Control.MousePosition;
+        Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+        {
+            _trayIconViewModel?.ShowStats(anchorPoint);
+        }));
+    }
+
+    private void OnTrayIconViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (_trayIcon == null || _trayIconViewModel == null)
+        {
+            return;
+        }
+
+        if (e.PropertyName == nameof(TrayIconViewModel.TrayIcon))
+        {
+            _trayIcon.Icon = _trayIconViewModel.TrayIcon;
+        }
+        else if (e.PropertyName == nameof(TrayIconViewModel.TooltipText))
+        {
+            _trayIcon.Text = _trayIconViewModel.TooltipText;
+        }
+    }
+
     private sealed class TrayContextMenuHost : IDisposable
     {
         private readonly ContextMenu _menu;
@@ -1010,6 +1148,41 @@ public partial class App : System.Windows.Application
                 };
 
                 Content = Anchor;
+            }
+        }
+    }
+
+    private sealed class TaskbarCreatedWatcher : Forms.NativeWindow, IDisposable
+    {
+        private readonly Action _taskbarCreatedHandler;
+        private readonly int _taskbarCreatedMessage;
+
+        public TaskbarCreatedWatcher(Action taskbarCreatedHandler)
+        {
+            _taskbarCreatedHandler = taskbarCreatedHandler;
+            _taskbarCreatedMessage = unchecked((int)NativeInterop.RegisterWindowMessage("TaskbarCreated"));
+
+            CreateHandle(new Forms.CreateParams
+            {
+                Caption = "KeyStatsTaskbarWatcher"
+            });
+        }
+
+        protected override void WndProc(ref Forms.Message m)
+        {
+            if (_taskbarCreatedMessage != 0 && m.Msg == _taskbarCreatedMessage)
+            {
+                _taskbarCreatedHandler();
+            }
+
+            base.WndProc(ref m);
+        }
+
+        public void Dispose()
+        {
+            if (Handle != IntPtr.Zero)
+            {
+                DestroyHandle();
             }
         }
     }

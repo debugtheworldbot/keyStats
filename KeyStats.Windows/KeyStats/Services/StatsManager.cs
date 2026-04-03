@@ -66,12 +66,7 @@ public class StatsManager : IDisposable
         Settings = LoadSettings();
         History = LoadHistory();
         CurrentStats = LoadStats() ?? new DailyStats();
-
-        // Check if stats are from today
-        if (CurrentStats.Date.Date != DateTime.Today)
-        {
-            CurrentStats = new DailyStats();
-        }
+        SynchronizeCurrentDay(DateTime.Today, notifyStatsUpdate: false);
 
         UpdateNotificationBaselines();
         SaveStats();
@@ -261,10 +256,7 @@ public class StatsManager : IDisposable
 
     private void EnsureCurrentDay()
     {
-        if (CurrentStats.Date.Date != DateTime.Today)
-        {
-            ResetStats(DateTime.Today);
-        }
+        SynchronizeCurrentDay(DateTime.Today, notifyStatsUpdate: true);
     }
 
     private void ScheduleSave()
@@ -876,18 +868,15 @@ public class StatsManager : IDisposable
 
     private void PerformMidnightReset()
     {
-        var now = DateTime.Now;
-        if (CurrentStats.Date.Date != now.Date)
-        {
-            ResetStats(now);
-        }
-        Dictionary<string, DailyStats> historySnapshot;
-        lock (_lock)
-        {
-            historySnapshot = CloneHistorySnapshot(History);
-        }
-        SaveHistorySnapshot(historySnapshot);
+        SynchronizeCurrentDay(DateTime.Now, notifyStatsUpdate: true);
         ScheduleNextMidnightReset();
+    }
+
+    public void HandleSystemResume()
+    {
+        SynchronizeCurrentDay(DateTime.Now, notifyStatsUpdate: true);
+        ScheduleNextMidnightReset();
+        SaveStats();
     }
 
     public void ResetStats()
@@ -911,6 +900,58 @@ public class StatsManager : IDisposable
         SaveHistorySnapshot(historySnapshot);
         UpdateNotificationBaselines();
         NotifyStatsUpdate();
+        SaveStats();
+    }
+
+    private void SynchronizeCurrentDay(DateTime targetDate, bool notifyStatsUpdate)
+    {
+        var normalizedTargetDate = targetDate.Date;
+        Dictionary<string, DailyStats>? historySnapshot = null;
+        var changed = false;
+
+        lock (_lock)
+        {
+            var currentDate = CurrentStats.Date.Date;
+            if (currentDate == normalizedTargetDate)
+            {
+                return;
+            }
+
+            History[currentDate.ToString("yyyy-MM-dd")] = CloneDailyStats(CurrentStats, currentDate);
+
+            if (currentDate < normalizedTargetDate)
+            {
+                for (var missingDate = currentDate.AddDays(1); missingDate < normalizedTargetDate; missingDate = missingDate.AddDays(1))
+                {
+                    var key = missingDate.ToString("yyyy-MM-dd");
+                    if (!History.ContainsKey(key))
+                    {
+                        History[key] = new DailyStats(missingDate);
+                    }
+                }
+            }
+
+            CurrentStats = new DailyStats(normalizedTargetDate);
+            historySnapshot = CloneHistorySnapshot(History);
+            UpdateNotificationBaselines();
+            changed = true;
+        }
+
+        if (historySnapshot != null)
+        {
+            SaveHistorySnapshot(historySnapshot);
+        }
+
+        if (!changed)
+        {
+            return;
+        }
+
+        if (notifyStatsUpdate)
+        {
+            NotifyStatsUpdate();
+        }
+
         SaveStats();
     }
 
