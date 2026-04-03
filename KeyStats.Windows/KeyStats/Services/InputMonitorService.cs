@@ -228,7 +228,7 @@ public class InputMonitorService : IDisposable
         // 终止 hook 线程的消息循环
         if (!TryStopHookThread())
         {
-            throw new InvalidOperationException("Failed to stop the hook thread within the timeout.");
+            Debug.WriteLine("Failed to stop the hook thread within the timeout. Continuing shutdown cleanup.");
         }
 
         if (_keyboardHookId != IntPtr.Zero)
