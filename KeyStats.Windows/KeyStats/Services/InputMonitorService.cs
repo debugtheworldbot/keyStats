@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using KeyStats.Helpers;
 
 namespace KeyStats.Services;
@@ -134,8 +135,7 @@ public class InputMonitorService : IDisposable
 
     private void StartHookThread()
     {
-        using var readyEvent = new ManualResetEventSlim(false);
-        Exception? hookError = null;
+        var hookStartup = new TaskCompletionSource<Exception?>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         _hookThread = new Thread(() =>
         {
@@ -143,7 +143,7 @@ public class InputMonitorService : IDisposable
             {
                 _hookThreadId = NativeInterop.GetCurrentThreadId();
                 InstallHooks();
-                readyEvent.Set();
+                hookStartup.TrySetResult(null);
 
                 while (NativeInterop.GetMessage(out var msg, IntPtr.Zero, 0, 0) > 0)
                 {
@@ -153,15 +153,14 @@ public class InputMonitorService : IDisposable
             }
             catch (Exception ex)
             {
-                hookError = ex;
-                readyEvent.Set();
+                hookStartup.TrySetResult(ex);
             }
         });
         _hookThread.IsBackground = true;
         _hookThread.Name = "InputHookThread";
         _hookThread.Start();
 
-        if (!readyEvent.Wait(HookInstallReadyTimeoutMs))
+        if (!hookStartup.Task.Wait(HookInstallReadyTimeoutMs))
         {
             if (!TryStopHookThread())
             {
@@ -171,6 +170,7 @@ public class InputMonitorService : IDisposable
             throw new TimeoutException($"Timed out waiting {HookInstallReadyTimeoutMs}ms for hook installation.");
         }
 
+        var hookError = hookStartup.Task.Result;
         if (hookError != null)
         {
             if (!TryStopHookThread())
@@ -515,6 +515,12 @@ public class InputMonitorService : IDisposable
         if (threadId != 0)
         {
             NativeInterop.PostThreadMessage(threadId, NativeInterop.WM_QUIT, IntPtr.Zero, IntPtr.Zero);
+        }
+
+        if (thread == null)
+        {
+            Debug.WriteLine("Hook thread reference is missing while thread id is still set; keeping thread state for a later retry.");
+            return false;
         }
 
         if (thread != null && !thread.Join(HookThreadStopTimeoutMs))
