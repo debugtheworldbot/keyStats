@@ -916,7 +916,6 @@ public class StatsManager : IDisposable
     private void SynchronizeCurrentDay(DateTime targetDate, bool notifyStatsUpdate)
     {
         var normalizedTargetDate = targetDate.Date;
-        Dictionary<string, DailyStats>? historySnapshot = null;
         var changed = false;
 
         lock (_lock)
@@ -942,7 +941,6 @@ public class StatsManager : IDisposable
             }
 
             CurrentStats = new DailyStats(normalizedTargetDate);
-            historySnapshot = CloneHistorySnapshot(History);
             UpdateNotificationBaselines();
             changed = true;
         }

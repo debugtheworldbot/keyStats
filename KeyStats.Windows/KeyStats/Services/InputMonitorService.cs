@@ -109,16 +109,8 @@ public class InputMonitorService : IDisposable
     {
         Debug.WriteLine("Watchdog: reinstalling hooks...");
 
-        // 在 hook 线程上卸载旧 hook 并重新安装
-        if (_hookThreadId != 0)
-        {
-            // 终止旧的消息循环
-            NativeInterop.PostThreadMessage(_hookThreadId, NativeInterop.WM_QUIT, IntPtr.Zero, IntPtr.Zero);
-        }
+        TryStopHookThread();
 
-        _hookThread?.Join(2000);
-
-        // 清理可能残留的 hook handle
         if (_keyboardHookId != IntPtr.Zero)
         {
             NativeInterop.UnhookWindowsHookEx(_keyboardHookId);
@@ -254,22 +246,22 @@ public class InputMonitorService : IDisposable
 
             if (message == NativeInterop.WM_KEYDOWN || message == NativeInterop.WM_SYSKEYDOWN)
             {
+                bool isNewKey;
                 lock (_pressedKeys)
                 {
-                    if (!_pressedKeys.Contains(vkCode))
+                    isNewKey = _pressedKeys.Add(vkCode);
+                }
+
+                if (isNewKey)
+                {
+                    var keyName = KeyNameMapper.GetKeyName(vkCode);
+                    var hWnd = NativeInterop.GetForegroundWindow();
+                    NativeInterop.GetWindowThreadProcessId(hWnd, out uint pid);
+                    ThreadPool.QueueUserWorkItem(_ =>
                     {
-                        _pressedKeys.Add(vkCode);
-                        // GetKeyName 需在 hook 回调中同步调用以准确获取修饰键状态
-                        var keyName = KeyNameMapper.GetKeyName(vkCode);
-                        // 捕获前台窗口句柄和进程 ID（轻量 P/Invoke），完整解析异步进行
-                        var hWnd = NativeInterop.GetForegroundWindow();
-                        NativeInterop.GetWindowThreadProcessId(hWnd, out uint pid);
-                        ThreadPool.QueueUserWorkItem(_ =>
-                        {
-                            var activeApp = ActiveWindowManager.ResolveAppInfo(hWnd, pid);
-                            KeyPressed?.Invoke(keyName, activeApp.AppName, activeApp.DisplayName);
-                        });
-                    }
+                        var activeApp = ActiveWindowManager.ResolveAppInfo(hWnd, pid);
+                        KeyPressed?.Invoke(keyName, activeApp.AppName, activeApp.DisplayName);
+                    });
                 }
             }
             else if (message == NativeInterop.WM_KEYUP || message == NativeInterop.WM_SYSKEYUP)

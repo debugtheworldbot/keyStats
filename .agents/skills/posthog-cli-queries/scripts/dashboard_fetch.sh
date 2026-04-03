@@ -46,7 +46,7 @@ if [[ "${mode}" == "--summary" ]]; then
           ),
           (.insight.query.source.kind // ""),
           (.insight.query.source.interval // ""),
-          ((.insight.result | length) | tostring),
+          ((.insight.result // [] | length) | tostring),
           (.last_refresh // .insight.last_refresh // "")
         ]
       | @tsv

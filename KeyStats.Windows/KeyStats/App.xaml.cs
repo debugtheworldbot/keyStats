@@ -37,7 +37,7 @@ public partial class App : System.Windows.Application
     private System.Threading.Mutex? _singleInstanceMutex;
     private string? _appVersion;
     private IPostHogAnalytics? _postHogClient;
-    private DateTime _lastResumeRecoveryUtc = DateTime.MinValue;
+    private long _lastResumeRecoveryTicks;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -886,13 +886,14 @@ public partial class App : System.Windows.Application
 
     private void ScheduleResumeRecovery(string trigger)
     {
-        var nowUtc = DateTime.UtcNow;
-        if (nowUtc - _lastResumeRecoveryUtc < TimeSpan.FromSeconds(5))
+        var nowTicks = DateTime.UtcNow.Ticks;
+        var lastTicks = Interlocked.Read(ref _lastResumeRecoveryTicks);
+        if (nowTicks - lastTicks < TimeSpan.FromSeconds(5).Ticks)
         {
             return;
         }
 
-        _lastResumeRecoveryUtc = nowUtc;
+        Interlocked.Exchange(ref _lastResumeRecoveryTicks, nowTicks);
         Dispatcher.BeginInvoke(new Action(() => RecoverAfterResume(trigger)));
     }
 
