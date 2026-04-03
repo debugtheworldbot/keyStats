@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows;
 using System.Windows.Data;
 using System.Threading.Tasks;
@@ -887,13 +888,22 @@ public partial class App : System.Windows.Application
     private void ScheduleResumeRecovery(string trigger)
     {
         var nowTicks = DateTime.UtcNow.Ticks;
-        var lastTicks = Interlocked.Read(ref _lastResumeRecoveryTicks);
-        if (nowTicks - lastTicks < TimeSpan.FromSeconds(5).Ticks)
+        var debounceWindowTicks = TimeSpan.FromSeconds(5).Ticks;
+
+        while (true)
         {
-            return;
+            var lastTicks = Interlocked.Read(ref _lastResumeRecoveryTicks);
+            if (nowTicks - lastTicks < debounceWindowTicks)
+            {
+                return;
+            }
+
+            if (Interlocked.CompareExchange(ref _lastResumeRecoveryTicks, nowTicks, lastTicks) == lastTicks)
+            {
+                break;
+            }
         }
 
-        Interlocked.Exchange(ref _lastResumeRecoveryTicks, nowTicks);
         Dispatcher.BeginInvoke(new Action(() => RecoverAfterResume(trigger)));
     }
 

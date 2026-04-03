@@ -38,6 +38,7 @@ public class StatsManager : IDisposable
     private readonly double _saveInterval = 2000; // 2 seconds
     private readonly double _statsUpdateDebounceInterval = 300; // 0.3 seconds
     private readonly double _mouseMoveIdleUpdateInterval = 350; // 0.35 seconds
+    private const int MaxMissingDayBackfillDays = 31;
     private bool _pendingSave;
     private bool _pendingStatsUpdate;
     private bool _pendingMouseMoveUpdate;
@@ -930,12 +931,16 @@ public class StatsManager : IDisposable
 
             if (currentDate < normalizedTargetDate)
             {
-                for (var missingDate = currentDate.AddDays(1); missingDate < normalizedTargetDate; missingDate = missingDate.AddDays(1))
+                var missingDayCount = (normalizedTargetDate - currentDate).Days - 1;
+                if (missingDayCount > 0 && missingDayCount <= MaxMissingDayBackfillDays)
                 {
-                    var key = missingDate.ToString("yyyy-MM-dd");
-                    if (!History.ContainsKey(key))
+                    for (var missingDate = currentDate.AddDays(1); missingDate < normalizedTargetDate; missingDate = missingDate.AddDays(1))
                     {
-                        History[key] = new DailyStats(missingDate);
+                        var key = missingDate.ToString("yyyy-MM-dd");
+                        if (!History.ContainsKey(key))
+                        {
+                            History[key] = new DailyStats(missingDate);
+                        }
                     }
                 }
             }

@@ -36,6 +36,7 @@ public class InputMonitorService : IDisposable
     private const int WatchdogIntervalMs = 3000;
     private const int HookDeadThresholdMs = 5000;
     private const int HookInstallReadyTimeoutMs = 5000;
+    private const int HookThreadStopTimeoutMs = 2000;
     private const int HookReinstallRetryCount = 3;
     private const int HookReinstallRetryDelayMs = 750;
 
@@ -109,7 +110,10 @@ public class InputMonitorService : IDisposable
     {
         Debug.WriteLine("Watchdog: reinstalling hooks...");
 
-        TryStopHookThread();
+        if (!TryStopHookThread())
+        {
+            throw new InvalidOperationException("Existing hook thread did not stop within the timeout.");
+        }
 
         if (_keyboardHookId != IntPtr.Zero)
         {
@@ -159,13 +163,21 @@ public class InputMonitorService : IDisposable
 
         if (!readyEvent.Wait(HookInstallReadyTimeoutMs))
         {
-            TryStopHookThread();
+            if (!TryStopHookThread())
+            {
+                throw new TimeoutException($"Timed out waiting {HookInstallReadyTimeoutMs}ms for hook installation, and the hook thread did not stop within {HookThreadStopTimeoutMs}ms.");
+            }
+
             throw new TimeoutException($"Timed out waiting {HookInstallReadyTimeoutMs}ms for hook installation.");
         }
 
         if (hookError != null)
         {
-            TryStopHookThread();
+            if (!TryStopHookThread())
+            {
+                throw new InvalidOperationException($"Hook installation failed and the hook thread did not stop within {HookThreadStopTimeoutMs}ms.", hookError);
+            }
+
             throw hookError;
         }
     }
@@ -214,7 +226,10 @@ public class InputMonitorService : IDisposable
         _watchdogTimer = null;
 
         // 终止 hook 线程的消息循环
-        TryStopHookThread();
+        if (!TryStopHookThread())
+        {
+            throw new InvalidOperationException("Failed to stop the hook thread within the timeout.");
+        }
 
         if (_keyboardHookId != IntPtr.Zero)
         {
@@ -488,17 +503,29 @@ public class InputMonitorService : IDisposable
         return false;
     }
 
-    private void TryStopHookThread()
+    private bool TryStopHookThread()
     {
+        var thread = _hookThread;
         var threadId = _hookThreadId;
+        if (thread == null && threadId == 0)
+        {
+            return true;
+        }
+
         if (threadId != 0)
         {
             NativeInterop.PostThreadMessage(threadId, NativeInterop.WM_QUIT, IntPtr.Zero, IntPtr.Zero);
         }
 
-        _hookThread?.Join(2000);
+        if (thread != null && !thread.Join(HookThreadStopTimeoutMs))
+        {
+            Debug.WriteLine($"Hook thread did not exit within {HookThreadStopTimeoutMs}ms.");
+            return false;
+        }
+
         _hookThread = null;
         _hookThreadId = 0;
+        return true;
     }
 
     private void ResetTransientState()
