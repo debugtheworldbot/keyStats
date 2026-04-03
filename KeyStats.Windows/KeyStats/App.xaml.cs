@@ -900,19 +900,17 @@ public partial class App : System.Windows.Application
     {
         Console.WriteLine($"Running resume recovery triggered by {trigger}.");
 
-        try
-        {
-            StatsManager.Instance.HandleSystemResume();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Stats resume recovery failed: {ex}");
-        }
-
-        // HandleSystemResume 包含 Thread.Join / readyEvent.Wait 等阻塞操作，
-        // 不能在 Dispatcher 线程执行，否则 UI 会冻结 15-20 秒。
         Task.Run(() =>
         {
+            try
+            {
+                StatsManager.Instance.HandleSystemResume();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Stats resume recovery failed: {ex}");
+            }
+
             try
             {
                 InputMonitorService.Instance.HandleSystemResume();

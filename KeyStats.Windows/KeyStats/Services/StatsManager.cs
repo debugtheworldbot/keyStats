@@ -66,10 +66,16 @@ public class StatsManager : IDisposable
         Settings = LoadSettings();
         History = LoadHistory();
         CurrentStats = LoadStats() ?? new DailyStats();
-        SynchronizeCurrentDay(DateTime.Today, notifyStatsUpdate: false);
 
-        UpdateNotificationBaselines();
-        SaveStats();
+        if (CurrentStats.Date.Date != DateTime.Today)
+        {
+            SynchronizeCurrentDay(DateTime.Today, notifyStatsUpdate: false);
+        }
+        else
+        {
+            UpdateNotificationBaselines();
+            SaveStats();
+        }
 
         SetupMidnightReset();
         SetupInputMonitor();
@@ -851,19 +857,24 @@ public class StatsManager : IDisposable
         ScheduleNextMidnightReset();
     }
 
+    private readonly object _midnightTimerLock = new();
+
     private void ScheduleNextMidnightReset()
     {
-        _midnightTimer?.Stop();
-        _midnightTimer?.Dispose();
+        lock (_midnightTimerLock)
+        {
+            _midnightTimer?.Stop();
+            _midnightTimer?.Dispose();
 
-        var now = DateTime.Now;
-        var nextMidnight = DateTime.Today.AddDays(1);
-        var timeUntilMidnight = nextMidnight - now;
+            var now = DateTime.Now;
+            var nextMidnight = DateTime.Today.AddDays(1);
+            var timeUntilMidnight = nextMidnight - now;
 
-        _midnightTimer = new Timer(timeUntilMidnight.TotalMilliseconds);
-        _midnightTimer.Elapsed += (_, _) => PerformMidnightReset();
-        _midnightTimer.AutoReset = false;
-        _midnightTimer.Start();
+            _midnightTimer = new Timer(timeUntilMidnight.TotalMilliseconds);
+            _midnightTimer.Elapsed += (_, _) => PerformMidnightReset();
+            _midnightTimer.AutoReset = false;
+            _midnightTimer.Start();
+        }
     }
 
     private void PerformMidnightReset()
@@ -876,7 +887,6 @@ public class StatsManager : IDisposable
     {
         SynchronizeCurrentDay(DateTime.Now, notifyStatsUpdate: true);
         ScheduleNextMidnightReset();
-        SaveStats();
     }
 
     public void ResetStats()
@@ -935,11 +945,6 @@ public class StatsManager : IDisposable
             historySnapshot = CloneHistorySnapshot(History);
             UpdateNotificationBaselines();
             changed = true;
-        }
-
-        if (historySnapshot != null)
-        {
-            SaveHistorySnapshot(historySnapshot);
         }
 
         if (!changed)

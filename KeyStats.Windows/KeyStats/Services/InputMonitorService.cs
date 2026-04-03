@@ -30,7 +30,7 @@ public class InputMonitorService : IDisposable
 
     // hook 健康检查：watchdog 定时检测 hook 是否被 Windows 静默移除
     private Timer? _watchdogTimer;
-    private int _lastMouseHookTick;
+    private int _lastHookCallbackTick;
     private int _isReinstallingHooks;
     private NativeInterop.POINT _lastCursorPos;
     private const int WatchdogIntervalMs = 3000;
@@ -58,7 +58,7 @@ public class InputMonitorService : IDisposable
         _mouseProc = MouseHookCallback;
         ResetTransientState();
 
-        _lastMouseHookTick = Environment.TickCount;
+        _lastHookCallbackTick = Environment.TickCount;
         StartHookThread();
 
         _isMonitoring = true;
@@ -130,7 +130,7 @@ public class InputMonitorService : IDisposable
             _mouseHookId = IntPtr.Zero;
         }
 
-        _lastMouseHookTick = Environment.TickCount;
+        _lastHookCallbackTick = Environment.TickCount;
         StartHookThread();
         ResetTransientState();
         Debug.WriteLine("Watchdog: hooks reinstalled");
@@ -138,8 +138,7 @@ public class InputMonitorService : IDisposable
 
     private void StartHookThread()
     {
-        // 在专用线程上安装 hook 并运行消息循环，使 hook 回调不受 UI 线程阻塞影响
-        var readyEvent = new ManualResetEventSlim(false);
+        using var readyEvent = new ManualResetEventSlim(false);
         Exception? hookError = null;
 
         _hookThread = new Thread(() =>
@@ -150,7 +149,6 @@ public class InputMonitorService : IDisposable
                 InstallHooks();
                 readyEvent.Set();
 
-                // 低级钩子需要消息循环来分发回调
                 while (NativeInterop.GetMessage(out var msg, IntPtr.Zero, 0, 0) > 0)
                 {
                     NativeInterop.TranslateMessage(ref msg);
@@ -175,6 +173,7 @@ public class InputMonitorService : IDisposable
 
         if (hookError != null)
         {
+            TryStopHookThread();
             throw hookError;
         }
     }
@@ -191,7 +190,7 @@ public class InputMonitorService : IDisposable
         if (!cursorMoved && !keyboardActivity) return;
 
         // 光标在移动，但 hook 回调长时间未被触发 → hook 可能已被 Windows 静默移除
-        var elapsed = unchecked((uint)(Environment.TickCount - Volatile.Read(ref _lastMouseHookTick)));
+        var elapsed = unchecked((uint)(Environment.TickCount - Volatile.Read(ref _lastHookCallbackTick)));
         if (elapsed > HookDeadThresholdMs)
         {
             if (Interlocked.CompareExchange(ref _isReinstallingHooks, 1, 0) != 0)
@@ -247,6 +246,8 @@ public class InputMonitorService : IDisposable
     {
         if (nCode >= 0)
         {
+            Interlocked.Exchange(ref _lastHookCallbackTick, Environment.TickCount);
+
             var message = (int)wParam;
             var hookStruct = Marshal.PtrToStructure<NativeInterop.KBDLLHOOKSTRUCT>(lParam);
             var vkCode = (int)hookStruct.vkCode;
@@ -287,7 +288,7 @@ public class InputMonitorService : IDisposable
     {
         if (nCode >= 0)
         {
-            Interlocked.Exchange(ref _lastMouseHookTick, Environment.TickCount);
+            Interlocked.Exchange(ref _lastHookCallbackTick, Environment.TickCount);
 
             var message = (int)wParam;
             var hookStruct = Marshal.PtrToStructure<NativeInterop.MSLLHOOKSTRUCT>(lParam);
