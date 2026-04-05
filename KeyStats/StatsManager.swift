@@ -556,10 +556,10 @@ class StatsManager {
         let now = Date()
         let cutoff = now.addingTimeInterval(-1.0)
         peakRateLock.lock()
+        defer { peakRateLock.unlock() }
         recentKeyTimestamps.append(now)
         recentKeyTimestamps = recentKeyTimestamps.filter { $0 > cutoff }
         let currentKPS = Double(recentKeyTimestamps.count)
-        peakRateLock.unlock()
         if currentKPS > currentStats.peakKPS {
             currentStats.peakKPS = currentKPS
         }
@@ -570,10 +570,10 @@ class StatsManager {
         let now = Date()
         let cutoff = now.addingTimeInterval(-1.0)
         peakRateLock.lock()
+        defer { peakRateLock.unlock() }
         recentClickTimestamps.append(now)
         recentClickTimestamps = recentClickTimestamps.filter { $0 > cutoff }
         let currentCPS = Double(recentClickTimestamps.count)
-        peakRateLock.unlock()
         if currentCPS > currentStats.peakCPS {
             currentStats.peakCPS = currentCPS
         }

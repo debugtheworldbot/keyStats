@@ -44,7 +44,6 @@ public class StatsManager : IDisposable
     private bool _pendingMouseMoveUpdate;
 
     // KPS/CPS peak tracking (1-second sliding window)
-    private readonly object _peakRateLock = new();
     private readonly Queue<DateTime> _recentKeyTimestamps = new();
     private readonly Queue<DateTime> _recentClickTimestamps = new();
 
@@ -281,19 +280,14 @@ public class StatsManager : IDisposable
     {
         var now = DateTime.UtcNow;
         var cutoff = now.AddSeconds(-1.0);
-        double currentKPS;
-        lock (_peakRateLock)
+        lock (_lock)
         {
             _recentKeyTimestamps.Enqueue(now);
             while (_recentKeyTimestamps.Count > 0 && _recentKeyTimestamps.Peek() <= cutoff)
             {
                 _recentKeyTimestamps.Dequeue();
             }
-            currentKPS = _recentKeyTimestamps.Count;
-        }
-
-        lock (_lock)
-        {
+            var currentKPS = (double)_recentKeyTimestamps.Count;
             if (currentKPS > CurrentStats.PeakKPS)
             {
                 CurrentStats.PeakKPS = currentKPS;
@@ -305,19 +299,14 @@ public class StatsManager : IDisposable
     {
         var now = DateTime.UtcNow;
         var cutoff = now.AddSeconds(-1.0);
-        double currentCPS;
-        lock (_peakRateLock)
+        lock (_lock)
         {
             _recentClickTimestamps.Enqueue(now);
             while (_recentClickTimestamps.Count > 0 && _recentClickTimestamps.Peek() <= cutoff)
             {
                 _recentClickTimestamps.Dequeue();
             }
-            currentCPS = _recentClickTimestamps.Count;
-        }
-
-        lock (_lock)
-        {
+            var currentCPS = (double)_recentClickTimestamps.Count;
             if (currentCPS > CurrentStats.PeakCPS)
             {
                 CurrentStats.PeakCPS = currentCPS;
@@ -1005,14 +994,10 @@ public class StatsManager : IDisposable
             }
 
             CurrentStats = new DailyStats(normalizedTargetDate);
-            UpdateNotificationBaselines();
-            changed = true;
-        }
-
-        lock (_peakRateLock)
-        {
             _recentKeyTimestamps.Clear();
             _recentClickTimestamps.Clear();
+            UpdateNotificationBaselines();
+            changed = true;
         }
 
         if (!changed)
