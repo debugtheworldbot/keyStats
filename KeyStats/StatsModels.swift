@@ -23,6 +23,10 @@ struct DailyStats: Codable {
     var mouseDistance: Double
     var scrollDistance: Double
     var appStats: [String: AppStats]
+    /// 今日峰值 KPS（每秒按键数）
+    var peakKPS: Double
+    /// 今日峰值 CPS（每秒点击数）
+    var peakCPS: Double
 
     init() {
         self.date = Calendar.current.startOfDay(for: Date())
@@ -35,6 +39,8 @@ struct DailyStats: Codable {
         self.mouseDistance = 0
         self.scrollDistance = 0
         self.appStats = [:]
+        self.peakKPS = 0
+        self.peakCPS = 0
     }
 
     init(date: Date) {
@@ -48,6 +54,8 @@ struct DailyStats: Codable {
         self.mouseDistance = 0
         self.scrollDistance = 0
         self.appStats = [:]
+        self.peakKPS = 0
+        self.peakCPS = 0
     }
 
     enum CodingKeys: String, CodingKey {
@@ -62,6 +70,8 @@ struct DailyStats: Codable {
         case mouseDistance
         case scrollDistance
         case appStats
+        case peakKPS
+        case peakCPS
     }
 
     init(from decoder: Decoder) throws {
@@ -79,6 +89,8 @@ struct DailyStats: Codable {
         mouseDistance = try container.decodeIfPresent(Double.self, forKey: .mouseDistance) ?? 0
         scrollDistance = try container.decodeIfPresent(Double.self, forKey: .scrollDistance) ?? 0
         appStats = try container.decodeIfPresent([String: AppStats].self, forKey: .appStats) ?? [:]
+        peakKPS = try container.decodeIfPresent(Double.self, forKey: .peakKPS) ?? 0
+        peakCPS = try container.decodeIfPresent(Double.self, forKey: .peakCPS) ?? 0
     }
 
     func encode(to encoder: Encoder) throws {
@@ -93,6 +105,8 @@ struct DailyStats: Codable {
         try container.encode(mouseDistance, forKey: .mouseDistance)
         try container.encode(scrollDistance, forKey: .scrollDistance)
         try container.encode(appStats, forKey: .appStats)
+        try container.encode(peakKPS, forKey: .peakKPS)
+        try container.encode(peakCPS, forKey: .peakCPS)
     }
 
     var totalClicks: Int {

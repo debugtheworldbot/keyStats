@@ -45,6 +45,8 @@ public class StatsPopupViewModel : ViewModelBase
     private bool _isSideClickRowVisible;
     private string _mouseDistance = "0 px";
     private string _scrollDistance = "0 px";
+    private string _peakKPS = "0";
+    private string _peakCPS = "0";
     private int _selectedRangeIndex;
     private int _selectedMetricIndex;
     private int _selectedChartStyleIndex;
@@ -109,6 +111,18 @@ public class StatsPopupViewModel : ViewModelBase
     {
         get => _scrollDistance;
         set => SetProperty(ref _scrollDistance, value);
+    }
+
+    public string PeakKPS
+    {
+        get => _peakKPS;
+        set => SetProperty(ref _peakKPS, value);
+    }
+
+    public string PeakCPS
+    {
+        get => _peakCPS;
+        set => SetProperty(ref _peakCPS, value);
     }
 
     public int SelectedRangeIndex
@@ -235,6 +249,8 @@ public class StatsPopupViewModel : ViewModelBase
         IsSideClickRowVisible = (stats.SideBackClicks + stats.SideForwardClicks) > 0;
         MouseDistance = manager.FormatMouseDistance(stats.MouseDistance);
         ScrollDistance = stats.FormattedScrollDistance;
+        PeakKPS = stats.PeakKPS > 0 ? stats.PeakKPS.ToString("F1") : "0";
+        PeakCPS = stats.PeakCPS > 0 ? stats.PeakCPS.ToString("F1") : "0";
     }
 
     private void UpdateKeyBreakdown()

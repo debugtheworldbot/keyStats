@@ -122,6 +122,11 @@ class StatsManager {
     private let inputRateBucketInterval: TimeInterval = 0.5
     private let inputRateApmThresholds: [Double] = [0, 80, 160, 240]
     private let inputRateLock = NSLock()
+
+    // KPS/CPS 峰值追踪（滑动窗口，1 秒）
+    private let peakRateLock = NSLock()
+    private var recentKeyTimestamps: [Date] = []
+    private var recentClickTimestamps: [Date] = []
     private var isReadyForUpdates = false
     private lazy var inputRateBuckets: [Int] = {
         let bucketCount = max(1, Int(inputRateWindowSeconds / inputRateBucketInterval))
@@ -357,6 +362,7 @@ class StatsManager {
             }
         }
         registerInputEvent()
+        recordKeyForPeakKPS()
         notifyMenuBarUpdate()
         notifyStatsUpdate()
         notifyKeyPressThresholdIfNeeded()
@@ -371,6 +377,7 @@ class StatsManager {
             }
         }
         registerInputEvent()
+        recordClickForPeakCPS()
         notifyMenuBarUpdate()
         notifyStatsUpdate()
         notifyClickThresholdIfNeeded()
@@ -385,6 +392,7 @@ class StatsManager {
             }
         }
         registerInputEvent()
+        recordClickForPeakCPS()
         notifyMenuBarUpdate()
         notifyStatsUpdate()
         notifyClickThresholdIfNeeded()
@@ -399,6 +407,7 @@ class StatsManager {
             }
         }
         registerInputEvent()
+        recordClickForPeakCPS()
         notifyMenuBarUpdate()
         notifyStatsUpdate()
         notifyClickThresholdIfNeeded()
@@ -413,6 +422,7 @@ class StatsManager {
             }
         }
         registerInputEvent()
+        recordClickForPeakCPS()
         notifyMenuBarUpdate()
         notifyStatsUpdate()
         notifyClickThresholdIfNeeded()
@@ -537,6 +547,36 @@ class StatsManager {
         inputRateLock.lock()
         inputRateBuckets[inputRateBucketIndex] += 1
         inputRateLock.unlock()
+    }
+
+    // MARK: - KPS/CPS 峰值追踪
+
+    /// 记录一次按键，计算当前 KPS 并在超过峰值时更新
+    func recordKeyForPeakKPS() {
+        let now = Date()
+        let cutoff = now.addingTimeInterval(-1.0)
+        peakRateLock.lock()
+        recentKeyTimestamps.append(now)
+        recentKeyTimestamps = recentKeyTimestamps.filter { $0 > cutoff }
+        let currentKPS = Double(recentKeyTimestamps.count)
+        peakRateLock.unlock()
+        if currentKPS > currentStats.peakKPS {
+            currentStats.peakKPS = currentKPS
+        }
+    }
+
+    /// 记录一次点击，计算当前 CPS 并在超过峰值时更新
+    func recordClickForPeakCPS() {
+        let now = Date()
+        let cutoff = now.addingTimeInterval(-1.0)
+        peakRateLock.lock()
+        recentClickTimestamps.append(now)
+        recentClickTimestamps = recentClickTimestamps.filter { $0 > cutoff }
+        let currentCPS = Double(recentClickTimestamps.count)
+        peakRateLock.unlock()
+        if currentCPS > currentStats.peakCPS {
+            currentStats.peakCPS = currentCPS
+        }
     }
 
     private func resetInputRateBuckets() {
@@ -854,6 +894,8 @@ class StatsManager {
         merged.sideForwardClicks = safeAdd(lhs.sideForwardClicks, rhs.sideForwardClicks)
         merged.mouseDistance = safeAddDistance(lhs.mouseDistance, rhs.mouseDistance)
         merged.scrollDistance = safeAddDistance(lhs.scrollDistance, rhs.scrollDistance)
+        merged.peakKPS = max(lhs.peakKPS, rhs.peakKPS)
+        merged.peakCPS = max(lhs.peakCPS, rhs.peakCPS)
         merged.keyPressCounts = mergedCounterMap(lhs.keyPressCounts, rhs.keyPressCounts)
         merged.appStats = mergedAppStats(lhs.appStats, rhs.appStats)
         return merged
@@ -939,6 +981,8 @@ class StatsManager {
         normalized.sideForwardClicks = max(0, normalized.sideForwardClicks)
         normalized.mouseDistance = normalized.mouseDistance.isFinite ? max(0, normalized.mouseDistance) : 0
         normalized.scrollDistance = normalized.scrollDistance.isFinite ? max(0, normalized.scrollDistance) : 0
+        normalized.peakKPS = normalized.peakKPS.isFinite ? max(0, normalized.peakKPS) : 0
+        normalized.peakCPS = normalized.peakCPS.isFinite ? max(0, normalized.peakCPS) : 0
         normalized.keyPressCounts = normalizedKeyPressCounts(normalized.keyPressCounts)
         normalized.appStats = normalizedAppStats(normalized.appStats)
         return normalized
@@ -1086,6 +1130,10 @@ class StatsManager {
 
     private func resetStats(for date: Date) {
         currentStats = DailyStats(date: date)
+        peakRateLock.lock()
+        recentKeyTimestamps.removeAll()
+        recentClickTimestamps.removeAll()
+        peakRateLock.unlock()
         updateNotificationBaselines()
         notifyMenuBarUpdate()
         notifyStatsUpdate()

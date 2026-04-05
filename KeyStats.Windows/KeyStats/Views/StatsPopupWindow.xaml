@@ -153,6 +153,20 @@
                 </Border>
             </Grid>
 
+            <Grid Margin="0,0,0,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="4"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" Style="{DynamicResource CardBorder}" Padding="8,7">
+                    <controls:StatItemControl Icon="&#xE945;" Title="峰值 KPS" Value="{Binding PeakKPS}"/>
+                </Border>
+                <Border Grid.Column="2" Style="{DynamicResource CardBorder}" Padding="8,7">
+                    <controls:StatItemControl Icon="&#xE945;" Title="峰值 CPS" Value="{Binding PeakCPS}"/>
+                </Border>
+            </Grid>
+
             <!-- Key Breakdown -->
             <Grid Margin="4,8,0,6">
                 <Grid.ColumnDefinitions>

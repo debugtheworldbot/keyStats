@@ -67,6 +67,8 @@
 "stats.sideForwardClicks" = "Side Forward Clicks";
 "stats.mouseDistance" = "Mouse Distance";
 "stats.scrollDistance" = "Scroll Distance";
+"stats.peakKPS" = "Peak KPS";
+"stats.peakCPS" = "Peak CPS";
 
 "section.keyBreakdown" = "Key Breakdown";
 "section.history" = "History";

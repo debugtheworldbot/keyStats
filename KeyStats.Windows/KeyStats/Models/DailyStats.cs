@@ -38,6 +38,12 @@ public class DailyStats
     [JsonPropertyName("scrollDistance")]
     public double ScrollDistance { get; set; }
 
+    [JsonPropertyName("peakKPS")]
+    public double PeakKPS { get; set; }
+
+    [JsonPropertyName("peakCPS")]
+    public double PeakCPS { get; set; }
+
     [JsonPropertyName("appStats")]
     public Dictionary<string, AppStats> AppStats { get; set; } = new();
 

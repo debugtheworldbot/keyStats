@@ -67,6 +67,8 @@
 "stats.sideForwardClicks" = "侧键前进";
 "stats.mouseDistance" = "鼠标移动";
 "stats.scrollDistance" = "滚动距离";
+"stats.peakKPS" = "峰值 KPS";
+"stats.peakCPS" = "峰值 CPS";
 
 "section.keyBreakdown" = "键位统计";
 "section.history" = "历史趋势";
