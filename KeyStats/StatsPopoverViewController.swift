@@ -2064,7 +2064,7 @@ class KPSBadgeView: NSView {
             mainStack.topAnchor.constraint(equalTo: topAnchor, constant: 2),
             mainStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -2),
             mainStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4),
-            mainStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8)
+            mainStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12)
         ])
 
         setContentHuggingPriority(.required, for: .horizontal)
