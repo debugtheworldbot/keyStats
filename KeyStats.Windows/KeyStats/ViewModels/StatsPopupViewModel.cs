@@ -249,8 +249,12 @@ public class StatsPopupViewModel : ViewModelBase
         IsSideClickRowVisible = (stats.SideBackClicks + stats.SideForwardClicks) > 0;
         MouseDistance = manager.FormatMouseDistance(stats.MouseDistance);
         ScrollDistance = stats.FormattedScrollDistance;
-        PeakKPS = stats.PeakKPS > 0 ? stats.PeakKPS.ToString("F1") : "0";
-        PeakCPS = stats.PeakCPS > 0 ? stats.PeakCPS.ToString("F1") : "0";
+        PeakKPS = stats.PeakKPS > 0
+            ? Math.Round(stats.PeakKPS, MidpointRounding.AwayFromZero).ToString("N0")
+            : "0";
+        PeakCPS = stats.PeakCPS > 0
+            ? Math.Round(stats.PeakCPS, MidpointRounding.AwayFromZero).ToString("N0")
+            : "0";
     }
 
     private void UpdateKeyBreakdown()
