@@ -53,7 +53,7 @@ class StatsPopoverViewController: NSViewController {
     
     // 统计项视图
     private var keyPressView: StatItemView!
-    private var kpsBadge: NSButton!
+    private var kpsBadge: KPSBadgeView!
 
     private var kpsRefreshTimer: Timer?
     private var kpsPopover: NSPopover?
@@ -152,15 +152,10 @@ class StatsPopoverViewController: NSViewController {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         containerView.addSubview(titleLabel)
 
-        // KPS 徽章按钮（放在标题右侧，双行显示峰值 KPS/CPS）
-        kpsBadge = NSButton(title: "", target: self, action: #selector(toggleKPSPopover))
-        kpsBadge.bezelStyle = .inline
-        kpsBadge.isBordered = true
-        kpsBadge.controlSize = .small
-        kpsBadge.toolTip = "KPS / CPS"
+        // KPS 徽章（放在标题右侧，双行显示峰值 KPS/CPS）
+        kpsBadge = KPSBadgeView()
+        kpsBadge.onTap = { [weak self] in self?.toggleKPSPopover() }
         kpsBadge.translatesAutoresizingMaskIntoConstraints = false
-        kpsBadge.setContentHuggingPriority(.required, for: .horizontal)
-        kpsBadge.setContentCompressionResistancePriority(.required, for: .horizontal)
         updateKPSBadge()
         containerView.addSubview(kpsBadge)
 
@@ -629,22 +624,7 @@ class StatsPopoverViewController: NSViewController {
 
     private func updateKPSBadge() {
         let stats = StatsManager.shared.currentStats
-        let peakKPS = Int(stats.peakKPS)
-        let peakCPS = Int(stats.peakCPS)
-
-        let font = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .medium)
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.alignment = .center
-        paragraphStyle.lineSpacing = 0
-        paragraphStyle.paragraphSpacing = 0
-
-        let attrs: [NSAttributedString.Key: Any] = [
-            .font: font,
-            .paragraphStyle: paragraphStyle
-        ]
-
-        let text = "⚡\(peakKPS)\n⚡\(peakCPS)"
-        kpsBadge.attributedTitle = NSAttributedString(string: text, attributes: attrs)
+        kpsBadge.update(peakKPS: Int(stats.peakKPS), peakCPS: Int(stats.peakCPS))
     }
 
     private func startKPSRefreshTimer() {
@@ -662,7 +642,7 @@ class StatsPopoverViewController: NSViewController {
         kpsRefreshTimer = nil
     }
 
-    @objc private func toggleKPSPopover() {
+    private func toggleKPSPopover() {
         if let popover = kpsPopover, popover.isShown {
             closeKPSPopover()
         } else {
@@ -2021,5 +2001,82 @@ class StatsChartView: NSView {
         scaleAnimation.duration = transitionDuration
         scaleAnimation.timingFunction = timingFunction
         layer.add(scaleAnimation, forKey: "contentScale")
+    }
+}
+
+// MARK: - KPS 徽章视图
+
+/// 左侧大闪电图标占两行，右侧两行数字（峰值 KPS / CPS）
+class KPSBadgeView: NSView {
+    var onTap: (() -> Void)?
+
+    private let iconLabel: NSTextField
+    private let kpsLabel: NSTextField
+    private let cpsLabel: NSTextField
+
+    override init(frame frameRect: NSRect) {
+        iconLabel = NSTextField(labelWithString: "⚡️")
+        kpsLabel = NSTextField(labelWithString: "0")
+        cpsLabel = NSTextField(labelWithString: "0")
+        super.init(frame: frameRect)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupUI() {
+        toolTip = "KPS / CPS"
+
+        iconLabel.font = NSFont.systemFont(ofSize: 16)
+        iconLabel.alignment = .center
+        iconLabel.translatesAutoresizingMaskIntoConstraints = false
+        iconLabel.setContentHuggingPriority(.required, for: .horizontal)
+
+        let numFont = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .medium)
+        kpsLabel.font = numFont
+        kpsLabel.textColor = .secondaryLabelColor
+        kpsLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        cpsLabel.font = numFont
+        cpsLabel.textColor = .secondaryLabelColor
+        cpsLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        let rightStack = NSStackView(views: [kpsLabel, cpsLabel])
+        rightStack.orientation = .vertical
+        rightStack.alignment = .leading
+        rightStack.spacing = 0
+        rightStack.translatesAutoresizingMaskIntoConstraints = false
+
+        let mainStack = NSStackView(views: [iconLabel, rightStack])
+        mainStack.orientation = .horizontal
+        mainStack.alignment = .centerY
+        mainStack.spacing = 2
+        mainStack.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(mainStack)
+
+        NSLayoutConstraint.activate([
+            mainStack.topAnchor.constraint(equalTo: topAnchor),
+            mainStack.bottomAnchor.constraint(equalTo: bottomAnchor),
+            mainStack.leadingAnchor.constraint(equalTo: leadingAnchor),
+            mainStack.trailingAnchor.constraint(equalTo: trailingAnchor)
+        ])
+
+        setContentHuggingPriority(.required, for: .horizontal)
+        setContentCompressionResistancePriority(.required, for: .horizontal)
+    }
+
+    func update(peakKPS: Int, peakCPS: Int) {
+        kpsLabel.stringValue = "\(peakKPS)"
+        cpsLabel.stringValue = "\(peakCPS)"
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        onTap?()
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
     }
 }
