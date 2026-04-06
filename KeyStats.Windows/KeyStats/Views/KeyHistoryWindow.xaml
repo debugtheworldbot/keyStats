@@ -9,7 +9,7 @@
         MinWidth="760"
         MinHeight="520"
         WindowStartupLocation="CenterScreen"
-        Background="{DynamicResource SurfaceBrush}"
+        Background="{DynamicResource WindowSurfaceBrush}"
         ShowInTaskbar="True">
 
     <Window.DataContext>

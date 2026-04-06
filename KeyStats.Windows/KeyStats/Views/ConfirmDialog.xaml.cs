@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using KeyStats.Helpers;
 
 namespace KeyStats.Views
 {
@@ -20,6 +21,9 @@ namespace KeyStats.Views
         public ConfirmDialog()
         {
             InitializeComponent();
+            Loaded += OnLoaded;
+            Closed += OnClosed;
+            ThemeManager.Instance.ThemeChanged += OnThemeChanged;
 
             // Allow dragging the window
             MouseLeftButtonDown += (s, e) =>
@@ -37,6 +41,26 @@ namespace KeyStats.Views
                     Close();
                 }
             };
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            ApplyWindowBackdrop();
+        }
+
+        private void OnClosed(object? sender, EventArgs e)
+        {
+            ThemeManager.Instance.ThemeChanged -= OnThemeChanged;
+        }
+
+        private void OnThemeChanged()
+        {
+            Dispatcher.BeginInvoke(new Action(ApplyWindowBackdrop));
+        }
+
+        private void ApplyWindowBackdrop()
+        {
+            WindowBackdropHelper.Apply(this, NativeInterop.DwmSystemBackdropType.TransientWindow);
         }
 
         public static bool Show(

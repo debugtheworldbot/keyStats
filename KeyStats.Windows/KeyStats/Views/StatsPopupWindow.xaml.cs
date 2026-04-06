@@ -62,14 +62,13 @@ public partial class StatsPopupWindow : Window
 
     private void OnSourceInitialized(object? sender, EventArgs e)
     {
-        var handle = new WindowInteropHelper(this).Handle;
-
         if (_isWindowMode)
         {
-            ApplyWindowTitleBarTheme(handle);
+            ApplyWindowModeBackdrop();
             return;
         }
 
+        var handle = new WindowInteropHelper(this).Handle;
         ApplyTrayPopupBackdrop(handle);
     }
 
@@ -79,7 +78,7 @@ public partial class StatsPopupWindow : Window
         if (_isWindowMode)
         {
             RestoreWindowModeBounds();
-            ApplyWindowTitleBarTheme(new WindowInteropHelper(this).Handle);
+            ApplyWindowModeBackdrop();
             Opacity = 1;
         }
         else
@@ -194,22 +193,27 @@ public partial class StatsPopupWindow : Window
     {
         Dispatcher.BeginInvoke(new Action(() =>
         {
-            var handle = new WindowInteropHelper(this).Handle;
-
             if (_isWindowMode)
             {
-                ApplyWindowTitleBarTheme(handle);
+                ApplyWindowModeBackdrop();
             }
             else
             {
+                var handle = new WindowInteropHelper(this).Handle;
                 ApplyTrayPopupBackdrop(handle);
             }
         }));
     }
 
-    private void ApplyWindowTitleBarTheme(IntPtr handle)
+    private void ApplyWindowModeBackdrop()
     {
-        NativeInterop.TrySetImmersiveDarkMode(handle, ThemeManager.Instance.IsDarkTheme);
+        WindowBackdropHelper.Apply(this, NativeInterop.DwmSystemBackdropType.TransientWindow);
+
+        if (FindName("RootBorder") is System.Windows.Controls.Border rootBorder)
+        {
+            rootBorder.Background = (System.Windows.Media.Brush)FindResource("WindowSurfaceBrush");
+            rootBorder.BorderThickness = new Thickness(0);
+        }
     }
 
     private void ApplyTrayPopupBackdrop(IntPtr handle)
@@ -503,7 +507,7 @@ public partial class StatsPopupWindow : Window
         {
             WindowStyle = WindowStyle.SingleBorderWindow;
             AllowsTransparency = false;
-            Background = (System.Windows.Media.Brush)FindResource("SurfaceBrush");
+            Background = System.Windows.Media.Brushes.Transparent;
             ShowInTaskbar = true;
             Topmost = false;
             ResizeMode = ResizeMode.CanResize;

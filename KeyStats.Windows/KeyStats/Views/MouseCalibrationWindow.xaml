@@ -5,7 +5,7 @@
         Width="360" SizeToContent="Height"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Background="{DynamicResource SurfaceBrush}"
+        Background="{DynamicResource WindowSurfaceBrush}"
         ShowInTaskbar="True"
         PreviewKeyDown="Window_PreviewKeyDown">
 

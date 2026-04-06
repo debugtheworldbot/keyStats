@@ -10,7 +10,7 @@
         MaxWidth="860"
         MaxHeight="460"
         WindowStartupLocation="CenterScreen"
-        Background="{DynamicResource SurfaceBrush}"
+        Background="{DynamicResource WindowSurfaceBrush}"
         ShowInTaskbar="True">
     <Window.Resources>
         <Style x:Key="CalendarHeaderButtonStyle" TargetType="{x:Type Button}">

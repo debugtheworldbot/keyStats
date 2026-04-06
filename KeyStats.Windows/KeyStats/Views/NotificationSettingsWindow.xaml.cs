@@ -1,7 +1,6 @@
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Interop;
 using KeyStats.Helpers;
 using KeyStats.Services;
 
@@ -23,7 +22,7 @@ public partial class NotificationSettingsWindow : Window
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        ApplyWindowTitleBarTheme();
+        ApplyWindowBackdrop();
         App.CurrentApp?.TrackPageView("notification_settings");
     }
 
@@ -34,13 +33,12 @@ public partial class NotificationSettingsWindow : Window
 
     private void OnThemeChanged()
     {
-        Dispatcher.BeginInvoke(new System.Action(ApplyWindowTitleBarTheme));
+        Dispatcher.BeginInvoke(new System.Action(ApplyWindowBackdrop));
     }
 
-    private void ApplyWindowTitleBarTheme()
+    private void ApplyWindowBackdrop()
     {
-        var handle = new WindowInteropHelper(this).Handle;
-        NativeInterop.TrySetImmersiveDarkMode(handle, ThemeManager.Instance.IsDarkTheme);
+        WindowBackdropHelper.Apply(this, NativeInterop.DwmSystemBackdropType.TransientWindow);
     }
 
     private void LoadSettings()

@@ -6,12 +6,12 @@
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         WindowStyle="None"
-        AllowsTransparency="True"
+        AllowsTransparency="False"
         Background="Transparent"
         ShowInTaskbar="False"
         Topmost="True">
 
-    <Border Background="{DynamicResource SurfaceBrush}"
+    <Border Background="{DynamicResource WindowSurfaceBrush}"
             CornerRadius="8"
             BorderBrush="{DynamicResource DividerBrush}"
             BorderThickness="1"

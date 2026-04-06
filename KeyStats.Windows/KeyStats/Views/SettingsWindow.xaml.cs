@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Windows;
-using System.Windows.Interop;
 using KeyStats.Helpers;
 
 namespace KeyStats.Views;
@@ -19,7 +18,7 @@ public partial class SettingsWindow : Window
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        ApplyWindowTitleBarTheme();
+        ApplyWindowBackdrop();
         App.CurrentApp?.TrackPageView("settings");
     }
 
@@ -30,13 +29,12 @@ public partial class SettingsWindow : Window
 
     private void OnThemeChanged()
     {
-        Dispatcher.BeginInvoke(new System.Action(ApplyWindowTitleBarTheme));
+        Dispatcher.BeginInvoke(new System.Action(ApplyWindowBackdrop));
     }
 
-    private void ApplyWindowTitleBarTheme()
+    private void ApplyWindowBackdrop()
     {
-        var handle = new WindowInteropHelper(this).Handle;
-        NativeInterop.TrySetImmersiveDarkMode(handle, ThemeManager.Instance.IsDarkTheme);
+        WindowBackdropHelper.Apply(this, NativeInterop.DwmSystemBackdropType.TransientWindow);
     }
 
     private void OpenStats_Click(object sender, RoutedEventArgs e)

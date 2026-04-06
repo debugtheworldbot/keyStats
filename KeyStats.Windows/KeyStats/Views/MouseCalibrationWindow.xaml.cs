@@ -4,7 +4,6 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Interop;
 using System.Windows.Threading;
 using KeyStats.Helpers;
 using KeyStats.Services;
@@ -40,7 +39,7 @@ public partial class MouseCalibrationWindow : Window
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        ApplyWindowTitleBarTheme();
+        ApplyWindowBackdrop();
         App.CurrentApp?.TrackPageView("mouse_calibration");
     }
 
@@ -51,13 +50,12 @@ public partial class MouseCalibrationWindow : Window
 
     private void OnThemeChanged()
     {
-        Dispatcher.BeginInvoke(new Action(ApplyWindowTitleBarTheme));
+        Dispatcher.BeginInvoke(new Action(ApplyWindowBackdrop));
     }
 
-    private void ApplyWindowTitleBarTheme()
+    private void ApplyWindowBackdrop()
     {
-        var handle = new WindowInteropHelper(this).Handle;
-        NativeInterop.TrySetImmersiveDarkMode(handle, ThemeManager.Instance.IsDarkTheme);
+        WindowBackdropHelper.Apply(this, NativeInterop.DwmSystemBackdropType.TransientWindow);
     }
 
     private void LoadSettings()

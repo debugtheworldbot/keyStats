@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
@@ -46,7 +45,7 @@ public partial class KeyboardHeatmapWindow : Window
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        ApplyWindowTitleBarTheme();
+        ApplyWindowBackdrop();
         RefreshData();
         App.CurrentApp?.TrackPageView("keyboard_heatmap");
     }
@@ -106,7 +105,7 @@ public partial class KeyboardHeatmapWindow : Window
 
     private void UpdateAppearance()
     {
-        ApplyWindowTitleBarTheme();
+        ApplyWindowBackdrop();
 
         var isDark = ThemeManager.Instance.IsDarkTheme;
         var badgeColor = isDark
@@ -116,10 +115,9 @@ public partial class KeyboardHeatmapWindow : Window
         KeyboardHeatmapView.InvalidateVisual();
     }
 
-    private void ApplyWindowTitleBarTheme()
+    private void ApplyWindowBackdrop()
     {
-        var handle = new WindowInteropHelper(this).Handle;
-        NativeInterop.TrySetImmersiveDarkMode(handle, ThemeManager.Instance.IsDarkTheme);
+        WindowBackdropHelper.Apply(this, NativeInterop.DwmSystemBackdropType.TransientWindow);
     }
 
     private void RefreshData()

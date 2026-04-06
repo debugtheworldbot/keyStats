@@ -1,6 +1,5 @@
 using System;
 using System.Windows;
-using System.Windows.Interop;
 using KeyStats.Helpers;
 using KeyStats.ViewModels;
 
@@ -21,13 +20,13 @@ public partial class AppStatsWindow : Window
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        ApplyWindowTitleBarTheme();
+        ApplyWindowBackdrop();
         App.CurrentApp?.TrackPageView("app_stats");
     }
 
     private void OnThemeChanged()
     {
-        Dispatcher.BeginInvoke(new Action(ApplyWindowTitleBarTheme));
+        Dispatcher.BeginInvoke(new Action(ApplyWindowBackdrop));
     }
 
     private void OnClosed(object? sender, EventArgs e)
@@ -36,9 +35,8 @@ public partial class AppStatsWindow : Window
         _viewModel.Cleanup();
     }
 
-    private void ApplyWindowTitleBarTheme()
+    private void ApplyWindowBackdrop()
     {
-        var handle = new WindowInteropHelper(this).Handle;
-        NativeInterop.TrySetImmersiveDarkMode(handle, ThemeManager.Instance.IsDarkTheme);
+        WindowBackdropHelper.Apply(this, NativeInterop.DwmSystemBackdropType.TransientWindow);
     }
 }

@@ -179,6 +179,18 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 -Configuration Release
 - Git commit messages must follow Conventional Commits, for example `feat: ...`, `fix: ...`, `docs: ...`, `refactor: ...`, `test: ...`, or `chore: ...`.
 - When adding a new page/window/popup, add matching analytics in the same change: emit a `pageview` for the page and `click` events for key entry/actions, using the shared tracking helpers and stable cross-platform names.
 
+## Window Material Rules
+
+- Prefer the shared DWM backdrop path for all app windows. Use `KeyStats/Helpers/WindowBackdropHelper.cs` rather than per-window ad hoc interop.
+- Match the current visual baseline: regular app windows, dialogs, and popup-like windows should use `NativeInterop.DwmSystemBackdropType.TransientWindow` unless there is a deliberate reason to diverge.
+- Do not rely on `AllowsTransparency="True"` for main app windows or custom dialogs when the goal is Acrylic-like blur. Prefer `AllowsTransparency="False"` plus DWM backdrop.
+- For windows using backdrop, extend the frame into the client area and keep the WPF composition background transparent via the shared helper. Do not reimplement this differently per window unless required.
+- Use `WindowSurfaceBrush` for top-level window backgrounds and keep it semi-transparent so the backdrop remains visible.
+- Use semi-transparent tint layers for internal cards and panels (`CardBrush`, `SubtleFillBrush`). Do not use opaque white or opaque dark fills for surfaces that are meant to sit above a backdrop.
+- Treat popup parity as a design requirement: if a new window is intended to feel like the tray stats popup, align its backdrop type, top-level tint, and card translucency with the popup implementation.
+- When adjusting translucency, change shared theme resources in `App.xaml` and `KeyStats/Helpers/ThemeManager.cs` first, instead of hardcoding per-window colors.
+- After changing window materials, manually verify at least one light-theme and one dark-theme window, because small alpha changes can collapse contrast or make the backdrop disappear visually.
+
 ## High-Risk Files (Review Carefully)
 
 - `KeyStats/Services/InputMonitorService.cs`

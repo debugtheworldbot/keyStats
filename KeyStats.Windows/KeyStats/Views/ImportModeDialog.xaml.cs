@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using KeyStats.Helpers;
 using KeyStats.Services;
 
 namespace KeyStats.Views
@@ -11,6 +12,9 @@ namespace KeyStats.Views
         public ImportModeDialog()
         {
             InitializeComponent();
+            Loaded += OnLoaded;
+            Closed += OnClosed;
+            ThemeManager.Instance.ThemeChanged += OnThemeChanged;
 
             // Allow dragging the window
             MouseLeftButtonDown += (s, e) =>
@@ -28,6 +32,26 @@ namespace KeyStats.Views
                     Close();
                 }
             };
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            ApplyWindowBackdrop();
+        }
+
+        private void OnClosed(object? sender, System.EventArgs e)
+        {
+            ThemeManager.Instance.ThemeChanged -= OnThemeChanged;
+        }
+
+        private void OnThemeChanged()
+        {
+            Dispatcher.BeginInvoke(new System.Action(ApplyWindowBackdrop));
+        }
+
+        private void ApplyWindowBackdrop()
+        {
+            WindowBackdropHelper.Apply(this, NativeInterop.DwmSystemBackdropType.TransientWindow);
         }
 
         public static StatsManager.ImportMode? Show(Window? owner = null)
