@@ -94,7 +94,7 @@
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                         <TextBlock Text="&#xE945;" FontFamily="Segoe MDL2 Assets" FontSize="10"
                                                    Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                        <TextBlock Text="峰值 KPS" FontSize="10"
+                                        <TextBlock Text="峰值按键速度(KPS)" FontSize="10"
                                                    Foreground="{DynamicResource TextSecondaryBrush}"/>
                                     </StackPanel>
                                     <TextBlock Text="{Binding PeakKPS}" FontSize="20" FontWeight="SemiBold"
@@ -104,7 +104,7 @@
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                         <TextBlock Text="&#xE945;" FontFamily="Segoe MDL2 Assets" FontSize="10"
                                                    Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                        <TextBlock Text="峰值 CPS" FontSize="10"
+                                        <TextBlock Text="峰值点击速度(CPS)" FontSize="10"
                                                    Foreground="{DynamicResource TextSecondaryBrush}"/>
                                     </StackPanel>
                                     <TextBlock Text="{Binding PeakCPS}" FontSize="20" FontWeight="SemiBold"
