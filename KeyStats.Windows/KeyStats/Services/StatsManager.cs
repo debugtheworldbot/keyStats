@@ -477,6 +477,8 @@ public class StatsManager : IDisposable
             SideForwardClicks = CurrentStats.SideForwardClicks,
             MouseDistance = CurrentStats.MouseDistance,
             ScrollDistance = CurrentStats.ScrollDistance,
+            PeakKPS = CurrentStats.PeakKPS,
+            PeakCPS = CurrentStats.PeakCPS,
             KeyPressCounts = new Dictionary<string, int>(CurrentStats.KeyPressCounts),
             AppStats = CurrentStats.AppStats.ToDictionary(k => k.Key, v => new AppStats(v.Value))
         };
@@ -719,6 +721,8 @@ public class StatsManager : IDisposable
             SideForwardClicks = source.SideForwardClicks,
             MouseDistance = source.MouseDistance,
             ScrollDistance = source.ScrollDistance,
+            PeakKPS = source.PeakKPS,
+            PeakCPS = source.PeakCPS,
             KeyPressCounts = new Dictionary<string, int>(source.KeyPressCounts),
             AppStats = source.AppStats.ToDictionary(k => k.Key, v => new AppStats(v.Value))
         };
@@ -820,6 +824,8 @@ public class StatsManager : IDisposable
             SideForwardClicks = Math.Max(0, source?.SideForwardClicks ?? 0),
             MouseDistance = SanitizeDistance(source?.MouseDistance ?? 0),
             ScrollDistance = SanitizeDistance(source?.ScrollDistance ?? 0),
+            PeakKPS = Math.Max(0, source?.PeakKPS ?? 0),
+            PeakCPS = Math.Max(0, source?.PeakCPS ?? 0),
             AppStats = appStats
         };
     }
@@ -875,6 +881,8 @@ public class StatsManager : IDisposable
             SideForwardClicks = normalizedExisting.SideForwardClicks + normalizedIncoming.SideForwardClicks,
             MouseDistance = normalizedExisting.MouseDistance + normalizedIncoming.MouseDistance,
             ScrollDistance = normalizedExisting.ScrollDistance + normalizedIncoming.ScrollDistance,
+            PeakKPS = Math.Max(normalizedExisting.PeakKPS, normalizedIncoming.PeakKPS),
+            PeakCPS = Math.Max(normalizedExisting.PeakCPS, normalizedIncoming.PeakCPS),
             KeyPressCounts = keyPressCounts,
             AppStats = appStats
         };
