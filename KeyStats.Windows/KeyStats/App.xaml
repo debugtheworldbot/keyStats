@@ -20,9 +20,9 @@
             <Color x:Key="TextSecondaryColor">#5C5C5C</Color>
             <Color x:Key="TextTertiaryColor">#8A8A8A</Color>
             <Color x:Key="SurfaceColor">#FAFAFA</Color>
-            <Color x:Key="CardColor">#FFFFFF</Color>
+            <Color x:Key="CardColor">#CCFFFFFF</Color>
             <Color x:Key="DividerColor">#E5E5E5</Color>
-            <Color x:Key="SubtleFillColor">#09000000</Color>
+            <Color x:Key="SubtleFillColor">#A8FFFFFF</Color>
             <Color x:Key="SubtleHoverColor">#12000000</Color>
 
             <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
