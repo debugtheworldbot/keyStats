@@ -54,7 +54,7 @@ class StatsPopoverViewController: NSViewController {
     // 统计项视图
     private var keyPressView: StatItemView!
     private var kpsBadge: NSButton!
-    private var keyPressRow: NSStackView!
+
     private var kpsRefreshTimer: Timer?
     private var kpsPopover: NSPopover?
     private var leftClickView: StatItemView!
@@ -148,26 +148,11 @@ class StatsPopoverViewController: NSViewController {
         ])
 
         // 标题
-        titleLabel = createLabel(text: "KeyStats", fontSize: 18, weight: .bold)
+        titleLabel = createLabel(text: "KeyStats", fontSize: 14, weight: .semibold)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         containerView.addSubview(titleLabel)
-        
-        permissionButton = NSButton(title: NSLocalizedString("button.permission", comment: ""), target: self, action: #selector(requestPermission))
-        permissionButton.bezelStyle = .rounded
-        permissionButton.controlSize = .regular
-        permissionButton.translatesAutoresizingMaskIntoConstraints = false
-        containerView.addSubview(permissionButton)
 
-        // 分隔线
-        let separator = NSBox()
-        separator.boxType = .separator
-        separator.translatesAutoresizingMaskIntoConstraints = false
-        containerView.addSubview(separator)
-        
-        // 统计项
-        keyPressView = StatItemView(icon: "⌨️", title: NSLocalizedString("stats.keyPresses", comment: ""), value: "0")
-
-        // KPS 徽章按钮
+        // KPS 徽章按钮（放在标题右侧）
         kpsBadge = NSButton(title: "⚡ 0", target: self, action: #selector(toggleKPSPopover))
         kpsBadge.bezelStyle = .inline
         kpsBadge.isBordered = true
@@ -177,16 +162,16 @@ class StatsPopoverViewController: NSViewController {
         kpsBadge.translatesAutoresizingMaskIntoConstraints = false
         kpsBadge.setContentHuggingPriority(.required, for: .horizontal)
         kpsBadge.setContentCompressionResistancePriority(.required, for: .horizontal)
+        containerView.addSubview(kpsBadge)
 
-        keyPressRow = NSStackView(views: [keyPressView, kpsBadge])
-        keyPressRow.orientation = .horizontal
-        keyPressRow.spacing = 8
-        keyPressRow.alignment = .centerY
-        keyPressRow.distribution = .fill
-        keyPressRow.setContentHuggingPriority(.required, for: .vertical)
-        keyPressRow.setContentCompressionResistancePriority(.required, for: .vertical)
-        keyPressRow.translatesAutoresizingMaskIntoConstraints = false
-        keyPressRow.heightAnchor.constraint(equalTo: keyPressView.heightAnchor).isActive = true
+        permissionButton = NSButton(title: NSLocalizedString("button.permission", comment: ""), target: self, action: #selector(requestPermission))
+        permissionButton.bezelStyle = .rounded
+        permissionButton.controlSize = .regular
+        permissionButton.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(permissionButton)
+        
+        // 统计项
+        keyPressView = StatItemView(icon: "⌨️", title: NSLocalizedString("stats.keyPresses", comment: ""), value: "0")
 
         leftClickView = StatItemView(icon: "🖱️", title: NSLocalizedString("stats.leftClicks", comment: ""), value: "0")
         rightClickView = StatItemView(icon: "🖱️", title: NSLocalizedString("stats.rightClicks", comment: ""), value: "0")
@@ -230,7 +215,7 @@ class StatsPopoverViewController: NSViewController {
             distanceRow.heightAnchor.constraint(equalTo: mouseDistanceView.heightAnchor).isActive = true
 
             statsStackView = NSStackView(views: [
-                keyPressRow,
+                keyPressView,
                 clickRow,
                 sideClickRow,
                 distanceRow
@@ -238,7 +223,7 @@ class StatsPopoverViewController: NSViewController {
         } else {
             // 英文环境：鼠标移动和滚动距离分行显示
             statsStackView = NSStackView(views: [
-                keyPressRow,
+                keyPressView,
                 clickRow,
                 sideClickRow,
                 mouseDistanceView,
@@ -488,18 +473,16 @@ class StatsPopoverViewController: NSViewController {
         NSLayoutConstraint.activate([
             // 标题
             titleLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
-            titleLabel.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+            titleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+
+            kpsBadge.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+            kpsBadge.leadingAnchor.constraint(equalTo: titleLabel.trailingAnchor, constant: 8),
 
             permissionButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
             permissionButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
             
-            // 分隔线
-            separator.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 12),
-            separator.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            separator.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-            
             // 统计项
-            statsStackView.topAnchor.constraint(equalTo: separator.bottomAnchor, constant: 12),
+            statsStackView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
             statsStackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
             statsStackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
             
