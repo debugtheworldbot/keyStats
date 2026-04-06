@@ -31,8 +31,90 @@
                       CanContentScroll="False">
             <StackPanel Margin="10">
             <!-- Header -->
-            <TextBlock Text="今日统计" FontSize="14" FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextPrimaryBrush}" Margin="2,0,0,8"/>
+            <Grid Margin="2,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="今日统计" FontSize="14" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimaryBrush}"/>
+                <ToggleButton x:Name="PeakToggle" Grid.Column="2"
+                              IsChecked="{Binding IsPeakPopupOpen, Mode=TwoWay}"
+                              Background="Transparent" BorderThickness="0"
+                              Cursor="Hand" Padding="4,2" VerticalAlignment="Center">
+                    <ToggleButton.Template>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Border x:Name="Bd" Background="Transparent" CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE945;" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                               Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                    <StackPanel Margin="3,0,0,0">
+                                        <TextBlock Text="{Binding DataContext.PeakKPS, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   FontSize="9" LineHeight="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        <TextBlock Text="{Binding DataContext.PeakCPS, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   FontSize="9" LineHeight="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SubtleFillBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SubtleFillBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </ToggleButton.Template>
+                </ToggleButton>
+                <Popup Grid.Column="2"
+                       IsOpen="{Binding IsPeakPopupOpen, Mode=TwoWay}"
+                       StaysOpen="False"
+                       AllowsTransparency="True"
+                       PopupAnimation="Fade"
+                       Placement="Bottom"
+                       PlacementTarget="{Binding ElementName=PeakToggle}"
+                       HorizontalOffset="-40">
+                    <Border Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource DividerBrush}"
+                            BorderThickness="1" CornerRadius="8"
+                            Padding="14,10" Margin="8">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.2" Color="Black"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" MinWidth="70">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                        <TextBlock Text="&#xE945;" FontFamily="Segoe MDL2 Assets" FontSize="10"
+                                                   Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                        <TextBlock Text="峰值 KPS" FontSize="10"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding PeakKPS}" FontSize="20" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" MinWidth="70">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                        <TextBlock Text="&#xE945;" FontFamily="Segoe MDL2 Assets" FontSize="10"
+                                                   Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                        <TextBlock Text="峰值 CPS" FontSize="10"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding PeakCPS}" FontSize="20" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Popup>
+            </Grid>
 
             <!-- Stats Cards -->
             <Grid Margin="0,0,0,4">
@@ -150,20 +232,6 @@
                 </Border>
                 <Border Grid.Column="2" Style="{DynamicResource CardBorder}" Padding="8,7">
                     <controls:StatItemControl Icon="&#xE74A;" Title="滚轮滚动" Value="{Binding ScrollDistance}"/>
-                </Border>
-            </Grid>
-
-            <Grid Margin="0,0,0,4">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="4"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <Border Grid.Column="0" Style="{DynamicResource CardBorder}" Padding="8,7">
-                    <controls:StatItemControl Icon="&#xE945;" Title="峰值 KPS" Value="{Binding PeakKPS}"/>
-                </Border>
-                <Border Grid.Column="2" Style="{DynamicResource CardBorder}" Padding="8,7">
-                    <controls:StatItemControl Icon="&#xE945;" Title="峰值 CPS" Value="{Binding PeakCPS}"/>
                 </Border>
             </Grid>
 
