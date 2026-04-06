@@ -2027,6 +2027,9 @@ class KPSBadgeView: NSView {
     }
 
     private func setupUI() {
+        wantsLayer = true
+        layer?.cornerRadius = 6
+        layer?.backgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.5).cgColor
         toolTip = "KPS / CPS"
 
         iconLabel.font = NSFont.systemFont(ofSize: 16)
@@ -2057,10 +2060,10 @@ class KPSBadgeView: NSView {
         addSubview(mainStack)
 
         NSLayoutConstraint.activate([
-            mainStack.topAnchor.constraint(equalTo: topAnchor),
-            mainStack.bottomAnchor.constraint(equalTo: bottomAnchor),
-            mainStack.leadingAnchor.constraint(equalTo: leadingAnchor),
-            mainStack.trailingAnchor.constraint(equalTo: trailingAnchor)
+            mainStack.topAnchor.constraint(equalTo: topAnchor, constant: 3),
+            mainStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -3),
+            mainStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6),
+            mainStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6)
         ])
 
         setContentHuggingPriority(.required, for: .horizontal)
