@@ -624,7 +624,7 @@ class StatsPopoverViewController: NSViewController {
 
     private func updateKPSBadge() {
         let stats = StatsManager.shared.currentStats
-        kpsBadge.update(peakKPS: Int(stats.peakKPS), peakCPS: Int(stats.peakCPS))
+        kpsBadge.update(peakKPS: stats.peakKPS, peakCPS: stats.peakCPS)
     }
 
     private func startKPSRefreshTimer() {

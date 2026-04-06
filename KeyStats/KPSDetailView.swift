@@ -68,10 +68,10 @@ struct KPSDetailView: View {
     }
 
     private func refreshData() {
-        let manager = StatsManager.shared
-        currentKPS = manager.getCurrentKPS()
-        currentCPS = manager.getCurrentCPS()
-        peakKPS = Int(manager.currentStats.peakKPS)
-        peakCPS = Int(manager.currentStats.peakCPS)
+        let snapshot = StatsManager.shared.currentRatesSnapshot()
+        currentKPS = snapshot.currentKPS
+        currentCPS = snapshot.currentCPS
+        peakKPS = snapshot.peakKPS
+        peakCPS = snapshot.peakCPS
     }
 }
