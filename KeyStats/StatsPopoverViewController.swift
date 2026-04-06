@@ -64,8 +64,7 @@ class StatsPopoverViewController: NSViewController {
     private var sideClickRow: NSStackView!
     private var mouseDistanceView: StatItemView!
     private var scrollDistanceView: StatItemView!
-    private var peakKPSView: StatItemView!
-    private var peakCPSView: StatItemView!
+
     
     // 底部按钮
     private var quitButton: NSButton!
@@ -195,8 +194,6 @@ class StatsPopoverViewController: NSViewController {
         sideForwardClickView = StatItemView(icon: "🖱️", title: NSLocalizedString("stats.sideForwardClicks", comment: ""), value: "0")
         mouseDistanceView = StatItemView(icon: "↔️", title: NSLocalizedString("stats.mouseDistance", comment: ""), value: "0 px")
         scrollDistanceView = StatItemView(icon: "↕️", title: NSLocalizedString("stats.scrollDistance", comment: ""), value: "0 px")
-        peakKPSView = StatItemView(icon: "⚡", title: NSLocalizedString("stats.peakKPS", comment: ""), value: "0")
-        peakCPSView = StatItemView(icon: "⚡", title: NSLocalizedString("stats.peakCPS", comment: ""), value: "0")
         
         let clickRow = NSStackView(views: [leftClickView, rightClickView])
         clickRow.orientation = .horizontal
@@ -220,16 +217,6 @@ class StatsPopoverViewController: NSViewController {
 
         let isChinese = Locale.current.language.languageCode?.identifier == "zh"
 
-        let peakRow = NSStackView(views: [peakKPSView, peakCPSView])
-        peakRow.orientation = .horizontal
-        peakRow.spacing = 16
-        peakRow.distribution = .fillEqually
-        peakRow.alignment = .centerY
-        peakRow.setContentHuggingPriority(.required, for: .vertical)
-        peakRow.setContentCompressionResistancePriority(.required, for: .vertical)
-        peakRow.translatesAutoresizingMaskIntoConstraints = false
-        peakRow.heightAnchor.constraint(equalTo: peakKPSView.heightAnchor).isActive = true
-
         if isChinese {
             // 中文环境：鼠标移动和滚动距离并排显示
             let distanceRow = NSStackView(views: [mouseDistanceView, scrollDistanceView])
@@ -246,8 +233,7 @@ class StatsPopoverViewController: NSViewController {
                 keyPressRow,
                 clickRow,
                 sideClickRow,
-                distanceRow,
-                peakRow
+                distanceRow
             ])
         } else {
             // 英文环境：鼠标移动和滚动距离分行显示
@@ -256,8 +242,7 @@ class StatsPopoverViewController: NSViewController {
                 clickRow,
                 sideClickRow,
                 mouseDistanceView,
-                scrollDistanceView,
-                peakRow
+                scrollDistanceView
             ])
         }
         statsStackView.orientation = .vertical
@@ -629,8 +614,6 @@ class StatsPopoverViewController: NSViewController {
         applySideClickRowVisibility(hasSideClickData)
         mouseDistanceView.updateValue(stats.formattedMouseDistance)
         scrollDistanceView.updateValue(stats.formattedScrollDistance)
-        peakKPSView.updateValue(formatRate(stats.peakKPS))
-        peakCPSView.updateValue(formatRate(stats.peakCPS))
         updateKeyBreakdown()
         updateHistorySection()
         updatePermissionButtonVisibility()
