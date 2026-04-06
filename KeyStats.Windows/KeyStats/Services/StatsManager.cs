@@ -174,6 +174,7 @@ public class StatsManager : IDisposable
         RecordKeyForPeakKPS();
         NotifyStatsUpdate();
         NotifyKeyPressThresholdIfNeeded();
+        ScheduleSave();
     }
 
     private void OnLeftClick(string appName, string displayName)
@@ -188,6 +189,7 @@ public class StatsManager : IDisposable
         RecordClickForPeakCPS();
         NotifyStatsUpdate();
         NotifyClickThresholdIfNeeded();
+        ScheduleSave();
     }
 
     private void OnRightClick(string appName, string displayName)
@@ -202,6 +204,7 @@ public class StatsManager : IDisposable
         RecordClickForPeakCPS();
         NotifyStatsUpdate();
         NotifyClickThresholdIfNeeded();
+        ScheduleSave();
     }
 
     private void OnMiddleClick(string appName, string displayName)
@@ -216,6 +219,7 @@ public class StatsManager : IDisposable
         RecordClickForPeakCPS();
         NotifyStatsUpdate();
         NotifyClickThresholdIfNeeded();
+        ScheduleSave();
     }
 
     private void OnSideBackClick(string appName, string displayName)
@@ -230,6 +234,7 @@ public class StatsManager : IDisposable
         RecordClickForPeakCPS();
         NotifyStatsUpdate();
         NotifyClickThresholdIfNeeded();
+        ScheduleSave();
     }
 
     private void OnSideForwardClick(string appName, string displayName)
@@ -244,6 +249,7 @@ public class StatsManager : IDisposable
         RecordClickForPeakCPS();
         NotifyStatsUpdate();
         NotifyClickThresholdIfNeeded();
+        ScheduleSave();
     }
 
     private void OnMouseMoved(double distance)
