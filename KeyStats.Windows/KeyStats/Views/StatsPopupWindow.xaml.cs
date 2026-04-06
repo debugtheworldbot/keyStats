@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Forms;
 using System.Windows.Threading;
@@ -27,6 +28,7 @@ public partial class StatsPopupWindow : Window
     private bool _isFullyLoaded;
     private bool _allowClose;
     private bool _suppressStatePersistence;
+    private bool _isTrayBackdropEnabled;
     private System.Drawing.Point? _anchorPoint;
     private readonly DispatcherTimer _windowStateSaveTimer;
 
@@ -53,20 +55,22 @@ public partial class StatsPopupWindow : Window
         SizeChanged += OnWindowBoundsChanged;
         SourceInitialized += OnSourceInitialized;
 
-        if (_isWindowMode)
-        {
-            ThemeManager.Instance.ThemeChanged += OnThemeChanged;
-        }
+        ThemeManager.Instance.ThemeChanged += OnThemeChanged;
 
         Console.WriteLine("StatsPopupWindow constructor done");
     }
 
     private void OnSourceInitialized(object? sender, EventArgs e)
     {
+        var handle = new WindowInteropHelper(this).Handle;
+
         if (_isWindowMode)
         {
-            ApplyWindowTitleBarTheme();
+            ApplyWindowTitleBarTheme(handle);
+            return;
         }
+
+        ApplyTrayPopupBackdrop(handle);
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -75,7 +79,7 @@ public partial class StatsPopupWindow : Window
         if (_isWindowMode)
         {
             RestoreWindowModeBounds();
-            ApplyWindowTitleBarTheme();
+            ApplyWindowTitleBarTheme(new WindowInteropHelper(this).Handle);
             Opacity = 1;
         }
         else
@@ -181,28 +185,77 @@ public partial class StatsPopupWindow : Window
     {
         _windowStateSaveTimer.Stop();
 
-        if (_isWindowMode)
-        {
-            ThemeManager.Instance.ThemeChanged -= OnThemeChanged;
-        }
+        ThemeManager.Instance.ThemeChanged -= OnThemeChanged;
 
         _viewModel.Cleanup();
     }
 
     private void OnThemeChanged()
     {
-        if (!_isWindowMode)
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            var handle = new WindowInteropHelper(this).Handle;
+
+            if (_isWindowMode)
+            {
+                ApplyWindowTitleBarTheme(handle);
+            }
+            else
+            {
+                ApplyTrayPopupBackdrop(handle);
+            }
+        }));
+    }
+
+    private void ApplyWindowTitleBarTheme(IntPtr handle)
+    {
+        NativeInterop.TrySetImmersiveDarkMode(handle, ThemeManager.Instance.IsDarkTheme);
+    }
+
+    private void ApplyTrayPopupBackdrop(IntPtr handle)
+    {
+        NativeInterop.TryExtendFrameIntoClientArea(handle);
+        NativeInterop.TrySetImmersiveDarkMode(handle, ThemeManager.Instance.IsDarkTheme);
+        _isTrayBackdropEnabled = NativeInterop.TrySetSystemBackdrop(
+            handle,
+            NativeInterop.DwmSystemBackdropType.TransientWindow);
+
+        if (PresentationSource.FromVisual(this) is HwndSource hwndSource)
+        {
+            hwndSource.CompositionTarget.BackgroundColor = Colors.Transparent;
+        }
+
+        NativeInterop.TrySetRoundedCorners(handle);
+        NativeInterop.TryClearWindowBorder(handle);
+        ApplyTrayPopupSurface();
+    }
+
+    private void ApplyTrayPopupSurface()
+    {
+        if (FindName("RootBorder") is not System.Windows.Controls.Border rootBorder)
         {
             return;
         }
 
-        Dispatcher.BeginInvoke(new Action(ApplyWindowTitleBarTheme));
+        rootBorder.BorderThickness = new Thickness(1);
+        rootBorder.BorderBrush = ThemeManager.Instance.IsDarkTheme
+            ? new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF))
+            : new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromArgb(0x20, 0x00, 0x00, 0x00));
+
+        rootBorder.Background = _isTrayBackdropEnabled
+            ? CreateTrayBackdropTintBrush()
+            : (System.Windows.Media.Brush)FindResource("SurfaceBrush");
     }
 
-    private void ApplyWindowTitleBarTheme()
+    private System.Windows.Media.Brush CreateTrayBackdropTintBrush()
     {
-        var handle = new WindowInteropHelper(this).Handle;
-        NativeInterop.TrySetImmersiveDarkMode(handle, ThemeManager.Instance.IsDarkTheme);
+        return ThemeManager.Instance.IsDarkTheme
+            ? new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromArgb(0xA8, 0x20, 0x20, 0x20))
+            : new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromArgb(0xB8, 0xFA, 0xFA, 0xFA));
     }
 
     private void Window_Deactivated(object sender, EventArgs e)
@@ -462,7 +515,15 @@ public partial class StatsPopupWindow : Window
             MaxHeight = double.PositiveInfinity;
             Opacity = 1;
             WindowStartupLocation = WindowStartupLocation.Manual;
+            return;
         }
+
+        WindowStyle = WindowStyle.None;
+        AllowsTransparency = false;
+        Background = System.Windows.Media.Brushes.Transparent;
+        ShowInTaskbar = false;
+        Topmost = true;
+        ResizeMode = ResizeMode.NoResize;
     }
 
     private void OnClosing(object? sender, CancelEventArgs e)

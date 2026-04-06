@@ -69,6 +69,15 @@ public static class NativeInterop
         public int Bottom;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MARGINS
+    {
+        public int cxLeftWidth;
+        public int cxRightWidth;
+        public int cyTopHeight;
+        public int cyBottomHeight;
+    }
+
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     public static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
 
@@ -183,8 +192,25 @@ public static class NativeInterop
     [DllImport("dwmapi.dll", PreserveSig = true)]
     private static extern int DwmSetWindowAttribute(IntPtr hwnd, int dwAttribute, ref int pvAttribute, int cbAttribute);
 
+    [DllImport("dwmapi.dll", PreserveSig = true)]
+    private static extern int DwmExtendFrameIntoClientArea(IntPtr hwnd, ref MARGINS margins);
+
     private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
     private const int DWMWA_USE_IMMERSIVE_DARK_MODE_FALLBACK = 19;
+    private const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
+    private const int DWMWA_BORDER_COLOR = 34;
+    private const int DWMWA_SYSTEMBACKDROP_TYPE = 38;
+    private const int DWMWCP_ROUND = 2;
+    private const int DWMWA_COLOR_NONE = unchecked((int)0xFFFFFFFE);
+
+    public enum DwmSystemBackdropType
+    {
+        Auto = 0,
+        None = 1,
+        MainWindow = 2,
+        TransientWindow = 3,
+        TabbedWindow = 4
+    }
 
     public static void TrySetImmersiveDarkMode(IntPtr hwnd, bool enabled)
     {
@@ -199,5 +225,56 @@ public static class NativeInterop
         {
             DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE_FALLBACK, ref useDarkMode, sizeof(int));
         }
+    }
+
+    public static bool TrySetSystemBackdrop(IntPtr hwnd, DwmSystemBackdropType backdropType)
+    {
+        if (hwnd == IntPtr.Zero || Environment.OSVersion.Version.Build < 22621)
+        {
+            return false;
+        }
+
+        var value = (int)backdropType;
+        return DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, ref value, sizeof(int)) == 0;
+    }
+
+    public static void TrySetRoundedCorners(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero || Environment.OSVersion.Version.Build < 22000)
+        {
+            return;
+        }
+
+        var preference = DWMWCP_ROUND;
+        DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref preference, sizeof(int));
+    }
+
+    public static void TryClearWindowBorder(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero || Environment.OSVersion.Version.Build < 22000)
+        {
+            return;
+        }
+
+        var borderColor = DWMWA_COLOR_NONE;
+        DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, ref borderColor, sizeof(int));
+    }
+
+    public static bool TryExtendFrameIntoClientArea(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero)
+        {
+            return false;
+        }
+
+        var margins = new MARGINS
+        {
+            cxLeftWidth = -1,
+            cxRightWidth = -1,
+            cyTopHeight = -1,
+            cyBottomHeight = -1
+        };
+
+        return DwmExtendFrameIntoClientArea(hwnd, ref margins) == 0;
     }
 }
