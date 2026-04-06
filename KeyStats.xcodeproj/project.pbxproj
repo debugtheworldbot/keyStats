@@ -28,6 +28,7 @@
 		A1000021 /* AllTimeStatsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000021 /* AllTimeStatsViewController.swift */; };
 		A1000022 /* AppStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000022 /* AppStats.swift */; };
 		A1000032 /* StatsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000032 /* StatsModels.swift */; };
+		A1000033 /* KPSDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000033 /* KPSDetailView.swift */; };
 		A1000023 /* AppActivityTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000023 /* AppActivityTracker.swift */; };
 		A1000024 /* AppStatsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000024 /* AppStatsWindowController.swift */; };
 		A1000025 /* AppStatsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000025 /* AppStatsViewController.swift */; };
@@ -60,6 +61,7 @@
 		A2000021 /* AllTimeStatsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllTimeStatsViewController.swift; sourceTree = "<group>"; };
 		A2000022 /* AppStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStats.swift; sourceTree = "<group>"; };
 		A2000032 /* StatsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsModels.swift; sourceTree = "<group>"; };
+		A2000033 /* KPSDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KPSDetailView.swift; sourceTree = "<group>"; };
 		A2000023 /* AppActivityTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppActivityTracker.swift; sourceTree = "<group>"; };
 		A2000024 /* AppStatsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStatsWindowController.swift; sourceTree = "<group>"; };
 		A2000025 /* AppStatsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStatsViewController.swift; sourceTree = "<group>"; };
@@ -105,6 +107,7 @@
 				A2000022 /* AppStats.swift */,
 				A2000032 /* StatsModels.swift */,
 				A2000004 /* MenuBarController.swift */,
+				A2000033 /* KPSDetailView.swift */,
 				A2000005 /* StatsPopoverViewController.swift */,
 				A2000024 /* AppStatsWindowController.swift */,
 				A2000025 /* AppStatsViewController.swift */,
@@ -227,6 +230,7 @@
 				A1000022 /* AppStats.swift in Sources */,
 				A1000032 /* StatsModels.swift in Sources */,
 				A1000004 /* MenuBarController.swift in Sources */,
+				A1000033 /* KPSDetailView.swift in Sources */,
 				A1000005 /* StatsPopoverViewController.swift in Sources */,
 				A1000024 /* AppStatsWindowController.swift in Sources */,
 				A1000025 /* AppStatsViewController.swift in Sources */,

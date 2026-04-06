@@ -53,6 +53,10 @@ class StatsPopoverViewController: NSViewController {
     
     // 统计项视图
     private var keyPressView: StatItemView!
+    private var kpsBadge: NSButton!
+    private var keyPressRow: NSStackView!
+    private var kpsRefreshTimer: Timer?
+    private var kpsPopover: NSPopover?
     private var leftClickView: StatItemView!
     private var rightClickView: StatItemView!
     private var sideBackClickView: StatItemView!
@@ -101,6 +105,7 @@ class StatsPopoverViewController: NSViewController {
         updateStats()
         startLiveUpdates()
         startUpdateAvailabilityUpdates()
+        startKPSRefreshTimer()
     }
 
     override func viewDidAppear() {
@@ -114,6 +119,8 @@ class StatsPopoverViewController: NSViewController {
         super.viewWillDisappear()
         stopLiveUpdates()
         stopUpdateAvailabilityUpdates()
+        stopKPSRefreshTimer()
+        closeKPSPopover()
     }
 
     override func viewDidLayout() {
@@ -160,6 +167,28 @@ class StatsPopoverViewController: NSViewController {
         
         // 统计项
         keyPressView = StatItemView(icon: "⌨️", title: NSLocalizedString("stats.keyPresses", comment: ""), value: "0")
+
+        // KPS 徽章按钮
+        kpsBadge = NSButton(title: "⚡ 0", target: self, action: #selector(toggleKPSPopover))
+        kpsBadge.bezelStyle = .inline
+        kpsBadge.isBordered = true
+        kpsBadge.controlSize = .small
+        kpsBadge.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .medium)
+        kpsBadge.toolTip = "KPS (Keys Per Second)"
+        kpsBadge.translatesAutoresizingMaskIntoConstraints = false
+        kpsBadge.setContentHuggingPriority(.required, for: .horizontal)
+        kpsBadge.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        keyPressRow = NSStackView(views: [keyPressView, kpsBadge])
+        keyPressRow.orientation = .horizontal
+        keyPressRow.spacing = 8
+        keyPressRow.alignment = .centerY
+        keyPressRow.distribution = .fill
+        keyPressRow.setContentHuggingPriority(.required, for: .vertical)
+        keyPressRow.setContentCompressionResistancePriority(.required, for: .vertical)
+        keyPressRow.translatesAutoresizingMaskIntoConstraints = false
+        keyPressRow.heightAnchor.constraint(equalTo: keyPressView.heightAnchor).isActive = true
+
         leftClickView = StatItemView(icon: "🖱️", title: NSLocalizedString("stats.leftClicks", comment: ""), value: "0")
         rightClickView = StatItemView(icon: "🖱️", title: NSLocalizedString("stats.rightClicks", comment: ""), value: "0")
         sideBackClickView = StatItemView(icon: "🖱️", title: NSLocalizedString("stats.sideBackClicks", comment: ""), value: "0")
@@ -214,7 +243,7 @@ class StatsPopoverViewController: NSViewController {
             distanceRow.heightAnchor.constraint(equalTo: mouseDistanceView.heightAnchor).isActive = true
 
             statsStackView = NSStackView(views: [
-                keyPressView,
+                keyPressRow,
                 clickRow,
                 sideClickRow,
                 distanceRow,
@@ -223,7 +252,7 @@ class StatsPopoverViewController: NSViewController {
         } else {
             // 英文环境：鼠标移动和滚动距离分行显示
             statsStackView = NSStackView(views: [
-                keyPressView,
+                keyPressRow,
                 clickRow,
                 sideClickRow,
                 mouseDistanceView,
@@ -592,6 +621,7 @@ class StatsPopoverViewController: NSViewController {
         let hasSideClickData = (stats.sideBackClicks + stats.sideForwardClicks) > 0
         
         keyPressView.updateValue(formatNumber(stats.keyPresses))
+        updateKPSBadge()
         leftClickView.updateValue(formatNumber(stats.leftClicks))
         rightClickView.updateValue(formatNumber(stats.rightClicks))
         sideBackClickView.updateValue(formatNumber(stats.sideBackClicks))
@@ -627,6 +657,52 @@ class StatsPopoverViewController: NSViewController {
         }
         statsUpdateToken = nil
         pendingStatsRefresh = false
+    }
+
+    // MARK: - KPS 实时刷新
+
+    private func updateKPSBadge() {
+        let kps = StatsManager.shared.getCurrentKPS()
+        kpsBadge.title = "⚡ \(kps)"
+    }
+
+    private func startKPSRefreshTimer() {
+        kpsRefreshTimer?.invalidate()
+        kpsRefreshTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in
+            self?.updateKPSBadge()
+        }
+        if let timer = kpsRefreshTimer {
+            RunLoop.main.add(timer, forMode: .common)
+        }
+    }
+
+    private func stopKPSRefreshTimer() {
+        kpsRefreshTimer?.invalidate()
+        kpsRefreshTimer = nil
+    }
+
+    @objc private func toggleKPSPopover() {
+        if let popover = kpsPopover, popover.isShown {
+            closeKPSPopover()
+        } else {
+            showKPSPopover()
+        }
+    }
+
+    private func showKPSPopover() {
+        closeKPSPopover()
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.animates = true
+        popover.contentViewController = NSHostingController(rootView: KPSDetailView())
+        popover.contentSize = NSSize(width: 220, height: 170)
+        self.kpsPopover = popover
+        popover.show(relativeTo: kpsBadge.bounds, of: kpsBadge, preferredEdge: .minY)
+    }
+
+    private func closeKPSPopover() {
+        kpsPopover?.performClose(nil)
+        kpsPopover = nil
     }
 
     private func startUpdateAvailabilityUpdates() {

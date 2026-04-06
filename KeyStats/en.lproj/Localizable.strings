@@ -70,6 +70,11 @@
 "stats.peakKPS" = "Peak KPS";
 "stats.peakCPS" = "Peak CPS";
 
+"kpsDetail.kps" = "KPS";
+"kpsDetail.cps" = "CPS";
+"kpsDetail.peak" = "Peak";
+"kpsDetail.current" = "Current";
+
 "section.keyBreakdown" = "Key Breakdown";
 "section.history" = "History";
 

@@ -331,7 +331,6 @@ class StatsManager {
             startInputRateTracking()
             updateCurrentInputRate()
         }
-        
         setupMidnightReset()
     }
     
@@ -577,6 +576,26 @@ class StatsManager {
         if currentCPS > currentStats.peakCPS {
             currentStats.peakCPS = currentCPS
         }
+    }
+
+    // MARK: - 实时 KPS/CPS 查询
+
+    /// 获取当前实时 KPS（过去 1 秒内的按键数）
+    func getCurrentKPS() -> Int {
+        let cutoff = Date().addingTimeInterval(-1.0)
+        peakRateLock.lock()
+        let count = recentKeyTimestamps.filter { $0 > cutoff }.count
+        peakRateLock.unlock()
+        return count
+    }
+
+    /// 获取当前实时 CPS（过去 1 秒内的点击数）
+    func getCurrentCPS() -> Int {
+        let cutoff = Date().addingTimeInterval(-1.0)
+        peakRateLock.lock()
+        let count = recentClickTimestamps.filter { $0 > cutoff }.count
+        peakRateLock.unlock()
+        return count
     }
 
     private func resetInputRateBuckets() {

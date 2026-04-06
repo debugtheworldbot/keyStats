@@ -70,6 +70,11 @@
 "stats.peakKPS" = "峰值 KPS";
 "stats.peakCPS" = "峰值 CPS";
 
+"kpsDetail.kps" = "每秒按键";
+"kpsDetail.cps" = "每秒点击";
+"kpsDetail.peak" = "峰值";
+"kpsDetail.current" = "当前";
+
 "section.keyBreakdown" = "键位统计";
 "section.history" = "历史趋势";
 
