@@ -74,6 +74,10 @@
 "kpsDetail.cps" = "CPS";
 "kpsDetail.peak" = "Peak";
 "kpsDetail.current" = "Current";
+"kpsDetail.peakKPS" = "Today's Peak KPS";
+"kpsDetail.peakCPS" = "Today's Peak CPS";
+"kpsDetail.currentKPS" = "Current KPS";
+"kpsDetail.currentCPS" = "Current CPS";
 
 "section.keyBreakdown" = "Key Breakdown";
 "section.history" = "History";

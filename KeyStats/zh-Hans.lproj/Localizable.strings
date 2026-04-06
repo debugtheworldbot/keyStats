@@ -74,6 +74,10 @@
 "kpsDetail.cps" = "每秒点击";
 "kpsDetail.peak" = "峰值";
 "kpsDetail.current" = "当前";
+"kpsDetail.peakKPS" = "今日峰值按键速度(KPS)";
+"kpsDetail.peakCPS" = "今日峰值点击速度(CPS)";
+"kpsDetail.currentKPS" = "当前KPS";
+"kpsDetail.currentCPS" = "当前CPS";
 
 "section.keyBreakdown" = "键位统计";
 "section.history" = "历史趋势";
