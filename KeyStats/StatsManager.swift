@@ -820,12 +820,28 @@ class StatsManager {
     // MARK: - 数据持久化
     
     private func saveStats() {
-        if let encoded = try? JSONEncoder().encode(currentStats) {
+        statsStateLock.lock()
+        let statsSnapshot = currentStats
+        let calendar = Calendar.current
+        let normalizedDate = calendar.startOfDay(for: statsSnapshot.date)
+        let key = dateFormatter.string(from: normalizedDate)
+        var normalizedStats = statsSnapshot
+        normalizedStats.date = normalizedDate
+        history[key] = normalizedStats
+        cachedHistoryStats = nil
+        cachedWeekdayStats = nil
+        cachedForDateKey = nil
+        let historySnapshot = history
+        statsStateLock.unlock()
+
+        if let encoded = try? JSONEncoder().encode(statsSnapshot) {
             userDefaults.set(encoded, forKey: statsKey)
         }
-        recordCurrentStatsToHistory()
+        if let encoded = try? JSONEncoder().encode(historySnapshot) {
+            userDefaults.set(encoded, forKey: historyKey)
+        }
     }
-    
+
     private func loadStats() -> DailyStats? {
         guard let data = userDefaults.data(forKey: statsKey),
               let stats = try? JSONDecoder().decode(DailyStats.self, from: data) else {
@@ -834,31 +850,12 @@ class StatsManager {
         return stats
     }
 
-    private func recordCurrentStatsToHistory() {
-        let calendar = Calendar.current
-        let normalizedDate = calendar.startOfDay(for: currentStats.date)
-        let key = dateFormatter.string(from: normalizedDate)
-        var stats = currentStats
-        stats.date = normalizedDate
-        history[key] = stats
-        cachedHistoryStats = nil
-        cachedWeekdayStats = nil
-        cachedForDateKey = nil
-        saveHistory()
-    }
-    
     private func loadHistory() -> [String: DailyStats] {
         guard let data = userDefaults.data(forKey: historyKey),
               let stored = try? JSONDecoder().decode([String: DailyStats].self, from: data) else {
             return [:]
         }
         return stored
-    }
-    
-    private func saveHistory() {
-        if let encoded = try? JSONEncoder().encode(history) {
-            userDefaults.set(encoded, forKey: historyKey)
-        }
     }
 
     // MARK: - 数据导入导出
@@ -888,9 +885,11 @@ class StatsManager {
     }
 
     func exportStatsData() throws -> Data {
+        statsStateLock.lock()
         var exportHistory = history
-        let normalizedDate = Calendar.current.startOfDay(for: currentStats.date)
         var current = currentStats
+        statsStateLock.unlock()
+        let normalizedDate = Calendar.current.startOfDay(for: current.date)
         current.date = normalizedDate
         let key = dateFormatter.string(from: normalizedDate)
         exportHistory[key] = current
@@ -943,18 +942,17 @@ class StatsManager {
             resolvedHistory = mergedHistory(base: currentHistorySnapshot(), imported: importedHistory)
         }
 
-        history = resolvedHistory
         statsStateLock.lock()
+        history = resolvedHistory
         currentStats = resolvedHistory[todayKey] ?? DailyStats(date: today)
         recentKeyTimestamps.removeAll()
         recentClickTimestamps.removeAll()
         keyTimestampsHead = 0
         clickTimestampsHead = 0
-        statsStateLock.unlock()
-
         cachedHistoryStats = nil
         cachedWeekdayStats = nil
         cachedForDateKey = nil
+        statsStateLock.unlock()
 
         saveTimer?.invalidate()
         saveTimer = nil
@@ -965,8 +963,12 @@ class StatsManager {
     }
 
     private func currentHistorySnapshot() -> [String: DailyStats] {
-        var snapshot = normalizedHistory(history)
-        let normalizedCurrent = normalizedDailyStats(currentStats)
+        statsStateLock.lock()
+        let historySnap = history
+        let current = currentStats
+        statsStateLock.unlock()
+        var snapshot = normalizedHistory(historySnap)
+        let normalizedCurrent = normalizedDailyStats(current)
         snapshot[dateFormatter.string(from: normalizedCurrent.date)] = normalizedCurrent
         return snapshot
     }
