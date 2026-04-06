@@ -658,7 +658,9 @@ class StatsPopoverViewController: NSViewController {
         popover.contentViewController = NSHostingController(rootView: KPSDetailView())
         popover.contentSize = NSSize(width: 220, height: 170)
         self.kpsPopover = popover
-        popover.show(relativeTo: kpsBadge.bounds, of: kpsBadge, preferredEdge: .minY)
+        // 在徽章正下方弹出：用徽章底边的零高度矩形作为锚点
+        let bottomRect = NSRect(x: 0, y: 0, width: kpsBadge.bounds.width, height: 1)
+        popover.show(relativeTo: bottomRect, of: kpsBadge, preferredEdge: .minY)
     }
 
     private func closeKPSPopover() {
