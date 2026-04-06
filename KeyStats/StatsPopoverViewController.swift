@@ -2030,16 +2030,15 @@ class KPSBadgeView: NSView {
 
     private func setupUI() {
         wantsLayer = true
-        layer?.cornerRadius = 6
         layer?.backgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.5).cgColor
         toolTip = "KPS / CPS"
 
-        iconLabel.font = NSFont.systemFont(ofSize: 16)
+        iconLabel.font = NSFont.systemFont(ofSize: 12)
         iconLabel.alignment = .center
         iconLabel.translatesAutoresizingMaskIntoConstraints = false
         iconLabel.setContentHuggingPriority(.required, for: .horizontal)
 
-        let numFont = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .medium)
+        let numFont = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .bold)
         kpsLabel.font = numFont
         kpsLabel.textColor = .secondaryLabelColor
         kpsLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -2057,19 +2056,24 @@ class KPSBadgeView: NSView {
         let mainStack = NSStackView(views: [iconLabel, rightStack])
         mainStack.orientation = .horizontal
         mainStack.alignment = .centerY
-        mainStack.spacing = 2
+        mainStack.spacing = 0
         mainStack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(mainStack)
 
         NSLayoutConstraint.activate([
-            mainStack.topAnchor.constraint(equalTo: topAnchor, constant: 3),
-            mainStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -3),
-            mainStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6),
-            mainStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6)
+            mainStack.topAnchor.constraint(equalTo: topAnchor, constant: 2),
+            mainStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -2),
+            mainStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4),
+            mainStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8)
         ])
 
         setContentHuggingPriority(.required, for: .horizontal)
         setContentCompressionResistancePriority(.required, for: .horizontal)
+    }
+
+    override func layout() {
+        super.layout()
+        layer?.cornerRadius = bounds.height / 2
     }
 
     func update(peakKPS: Int, peakCPS: Int) {
