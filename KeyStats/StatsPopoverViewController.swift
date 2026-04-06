@@ -152,16 +152,16 @@ class StatsPopoverViewController: NSViewController {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         containerView.addSubview(titleLabel)
 
-        // KPS 徽章按钮（放在标题右侧）
-        kpsBadge = NSButton(title: "⚡ 0", target: self, action: #selector(toggleKPSPopover))
+        // KPS 徽章按钮（放在标题右侧，双行显示峰值 KPS/CPS）
+        kpsBadge = NSButton(title: "", target: self, action: #selector(toggleKPSPopover))
         kpsBadge.bezelStyle = .inline
         kpsBadge.isBordered = true
         kpsBadge.controlSize = .small
-        kpsBadge.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .medium)
-        kpsBadge.toolTip = "KPS (Keys Per Second)"
+        kpsBadge.toolTip = "KPS / CPS"
         kpsBadge.translatesAutoresizingMaskIntoConstraints = false
         kpsBadge.setContentHuggingPriority(.required, for: .horizontal)
         kpsBadge.setContentCompressionResistancePriority(.required, for: .horizontal)
+        updateKPSBadge()
         containerView.addSubview(kpsBadge)
 
         permissionButton = NSButton(title: NSLocalizedString("button.permission", comment: ""), target: self, action: #selector(requestPermission))
@@ -628,8 +628,23 @@ class StatsPopoverViewController: NSViewController {
     // MARK: - KPS 实时刷新
 
     private func updateKPSBadge() {
-        let kps = StatsManager.shared.getCurrentKPS()
-        kpsBadge.title = "⚡ \(kps)"
+        let stats = StatsManager.shared.currentStats
+        let peakKPS = Int(stats.peakKPS)
+        let peakCPS = Int(stats.peakCPS)
+
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .medium)
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+        paragraphStyle.lineSpacing = 0
+        paragraphStyle.paragraphSpacing = 0
+
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .paragraphStyle: paragraphStyle
+        ]
+
+        let text = "⚡\(peakKPS)\n⚡\(peakCPS)"
+        kpsBadge.attributedTitle = NSAttributedString(string: text, attributes: attrs)
     }
 
     private func startKPSRefreshTimer() {
