@@ -348,8 +348,14 @@ public class StatsManager : IDisposable
                 };
             }
 
-            _saveTimer.Stop();
-            _saveTimer.Start();
+            var saveTimer = _saveTimer;
+            if (saveTimer == null)
+            {
+                return;
+            }
+
+            saveTimer.Stop();
+            saveTimer.Start();
         }
     }
 
