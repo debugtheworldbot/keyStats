@@ -2,8 +2,6 @@ using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Interop;
-using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Forms;
 using System.Windows.Threading;
@@ -68,8 +66,7 @@ public partial class StatsPopupWindow : Window
             return;
         }
 
-        var handle = new WindowInteropHelper(this).Handle;
-        ApplyTrayPopupBackdrop(handle);
+        ApplyTrayPopupBackdrop();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -78,7 +75,6 @@ public partial class StatsPopupWindow : Window
         if (_isWindowMode)
         {
             RestoreWindowModeBounds();
-            ApplyWindowModeBackdrop();
             Opacity = 1;
         }
         else
@@ -191,18 +187,14 @@ public partial class StatsPopupWindow : Window
 
     private void OnThemeChanged()
     {
-        Dispatcher.BeginInvoke(new Action(() =>
+        if (_isWindowMode)
         {
-            if (_isWindowMode)
-            {
-                ApplyWindowModeBackdrop();
-            }
-            else
-            {
-                var handle = new WindowInteropHelper(this).Handle;
-                ApplyTrayPopupBackdrop(handle);
-            }
-        }));
+            ApplyWindowModeBackdrop();
+        }
+        else
+        {
+            ApplyTrayPopupBackdrop();
+        }
     }
 
     private void ApplyWindowModeBackdrop()
@@ -211,26 +203,18 @@ public partial class StatsPopupWindow : Window
 
         if (FindName("RootBorder") is System.Windows.Controls.Border rootBorder)
         {
-            rootBorder.Background = (System.Windows.Media.Brush)FindResource("WindowSurfaceBrush");
+            rootBorder.SetResourceReference(
+                System.Windows.Controls.Border.BackgroundProperty,
+                "WindowSurfaceBrush");
             rootBorder.BorderThickness = new Thickness(0);
         }
     }
 
-    private void ApplyTrayPopupBackdrop(IntPtr handle)
+    private void ApplyTrayPopupBackdrop()
     {
-        NativeInterop.TryExtendFrameIntoClientArea(handle);
-        NativeInterop.TrySetImmersiveDarkMode(handle, ThemeManager.Instance.IsDarkTheme);
-        _isTrayBackdropEnabled = NativeInterop.TrySetSystemBackdrop(
-            handle,
+        _isTrayBackdropEnabled = WindowBackdropHelper.Apply(
+            this,
             NativeInterop.DwmSystemBackdropType.TransientWindow);
-
-        if (PresentationSource.FromVisual(this) is HwndSource hwndSource)
-        {
-            hwndSource.CompositionTarget.BackgroundColor = Colors.Transparent;
-        }
-
-        NativeInterop.TrySetRoundedCorners(handle);
-        NativeInterop.TryClearWindowBorder(handle);
         ApplyTrayPopupSurface();
     }
 
@@ -242,24 +226,13 @@ public partial class StatsPopupWindow : Window
         }
 
         rootBorder.BorderThickness = new Thickness(1);
-        rootBorder.BorderBrush = ThemeManager.Instance.IsDarkTheme
-            ? new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF))
-            : new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Color.FromArgb(0x20, 0x00, 0x00, 0x00));
+        rootBorder.SetResourceReference(
+            System.Windows.Controls.Border.BorderBrushProperty,
+            "TrayPopupBorderBrush");
 
-        rootBorder.Background = _isTrayBackdropEnabled
-            ? CreateTrayBackdropTintBrush()
-            : (System.Windows.Media.Brush)FindResource("SurfaceBrush");
-    }
-
-    private System.Windows.Media.Brush CreateTrayBackdropTintBrush()
-    {
-        return ThemeManager.Instance.IsDarkTheme
-            ? new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Color.FromArgb(0xA8, 0x20, 0x20, 0x20))
-            : new System.Windows.Media.SolidColorBrush(
-                System.Windows.Media.Color.FromArgb(0xB8, 0xFA, 0xFA, 0xFA));
+        rootBorder.SetResourceReference(
+            System.Windows.Controls.Border.BackgroundProperty,
+            _isTrayBackdropEnabled ? "TrayBackdropTintBrush" : "SurfaceBrush");
     }
 
     private void Window_Deactivated(object sender, EventArgs e)

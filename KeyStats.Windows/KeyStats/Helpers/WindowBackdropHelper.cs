@@ -7,17 +7,17 @@ namespace KeyStats.Helpers;
 
 public static class WindowBackdropHelper
 {
-    public static void Apply(Window window, NativeInterop.DwmSystemBackdropType backdropType)
+    public static bool Apply(Window window, NativeInterop.DwmSystemBackdropType backdropType)
     {
         var handle = new WindowInteropHelper(window).Handle;
         if (handle == IntPtr.Zero)
         {
-            return;
+            return false;
         }
 
         NativeInterop.TryExtendFrameIntoClientArea(handle);
         NativeInterop.TrySetImmersiveDarkMode(handle, ThemeManager.Instance.IsDarkTheme);
-        NativeInterop.TrySetSystemBackdrop(handle, backdropType);
+        var backdropApplied = NativeInterop.TrySetSystemBackdrop(handle, backdropType);
         NativeInterop.TrySetRoundedCorners(handle);
         NativeInterop.TryClearWindowBorder(handle);
 
@@ -25,5 +25,7 @@ public static class WindowBackdropHelper
         {
             hwndSource.CompositionTarget.BackgroundColor = Colors.Transparent;
         }
+
+        return backdropApplied;
     }
 }

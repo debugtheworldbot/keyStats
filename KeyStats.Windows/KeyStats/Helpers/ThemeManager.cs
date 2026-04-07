@@ -87,6 +87,8 @@ public sealed class ThemeManager : IDisposable
         SetColor(res, "SurfaceColor", "#FAFAFA");
         SetColor(res, "WindowSurfaceColor", "#B8FAFAFA");
         SetColor(res, "CardColor", "#CCFFFFFF");
+        SetColor(res, "TrayPopupBorderColor", "#20000000");
+        SetColor(res, "TrayBackdropTintColor", "#B8FAFAFA");
         SetColor(res, "DividerColor", "#E5E5E5");
         SetColor(res, "SubtleFillColor", "#A8FFFFFF");
         SetColor(res, "SubtleHoverColor", "#12000000");
@@ -99,6 +101,8 @@ public sealed class ThemeManager : IDisposable
         SetBrush(res, "SurfaceBrush", "#FAFAFA");
         SetBrush(res, "WindowSurfaceBrush", "#B8FAFAFA");
         SetBrush(res, "CardBrush", "#CCFFFFFF");
+        SetBrush(res, "TrayPopupBorderBrush", "#20000000");
+        SetBrush(res, "TrayBackdropTintBrush", "#B8FAFAFA");
         SetBrush(res, "DividerBrush", "#E5E5E5");
         SetBrush(res, "SubtleFillBrush", "#A8FFFFFF");
         SetBrush(res, "SubtleHoverBrush", "#12000000");
@@ -123,6 +127,8 @@ public sealed class ThemeManager : IDisposable
         SetColor(res, "SurfaceColor", "#202020");
         SetColor(res, "WindowSurfaceColor", "#C8141414");
         SetColor(res, "CardColor", "#CC1A1A1A");
+        SetColor(res, "TrayPopupBorderColor", "#33FFFFFF");
+        SetColor(res, "TrayBackdropTintColor", "#A8202020");
         SetColor(res, "DividerColor", "#3D3D3D");
         SetColor(res, "SubtleFillColor", "#90161616");
         SetColor(res, "SubtleHoverColor", "#15FFFFFF");
@@ -135,6 +141,8 @@ public sealed class ThemeManager : IDisposable
         SetBrush(res, "SurfaceBrush", "#202020");
         SetBrush(res, "WindowSurfaceBrush", "#C8141414");
         SetBrush(res, "CardBrush", "#CC1A1A1A");
+        SetBrush(res, "TrayPopupBorderBrush", "#33FFFFFF");
+        SetBrush(res, "TrayBackdropTintBrush", "#A8202020");
         SetBrush(res, "DividerBrush", "#3D3D3D");
         SetBrush(res, "SubtleFillBrush", "#90161616");
         SetBrush(res, "SubtleHoverBrush", "#15FFFFFF");

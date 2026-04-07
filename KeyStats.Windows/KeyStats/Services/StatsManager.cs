@@ -324,22 +324,33 @@ public class StatsManager : IDisposable
     {
         lock (_lock)
         {
-            if (_pendingSave) return;
             _pendingSave = true;
-        }
 
-        _saveTimer?.Stop();
-        _saveTimer = new Timer(_saveInterval);
-        _saveTimer.Elapsed += (_, _) =>
-        {
-            _saveTimer?.Stop();
-            lock (_lock)
+            if (_saveTimer == null)
             {
-                _pendingSave = false;
+                _saveTimer = new Timer(_saveInterval)
+                {
+                    AutoReset = false
+                };
+                _saveTimer.Elapsed += (_, _) =>
+                {
+                    lock (_lock)
+                    {
+                        if (!_pendingSave)
+                        {
+                            return;
+                        }
+
+                        _pendingSave = false;
+                    }
+
+                    SaveStats();
+                };
             }
-            SaveStats();
-        };
-        _saveTimer.Start();
+
+            _saveTimer.Stop();
+            _saveTimer.Start();
+        }
     }
 
     private void ScheduleDebouncedStatsUpdate()
