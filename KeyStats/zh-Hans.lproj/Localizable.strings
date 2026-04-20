@@ -1,7 +1,7 @@
 "permission.title" = "需要辅助功能权限";
-"permission.message" = "KeyStats 需要辅助功能权限来监听键盘和鼠标事件。\n\n请按照以下步骤授权：\n1. 点击“打开系统设置”\n2. 在“隐私与安全性”中找到“辅助功能”\n3. 启用 KeyStats 的权限\n\n授权后，应用将自动开始统计。";
-"permission.reinstallTip" = "重装/升级提示：未签名版本重装后需重新授权。请在“隐私与安全性 > 辅助功能”删除旧 KeyStats，再回到应用点击“获取权限”。";
-"permission.openSettings" = "打开系统设置";
+"permission.message" = "KeyStats 需要辅助功能权限来统计键盘和鼠标活动。\n\n点击“打开授权引导”后，系统会打开“隐私与安全性 > 辅助功能”，并显示拖拽浮层。请将 KeyStats 拖入权限列表完成授权。";
+"permission.reinstallTip" = "重装/升级提示：未签名版本重装后需重新授权。请先在“隐私与安全性 > 辅助功能”删除旧 KeyStats，再重新运行授权引导。";
+"permission.openSettings" = "打开授权引导";
 "permission.later" = "稍后";
 "button.permission" = "获取权限";
 "button.launchAtLogin" = "开机启动";

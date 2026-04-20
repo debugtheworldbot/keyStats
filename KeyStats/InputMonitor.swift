@@ -31,13 +31,7 @@ class InputMonitor {
     
     // MARK: - 权限检查
     
-    /// 检查是否有辅助功能权限
-    func checkAccessibilityPermission() -> Bool {
-        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
-        return AXIsProcessTrustedWithOptions(options)
-    }
-    
-    /// 仅检查权限状态（不弹出提示）
+    /// 仅检查辅助功能权限状态（不弹出提示）
     func hasAccessibilityPermission() -> Bool {
         return AXIsProcessTrusted()
     }
@@ -48,7 +42,7 @@ class InputMonitor {
         guard !isMonitoring else { return }
         
         // 检查权限
-        guard checkAccessibilityPermission() else {
+        guard hasAccessibilityPermission() else {
             print("需要辅助功能权限才能监听输入事件")
             return
         }

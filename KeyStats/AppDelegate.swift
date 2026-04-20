@@ -3,6 +3,9 @@ import PostHog
 
 @main
 class AppDelegate: NSObject, NSApplicationDelegate {
+    static var shared: AppDelegate? {
+        NSApp.delegate as? AppDelegate
+    }
 
     private var menuBarController: MenuBarController?
     private var permissionCheckTimer: Timer?
@@ -56,9 +59,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     private func checkAndRequestPermission(retryCount: Int = 0) {
         if InputMonitor.shared.hasAccessibilityPermission() {
-            // 已有权限，直接开始监听
-            InputMonitor.shared.startMonitoring()
-            promptLaunchAtLoginIfNeeded()
+            handleAccessibilityPermissionGranted()
         } else if retryCount < 5 {
             // 开机启动时 TCC 服务可能还没完全初始化，快速重试几次
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
@@ -73,37 +74,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 print("开发模式启动：未授予辅助功能权限，跳过启动提示弹窗")
             }
 
-            // 定期检查权限状态（最多5分钟）
-            permissionCheckCount = 0
-            permissionCheckTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] timer in
-                guard let self = self else {
-                    timer.invalidate()
-                    return
-                }
-
-                self.permissionCheckCount += 1
-
-                // 检查是否获得权限
-                if InputMonitor.shared.hasAccessibilityPermission() {
-                    timer.invalidate()
-                    self.permissionCheckTimer = nil
-                    InputMonitor.shared.startMonitoring()
-                    self.promptLaunchAtLoginIfNeeded()
-                    Self.trackEvent("permission_granted", properties: ["permission": "accessibility"])
-                    print("权限已授予，开始监听")
-                    return
-                }
-
-                // 检查是否超时（5分钟）
-                if self.permissionCheckCount >= self.maxPermissionChecks {
-                    timer.invalidate()
-                    self.permissionCheckTimer = nil
-                    print("权限检查超时（5分钟），请手动在系统设置中授予辅助功能权限后重启应用")
-                }
-            }
+            startPermissionPolling()
         }
     }
     
+    func requestAccessibilityPermission(from sourceView: NSView? = nil, analyticsSource: String) {
+        guard !InputMonitor.shared.hasAccessibilityPermission() else {
+            handleAccessibilityPermissionGranted()
+            return
+        }
+
+        let sourceFrameInScreen = sourceView?.permissionFlowSourceFrameInScreen()
+        Self.trackClick("request_accessibility_permission", properties: [
+            "permission": "accessibility",
+            "source": analyticsSource
+        ])
+        Task { @MainActor in
+            AccessibilityPermissionCoordinator.shared.requestPermission(sourceFrameInScreen: sourceFrameInScreen)
+        }
+        startPermissionPolling()
+    }
+
     private func showPermissionAlert() {
         let alert = NSAlert()
         alert.messageText = NSLocalizedString("permission.title", comment: "")
@@ -120,8 +111,46 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         alert.addButton(withTitle: NSLocalizedString("permission.later", comment: ""))
 
         if alert.runModal() == .alertFirstButtonReturn {
-            openAccessibilitySettings()
-            _ = InputMonitor.shared.checkAccessibilityPermission()
+            requestAccessibilityPermission(analyticsSource: "launch_alert")
+        }
+    }
+
+    private func handleAccessibilityPermissionGranted() {
+        permissionCheckTimer?.invalidate()
+        permissionCheckTimer = nil
+        InputMonitor.shared.startMonitoring()
+        promptLaunchAtLoginIfNeeded()
+    }
+
+    private func startPermissionPolling() {
+        permissionCheckTimer?.invalidate()
+        permissionCheckCount = 0
+        permissionCheckTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] timer in
+            guard let self = self else {
+                timer.invalidate()
+                return
+            }
+
+            self.permissionCheckCount += 1
+
+            if InputMonitor.shared.hasAccessibilityPermission() {
+                timer.invalidate()
+                self.permissionCheckTimer = nil
+                self.handleAccessibilityPermissionGranted()
+                Self.trackEvent("permission_granted", properties: ["permission": "accessibility"])
+                print("权限已授予，开始监听")
+                return
+            }
+
+            if self.permissionCheckCount >= self.maxPermissionChecks {
+                timer.invalidate()
+                self.permissionCheckTimer = nil
+                print("权限检查超时（5分钟），请手动在系统设置中授予辅助功能权限后重试")
+            }
+        }
+
+        if let permissionCheckTimer {
+            RunLoop.main.add(permissionCheckTimer, forMode: .common)
         }
     }
 
@@ -160,11 +189,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         alert.runModal()
     }
     
-    private func openAccessibilitySettings() {
-        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
-        NSWorkspace.shared.open(url)
-    }
-
     private func makeRoundedAlertIcon(from image: NSImage) -> NSImage {
         let targetSize: CGFloat = 64
         let rect = NSRect(x: 0, y: 0, width: targetSize, height: targetSize)

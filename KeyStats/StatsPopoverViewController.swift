@@ -889,8 +889,14 @@ class StatsPopoverViewController: NSViewController {
     }
 
     @objc private func requestPermission() {
-        _ = InputMonitor.shared.checkAccessibilityPermission()
-        openAccessibilitySettings()
+        if let appDelegate = AppDelegate.shared {
+            appDelegate.requestAccessibilityPermission(from: permissionButton, analyticsSource: "popover_button")
+        } else {
+            let sourceFrameInScreen = permissionButton.permissionFlowSourceFrameInScreen()
+            Task { @MainActor in
+                AccessibilityPermissionCoordinator.shared.requestPermission(sourceFrameInScreen: sourceFrameInScreen)
+            }
+        }
         updatePermissionButtonVisibility()
     }
 
@@ -901,11 +907,6 @@ class StatsPopoverViewController: NSViewController {
     
     @objc private func quitApp() {
         NSApplication.shared.terminate(nil)
-    }
-
-    private func openAccessibilitySettings() {
-        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
-        NSWorkspace.shared.open(url)
     }
 
     private func showUpdatePermissionNoticeIfNeeded() -> Bool {

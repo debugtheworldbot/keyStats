@@ -1,7 +1,7 @@
 "permission.title" = "Accessibility Permission Required";
-"permission.message" = "KeyStats needs Accessibility access to count keyboard and mouse activity.\n\nClick \"Open System Settings\" and enable KeyStats in Privacy & Security > Accessibility.";
-"permission.reinstallTip" = "If reinstalled, you may need to re-enable Accessibility access.";
-"permission.openSettings" = "Open System Settings";
+"permission.message" = "KeyStats needs Accessibility access to count keyboard and mouse activity.\n\nClick \"Open Permission Guide\" to open Privacy & Security > Accessibility. Then drag KeyStats into the permission list to finish authorization.";
+"permission.reinstallTip" = "If reinstalled, remove the old KeyStats entry in Privacy & Security > Accessibility and run the permission guide again.";
+"permission.openSettings" = "Open Permission Guide";
 "permission.later" = "Later";
 "button.permission" = "Permissions";
 "button.launchAtLogin" = "Open at Login";
