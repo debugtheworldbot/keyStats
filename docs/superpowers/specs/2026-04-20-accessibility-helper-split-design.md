@@ -92,7 +92,7 @@ Helper **不做**：按键名翻译（`UCKeyTranslate`、TIS 布局监听）、�
 ### 5.1 Helper 的「分发来源」和「运行位置」分离
 
 - **分发来源（Committed Payload）**：把预构建好的 Helper `.app` 打成归档资源后提交进仓库，路径改为 `KeyStats/Resources/Helper/KeyStatsHelper.app.zip`，旁边附一个 `HelperManifest.json`。Xcode build phase 只把这两个**数据文件**原样拷进主包 `KeyStats.app/Contents/Resources/Helper/`。
-- **运行位置（Installed Binary）**：主 App 首次启动时，`HelperSupervisor` 将 zip 解包到临时目录，校验 bundle id / 接口版本 / cdhash 均符合 manifest，再原子性落到 `~/Library/Application Support/KeyStats/Helper/KeyStatsHelper.app/` 并注册 LaunchAgent。**此后 CGEventTap 使用的永远是这个 installed 副本**。
+- **运行位置（Installed Binary）**：主 App 首次启动时，`HelperSupervisor` 将 zip 解包到临时目录，先递归移除 `com.apple.quarantine`，再校验 bundle id / 接口版本 / cdhash / `codesign --verify` 均符合 manifest，最后原子性落到 `~/Library/Application Support/KeyStats/Helper/KeyStatsHelper.app/` 并注册 LaunchAgent。**此后 CGEventTap 使用的永远是这个 installed 副本**。
 - Sparkle 更新 `/Applications/KeyStats.app` → 只替换主 App 和主包内的 zip payload，不会动到 `~/Library/Application Support/KeyStats/Helper/`。Installed Helper 的 cdhash 保持不变 → TCC 条目有效。
 
 ### 5.2 保证 Committed Payload 字节恒定
@@ -108,6 +108,8 @@ Swift / Xcode 输出本身是不确定的（build timestamp、链接器填充、
 - **这个脚本只在开发者 *有意* 修改 Helper 源码后手动跑**。zip + manifest 直接 commit 进 git。
 - 常规 `build_dmg.sh`、日常 Xcode build **不重建** Helper，只 copy zip + manifest。
 - 主 App 运行时从 `HelperManifest.json` 读取 expected helper metadata；不再在源码里硬编码 `expectedCDHash`，避免 manifest / 代码双写漂移。
+- 不能只依赖“开发者记得手动跑脚本”。`build_helper.sh` 需要把 Helper 的版本字段和构建输入固定为显式输入，不在脚本里隐式改写；若 Phase 0 证明同源码重复构建仍有漂移，再补最小必要的 linker reproducibility 设置（优先评估 `-Wl,-reproducible`，`-Wl,-no_uuid` 仅在确认不影响崩溃定位 / 调试工作流后才可采用）。
+- 增加一个 payload 一致性校验脚本 / CI job：读取 committed `KeyStatsHelper.app.zip` 里的 Helper 可执行文件 cdhash，与 `HelperManifest.json` 对比；不一致直接 fail。这样能拦住“改了 Helper 源码但忘了重打 payload”或“打了 payload 但 manifest / zip 没一起提交”。
 
 ### 5.3 Helper 变化时的处理
 
@@ -131,16 +133,18 @@ Swift / Xcode 输出本身是不确定的（build timestamp、链接器填充、
 - Mach service name：`com.keystats.app.helper`
 - LaunchAgent plist 里声明 `MachServices` 字典，launchd 负责按需拉起 Helper 和托管 bootstrap 端口。
 - 这里是 **LaunchAgent + MachServices** 模型，不是 app bundle 内的 XPC Service；实现中不使用 `NSXPCListener.service()`。
+- 在 macOS 13+ 上，Helper listener 先用 `setConnectionCodeSigningRequirement(_:)` 做第一层预过滤；只要 requirement 不满足，连接在 delegate 介入前就会被系统拒绝。
 
 ### 6.2 连接接受与对端校验
 
-Helper 在 `listener(_:shouldAcceptNewConnection:)` 里先做 peer validation，再决定是否接受连接。校验顺序：
+Helper 在 `listener(_:shouldAcceptNewConnection:)` 里再做第二层 peer validation。实现路径明确为 Foundation / Security 的公开 API，不依赖未公开的 `auditToken` 属性。校验顺序：
 
-1. 从 `newConnection` 的 audit token / pid 解析调用方进程。
-2. 校验调用方与当前用户、当前 GUI session 一致。
-3. 解析调用方 bundle id，必须等于 `com.keystats.app`。
-4. 解析调用方 bundle URL / executable URL，必须等于 `HelperSupervisor` 维护的 canonical main app path。
-5. 校验协议版本兼容。
+1. listener 预先设置 code signing requirement，至少要求 peer identifier 为 `com.keystats.app`。
+2. 读取 `newConnection.effectiveUserIdentifier` 与 `auditSessionIdentifier`，确认调用方属于当前登录用户和当前 GUI session。
+3. 读取 `newConnection.processIdentifier`，仅把它作为**即时查询** live peer code object 的输入，不把 PID 本身当作身份缓存。
+4. 用 `SecCodeCopyGuestWithAttributes(... kSecGuestAttributePid ...)` + `SecCodeCheckValidity(...)` 获取并校验当前 peer 的 `SecCode`；随后用 `SecCodeCopySigningInformation(...)` 读取 signing identifier，并用 `SecCodeCopyPath(...)` 读取实际 bundle / executable 路径。
+5. 比对 signing identifier == `com.keystats.app`，且路径 == `HelperSupervisor` 维护的 canonical main app path。
+6. 校验协议版本兼容。
 
 通过后才：
 
@@ -176,7 +180,12 @@ Helper 在 `listener(_:shouldAcceptNewConnection:)` 里先做 peer validation，
 }
 ```
 
-`receiveEvent` 的 payload 是一个字典，key 对应第 4 节列出的字段，value 为 plist 可序列化类型。避免自定义 Codable 对象是因为：Mach XPC 跨版本序列化出故障最常见的原因就是类型定义不一致；用字典做纯数据通道，版本容错最好，丢弃未知 key 即可。
+`receiveEvent` 的 payload 是一个字典，key 对应第 4 节列出的字段，value 严格限制为 property-list types。避免自定义 Codable 对象是因为：Mach XPC 跨版本序列化出故障最常见的原因就是类型定义不一致；用字典做纯数据通道，版本容错最好，丢弃未知 key 即可。
+
+实现要求：
+
+- 即便 property-list collection 默认可被 NSXPC 接受，`NSXPCInterface` 仍然要对 `receiveEvent(_:)` 的第一个参数显式 `setClasses(...)`，把集合内容收窄到 `NSDictionary` / `NSString` / `NSNumber` 这一组 allowlist，避免后续字段演化时无意引入非预期对象类型。
+- payload 继续只承载 plist 值；若将来协议复杂到需要嵌套集合或非 plist 类型，再单独评估是否切换为 `NSSecureCoding` 封装对象，而不是现在提前引入自定义 model class。
 
 ### 6.4 版本协商
 
@@ -220,6 +229,12 @@ Helper 在 `listener(_:shouldAcceptNewConnection:)` 里先做 peer validation，
 </plist>
 ```
 
+这个 plist **不是**仓库里的一份静态文件，而是安装时由 `HelperSupervisor` 动态生成：
+
+- 文件名遵循 `<Label>.plist`，即 `com.keystats.app.helper.plist`
+- `ProgramArguments[0]` 写入 `installedHelperURL.path`
+- 路径必须是绝对路径；不能依赖 `~`、`$HOME` 或相对路径展开
+
 不设置 `RunAtLoad` / `KeepAlive`：
 
 - 第一次 XPC 连接时由 launchd 拉起。
@@ -246,6 +261,13 @@ Helper 进程是 LSUIElement 风格（无 Dock 无菜单栏），直接跑 `CFRu
   - `reinstallForUpgrade()` —— Helper 版本升级路径。
   - `syncAuthorizedClientLocation()` —— 记录 canonical main app path，供 Helper 做 peer validation。
 
+  `uninstall()` 的顺序固定为：
+  1. `launchctl bootout` 当前用户域中的 `com.keystats.app.helper`
+  2. 删除 `~/Library/LaunchAgents/com.keystats.app.helper.plist`
+  3. 删除 `~/Library/Application Support/KeyStats/Helper/`
+  4. best-effort 执行 `tccutil reset Accessibility com.keystats.app.helper`
+  5. 若 reset 失败，提示用户到系统设置中手动移除旧条目
+
 - `RemoteEventProcessor`（替代 `InputMonitor` 的消费侧）
   - 实现 `KeyStatsEventSinkProtocol`，接收 Helper 推来的 payload。
   - 把现有 `InputMonitor.handleEvent(type:event:)` 拆成两半：
@@ -265,6 +287,7 @@ Helper 进程是 LSUIElement 风格（无 Dock 无菜单栏），直接跑 `CFRu
 - `AppDelegate.checkAndRequestPermission` 的「授权成功」判断不再依赖 `AXIsProcessTrusted()`（主 App 本身永远不需要这个权限），改为：`HelperSupervisor.ensureInstalled()` → XPC 握手拿到 `accessibilityGranted == true`。
 - 轮询逻辑 (`startPermissionPolling`) 相应改为每 2 秒发起一次 XPC `handshake`。
 - `StatsManager` 当前使用单调时间窗口的逻辑继续沿用，但输入时间戳来源改为 Helper payload 里的 `monotonicTime`。
+- 在切换到 Helper 路径前，先做一次全仓库 sweep：把所有 `AXIsProcessTrusted()` / `AXIsProcessTrustedWithOptions()` / `InputMonitor.hasAccessibilityPermission()` 的调用点统一迁移到 `HelperSupervisor.isAuthorizedForAccessibility`，避免新旧权限判断并存。
 
 ### 8.3 主 App 自身的 Accessibility 权限
 
@@ -278,6 +301,7 @@ Helper 进程是 LSUIElement 风格（无 Dock 无菜单栏），直接跑 `CFRu
 2. `HelperSupervisor.ensureInstalled()` 发现 Helper 未装 → 从主包内 zip payload 解包、校验并安装到 Application Support，再注册 LaunchAgent。
 3. XPC 握手 → `accessibilityGranted == false`。
 4. 触发 `PermissionFlow` 引导：「请把 **KeyStatsHelper** 拖入辅助功能」。引导里的 `requiredAppURLs = [installedHelperURL]`，`PermissionFlow` 会高亮 Application Support 里那个 Helper。
+   - 引导文案要提前解释路径原因，例如：「KeyStats 把监听组件安装在这里，是为了以后升级主 App 时不用重复授权。」
 5. 用户授权后 2 秒内 XPC 再次握手成功 → Helper 开 tap → 菜单栏开始计数。
 
 ### 9.2 主 App 升级（常态，预期 > 95% 的升级属此类）
@@ -313,17 +337,32 @@ Helper 进程是 LSUIElement 风格（无 Dock 无菜单栏），直接跑 `CFRu
 | LaunchAgent plist 被用户清理 | `launchctl print` 里找不到 | 重新 bootstrap |
 | 主 App 被用户移动到新路径 | peer validation 用旧 canonical path 失败，或 `Bundle.main.bundleURL` 与记录值不符 | `HelperSupervisor.syncAuthorizedClientLocation()` 更新记录并重新建立连接 |
 
+### 10.1 可观测性
+
+- Helper 使用独立的 `Logger(subsystem: "com.keystats.app.helper", category: ...)`，至少覆盖 `lifecycle`、`xpc`、`eventtap`、`install` 四类日志。
+- 约定运维查询命令：`log show --predicate 'subsystem == "com.keystats.app.helper"' --last 10m`
+- 主 App 启动时可 best-effort 扫描 `~/Library/Logs/DiagnosticReports/KeyStatsHelper*.ips`；若发现新崩溃，仅上报元数据到 PostHog（版本、异常类型、主线程签名、发生时间），不得包含任何输入事件内容。
+- 设定连续崩溃退避：例如 60 秒内连续失败 3 次后，停止自动重连，菜单栏进入明显异常态，并引导用户查看权限 / 安装状态。
+
 ## 11. 构建 & 发布链路
 
 - 新增 Xcode target `KeyStatsHelper`（Command Line Tool，但打包成 `.app`）。
   - `Info.plist`：`LSUIElement = true`、`CFBundleIdentifier = com.keystats.app.helper`、`CFBundlePackageType = APPL`。
   - 输出 `KeyStatsHelper.app`。
+  - entitlements：显式保持 `com.apple.security.app-sandbox = false`。
+  - 不为本方案额外启用 Hardened Runtime 或 runtime exception entitlements；若未来分发策略变化导致需要 notarization，再单独评估。
+  - 基线只使用 `LSUIElement = true`；不默认同时设置 `LSBackgroundOnly = true`，因为后者语义更严格，会改变激活 / 窗口行为，而当前 Helper 不需要这层约束。
 - 新增 `scripts/build_helper.sh`：
   - `xcodebuild -scheme KeyStatsHelper -configuration Release archive ...`
   - 对 `KeyStatsHelper.app` 做 ad-hoc 签名。
   - 用 `ditto -c -k --keepParent` 打出 `KeyStats/Resources/Helper/KeyStatsHelper.app.zip`。
   - 计算 Helper cdhash 并写入 `HelperManifest.json`。
   - 让开发者 review zip + manifest diff。
+- 新增 CI / 本地校验脚本 `verify_helper_payload`：
+  - 解出 committed zip 中的 `KeyStatsHelper.app`
+  - 读取可执行文件 cdhash
+  - 与 `HelperManifest.json` 比对
+  - 不一致立即 fail
 - 主 `build_dmg.sh` 可以在第一阶段保持现状：Helper payload 在主包里只是普通数据文件，不再依赖 `codesign --deep` 对嵌套 bundle 的具体行为。
 - 后续如要继续硬化发布链路，可以把主包顶层的 `codesign --deep` 替换为显式嵌套签名流程；但这不是 Helper 方案的前置条件。
 - Sparkle：无变化。appcast 依然只描述主 App。
@@ -333,7 +372,7 @@ Helper 进程是 LSUIElement 风格（无 Dock 无菜单栏），直接跑 `CFRu
 - **R1（最高优先级）：ad-hoc 前提下的 peer validation 不是强身份认证。**
   需要明确 threat model：它足以约束误连/低成本误用，但不足以抵御同 uid 下的恶意仿冒进程。这个边界必须在实现和文档里都保留。
 - **R2：zip 解包后代码签名与 quarantine 行为。**
-  需要验证 `ditto` 打包/解包后 Helper 仍满足签名校验，并确认首次 launchd 启动不会因为 quarantine 行为异常而卡住。
+  需要验证 `ditto` 打包/解包后 Helper 仍满足签名校验，并确认递归移除 `com.apple.quarantine` 后，首次 launchd 启动不会被 Gatekeeper / xattr 状态卡住。
 - **R3：MachServices + on-demand LaunchAgent 的恢复路径。**
   需要实测 Helper 崩溃、主 App 重连、用户注销/登录、Sparkle 重启等场景下，是否都能稳定恢复。
 - **R4：tccutil reset 需要 sudo 吗？**
@@ -348,10 +387,13 @@ Helper 进程是 LSUIElement 风格（无 Dock 无菜单栏），直接跑 `CFRu
 按从小到大的风险顺序推进，每一步都能独立验证并回滚：
 
 1. **Phase 0 —— SPIKE**：验证 zip payload 解包后的签名可用；验证 LaunchAgent + MachServices 的按需拉起；验证 peer validation 技术路径；同步验证 `tccutil reset` 行为。
+   - 同一台机器、同一份源码连续跑 3 次 `build_helper.sh`，确认生成的 Helper cdhash 一致；若不一致，再引入最小必要的 reproducibility 设置并重复验证。
+   - 走完整路径验证：DMG → `/Applications` → 首次启动 → 解包 Helper → 清理 quarantine → `codesign --verify` → 建立 XPC / launchd 按需拉起，全链路都不被 xattr 卡住。
+   - 以普通 GUI 用户身份实测 `tccutil reset Accessibility com.keystats.app` 与 `com.keystats.app.helper`，记录是否需要 sudo / 是否会失败。
 2. **Phase 1 —— 抽离公共解码层**：新建 `InputEventDecoder`，把 `InputMonitor` 里仍需保留在主 App 的键盘解码逻辑搬过去；点击归一化则明确转移到 Helper 侧；老的 `InputMonitor` 改成调用新边界，行为不变。
 3. **Phase 2 —— 新增 Helper target + payload 构建链路**：Helper target、`build_helper.sh`、zip payload、manifest 生成、`HelperSupervisor.ensureInstalled()` 的解包校验逻辑。
 4. **Phase 3 —— LaunchAgent + XPC 通道 + peer validation**：落地 `HelperXPCClient`、Mach service、连接接受校验、单活会话和 idle exit。
-5. **Phase 4 —— 接入 `RemoteEventProcessor`**：`USE_HELPER=true` 时走 Helper，验证事件流完整、统计结果与老路径一致（可以 diff `StatsManager` 快照）。
+5. **Phase 4 —— 接入 `RemoteEventProcessor`**：`USE_HELPER=true` 时走 Helper，验证事件流完整、统计结果与老路径一致（可以 diff `StatsManager` 快照）；并完成全仓库 `AXIsProcessTrusted*` 调用点 sweep。
 6. **Phase 5 —— 迁移 UX**：授权入口从「授权 KeyStats」改成「授权 KeyStatsHelper」；补一次性删旧条目引导；确认不会破坏现有 launch-at-login 提示链路。
 7. **Phase 6 —— 发布灰度**：在 `build_dmg.sh` / `release.sh` 的发布分支上把 `USE_HELPER` 默认开启；appcast 带一条「**升级后需要一次性重新授权**」提示。
 8. **Phase 7 —— 清理**：彻底删除 `InputMonitor.swift`（被 `RemoteEventProcessor` + `InputEventDecoder` 替代），移除 `USE_HELPER` 开关。
