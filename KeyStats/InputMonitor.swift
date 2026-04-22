@@ -71,7 +71,10 @@ class InputMonitor {
                 if let tap = InputMonitor.shared.eventTap {
                     CGEvent.tapEnable(tap: tap, enable: true)
                 }
-                return Unmanaged.passUnretained(event)
+                // tap-disable 通知中 event 参数按 Apple 文档可能为 NULL，
+                // Swift 把它映射成非可选 CGEvent 会误导 Unmanaged.passUnretained，
+                // 直接返回 nil 既安全也符合通知语义。
+                return nil
             }
             InputMonitor.shared.handleEvent(type: type, event: event)
             return Unmanaged.passUnretained(event)
