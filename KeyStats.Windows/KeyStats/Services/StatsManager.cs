@@ -34,14 +34,17 @@ public class StatsManager : IDisposable
     private Timer? _midnightTimer;
     private Timer? _statsUpdateTimer;
     private Timer? _mouseMoveUpdateTimer;
+    private Timer? _settingsSaveTimer;
 
     private readonly double _saveInterval = 2000; // 2 seconds
     private readonly double _statsUpdateDebounceInterval = 300; // 0.3 seconds
     private readonly double _mouseMoveIdleUpdateInterval = 350; // 0.35 seconds
+    private readonly double _settingsSaveInterval = 500; // 0.5 seconds — collapses per-keystroke text-changed bursts
     private const int MaxMissingDayBackfillDays = 31;
     private bool _pendingSave;
     private bool _pendingStatsUpdate;
     private bool _pendingMouseMoveUpdate;
+    private bool _pendingSettingsSave;
 
     // KPS/CPS peak tracking (1-second sliding window)
     private readonly Queue<DateTime> _recentKeyTimestamps = new();
@@ -435,18 +438,28 @@ public class StatsManager : IDisposable
     private void SaveStats()
     {
         DailyStats statsSnapshot;
-        Dictionary<string, DailyStats> historySnapshot;
 
         lock (_lock)
         {
             statsSnapshot = CloneDailyStats(CurrentStats, CurrentStats.Date.Date);
+            // Mirror today's counters into the in-memory History dict so query paths
+            // that read from History stay in sync. The history *file* is no longer
+            // re-written here — past-day data only changes at day rollover / import /
+            // reset / shutdown, so writing it every 2s is wasted I/O.
             RecordCurrentStatsToHistory();
-            historySnapshot = CloneHistorySnapshot(History);
         }
 
         WriteJsonDurable(_statsFilePath, statsSnapshot, "stats");
+    }
 
-        SaveHistorySnapshot(historySnapshot);
+    private void SaveHistory()
+    {
+        Dictionary<string, DailyStats> snapshot;
+        lock (_lock)
+        {
+            snapshot = CloneHistorySnapshot(History);
+        }
+        WriteJsonDurable(_historyFilePath, snapshot, "history");
     }
 
     private DailyStats? LoadStats()
@@ -504,10 +517,6 @@ public class StatsManager : IDisposable
             kvp => CloneDailyStats(kvp.Value, kvp.Value.Date.Date));
     }
 
-    private void SaveHistorySnapshot(Dictionary<string, DailyStats> historySnapshot)
-    {
-        WriteJsonDurable(_historyFilePath, historySnapshot, "history");
-    }
 
     private Dictionary<string, DailyStats> LoadHistory()
     {
@@ -525,6 +534,35 @@ public class StatsManager : IDisposable
     }
 
     public void SaveSettings()
+    {
+        // UI call sites can fire per-keystroke (e.g. NotificationSettingsWindow's
+        // OnThresholdTextChanged), so debounce the durable write — otherwise every
+        // keystroke would block the UI thread on a synchronous FlushFileBuffers.
+        lock (_lock)
+        {
+            _pendingSettingsSave = true;
+
+            if (_settingsSaveTimer == null)
+            {
+                _settingsSaveTimer = new Timer(_settingsSaveInterval) { AutoReset = false };
+                _settingsSaveTimer.Elapsed += (_, _) =>
+                {
+                    lock (_lock)
+                    {
+                        if (!_pendingSettingsSave) return;
+                        _pendingSettingsSave = false;
+                    }
+
+                    FlushSettings();
+                };
+            }
+
+            _settingsSaveTimer.Stop();
+            _settingsSaveTimer.Start();
+        }
+    }
+
+    private void FlushSettings()
     {
         WriteJsonDurable(_settingsFilePath, Settings, "settings");
     }
@@ -724,6 +762,7 @@ public class StatsManager : IDisposable
         }
 
         SaveStats();
+        SaveHistory();
         NotifyStatsUpdate();
     }
 
@@ -972,18 +1011,16 @@ public class StatsManager : IDisposable
 
     private void ResetStats(DateTime date)
     {
-        Dictionary<string, DailyStats> historySnapshot;
         lock (_lock)
         {
             // 先保存旧数据到 History，避免丢失最后一次保存后的增量
             RecordCurrentStatsToHistory();
-            historySnapshot = CloneHistorySnapshot(History);
 
             // 然后创建新的统计对象
             CurrentStats = new DailyStats(date);
         }
 
-        SaveHistorySnapshot(historySnapshot);
+        SaveHistory();
         UpdateNotificationBaselines();
         NotifyStatsUpdate();
         SaveStats();
@@ -1038,6 +1075,9 @@ public class StatsManager : IDisposable
         }
 
         SaveStats();
+        // Persist History too — past-day data just changed (today's counters were
+        // archived and possibly missing days were back-filled).
+        SaveHistory();
     }
 
     #endregion
@@ -1710,8 +1750,17 @@ public class StatsManager : IDisposable
         _statsUpdateTimer?.Stop();
         _mouseMoveUpdateTimer?.Stop();
         _midnightTimer?.Stop();
+        _settingsSaveTimer?.Stop();
+
+        lock (_lock)
+        {
+            _pendingSave = false;
+            _pendingSettingsSave = false;
+        }
+
         SaveStats();
-        SaveSettings();
+        SaveHistory();
+        FlushSettings();
     }
 
     public void Dispose()
@@ -1721,6 +1770,7 @@ public class StatsManager : IDisposable
         _statsUpdateTimer?.Dispose();
         _mouseMoveUpdateTimer?.Dispose();
         _midnightTimer?.Dispose();
+        _settingsSaveTimer?.Dispose();
         _instance = null;
     }
 }
