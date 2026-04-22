@@ -47,7 +47,7 @@ let package = Package(
             name: "KeyStatsCoreTests",
             dependencies: ["KeyStatsCore"],
             path: "KeyStatsTests",
-            sources: ["AppStatsTests.swift", "StatsModelsTests.swift"]
+            sources: ["AppStatsTests.swift", "StatsModelsTests.swift", "AppIdentityCacheTests.swift"]
         )
     ]
 )
