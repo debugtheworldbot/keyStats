@@ -22,6 +22,7 @@ struct QueueAppIdentityDispatcher: AppIdentityDispatcher {
 /// 线程安全的 PID → AppIdentity 缓存。未命中时派发后台解析，
 /// 同一 PID 的并发查询会被折叠成单次解析，避免在事件 tap 回调
 /// 线程上同步调用 NSRunningApplication 进而阻塞 IME 事件。
+/// 解析失败会被负缓存，避免对不可解析的系统进程反复堆积后台任务。
 final class AppIdentityCache {
     typealias Resolver = (pid_t) -> (bundleId: String, name: String)?
 
@@ -30,6 +31,7 @@ final class AppIdentityCache {
     private var pidToBundleId: [pid_t: String] = [:]
     private var bundleIdToName: [String: String] = [:]
     private var pendingResolutions: Set<pid_t> = []
+    private var unresolvablePIDs: Set<pid_t> = []
     private let resolver: Resolver
     private let dispatcher: AppIdentityDispatcher
 
@@ -39,15 +41,11 @@ final class AppIdentityCache {
     }
 
     func identity(forPID pid: pid_t?) -> AppIdentity {
-        if let pid = pid, pid > 0 {
-            if let cached = cachedIdentity(forPID: pid) {
-                return cached
-            }
-            scheduleResolution(forPID: pid)
+        let (identity, pidNeedingResolution) = lookupLocked(pid: pid)
+        if let pid = pidNeedingResolution {
+            dispatchResolution(forPID: pid)
         }
-        lock.lock()
-        defer { lock.unlock() }
-        return frontmost
+        return identity
     }
 
     func updateFrontmost(bundleId: String, name: String, pid: pid_t?) {
@@ -58,6 +56,7 @@ final class AppIdentityCache {
         }
         if let pid = pid, pid > 0 {
             pidToBundleId[pid] = bundleId
+            unresolvablePIDs.remove(pid)
         }
         lock.unlock()
     }
@@ -68,23 +67,27 @@ final class AppIdentityCache {
         return frontmost
     }
 
-    private func cachedIdentity(forPID pid: pid_t) -> AppIdentity? {
+    /// 在单次锁块内完成缓存命中判定、待解析 PID 登记和 frontmost 读取，
+    /// 减少事件 tap 回调路径上的锁抖动。返回的第二项非 nil 时，调用方
+    /// 需在锁外派发后台解析（派发本身不能持锁，避免占锁过久）。
+    private func lookupLocked(pid: pid_t?) -> (AppIdentity, pid_t?) {
         lock.lock()
         defer { lock.unlock() }
-        guard let bundleId = pidToBundleId[pid] else { return nil }
-        let name = bundleIdToName[bundleId] ?? ""
-        return AppIdentity(bundleId: bundleId, displayName: name)
-    }
-
-    private func scheduleResolution(forPID pid: pid_t) {
-        lock.lock()
-        if pendingResolutions.contains(pid) || pidToBundleId[pid] != nil {
-            lock.unlock()
-            return
+        guard let pid = pid, pid > 0 else {
+            return (frontmost, nil)
+        }
+        if let bundleId = pidToBundleId[pid] {
+            let name = bundleIdToName[bundleId] ?? ""
+            return (AppIdentity(bundleId: bundleId, displayName: name), nil)
+        }
+        if unresolvablePIDs.contains(pid) || pendingResolutions.contains(pid) {
+            return (frontmost, nil)
         }
         pendingResolutions.insert(pid)
-        lock.unlock()
+        return (frontmost, pid)
+    }
 
+    private func dispatchResolution(forPID pid: pid_t) {
         dispatcher.dispatch { [weak self] in
             guard let self = self else { return }
             let result = self.resolver(pid)
@@ -95,6 +98,8 @@ final class AppIdentityCache {
                 if !result.name.isEmpty {
                     self.bundleIdToName[result.bundleId] = result.name
                 }
+            } else {
+                self.unresolvablePIDs.insert(pid)
             }
             self.lock.unlock()
         }

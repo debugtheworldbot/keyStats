@@ -126,7 +126,7 @@ final class AppIdentityCacheTests: XCTestCase {
         XCTAssertEqual(spy.calls, [42])
     }
 
-    func testResolverFailureDoesNotCachePIDAndAllowsRetry() {
+    func testResolverFailureIsNegativelyCachedToAvoidRepeatedWork() {
         let spy = ResolverSpy()
         spy.response = { _ in nil }
         let dispatcher = ManualDispatcher()
@@ -135,10 +135,28 @@ final class AppIdentityCacheTests: XCTestCase {
         _ = cache.identity(forPID: 42)
         dispatcher.drain()
 
+        // 对无法解析的 PID，后续查询不应反复堆积后台任务；
+        // 避免某些系统进程或 XPC 服务持续触发无效解析。
         _ = cache.identity(forPID: 42)
-        XCTAssertEqual(dispatcher.pending.count, 1, "resolver 返回 nil 后允许后续查询重试")
+        _ = cache.identity(forPID: 42)
+        XCTAssertTrue(dispatcher.pending.isEmpty, "解析失败后不应再派发解析任务")
+        XCTAssertEqual(spy.calls, [42], "resolver 不应被重复调用")
+    }
+
+    func testUpdateFrontmostClearsNegativeCacheForPID() {
+        let spy = ResolverSpy()
+        spy.response = { _ in nil }
+        let dispatcher = ManualDispatcher()
+        let (cache, _, _) = makeCache(dispatcher: dispatcher, spy: spy)
+
+        _ = cache.identity(forPID: 42)
         dispatcher.drain()
-        XCTAssertEqual(spy.calls, [42, 42])
+
+        // PID 可能被系统回收给新进程，前台切换带来的新信息应覆盖负缓存，
+        // 让该 PID 再次参与正常解析路径。
+        cache.updateFrontmost(bundleId: "com.recycled", name: "Recycled", pid: 42)
+        let result = cache.identity(forPID: 42)
+        XCTAssertEqual(result, AppIdentity(bundleId: "com.recycled", displayName: "Recycled"))
     }
 
     // MARK: - updateFrontmost
