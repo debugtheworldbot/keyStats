@@ -13,6 +13,13 @@ private let rightCommandRawMask = UInt64(NX_DEVICERCMDKEYMASK)
 private let leftOptionRawMask = UInt64(NX_DEVICELALTKEYMASK)
 private let rightOptionRawMask = UInt64(NX_DEVICERALTKEYMASK)
 
+/// 判断 CGEventTap 回调收到的事件类型是否表示 tap 被系统禁用
+/// （回调超时或被用户输入抢占）。收到此类事件时应立即重新启用 tap，
+/// 否则 tap 会长期处于半死状态，可能干扰输入法等事件处理链路。
+func isTapDisabledSignal(_ type: CGEventType) -> Bool {
+    return type == .tapDisabledByTimeout || type == .tapDisabledByUserInput
+}
+
 func baseKeyComponent(_ keyName: String) -> String {
     let trimmed = keyName.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmed.isEmpty else { return "" }

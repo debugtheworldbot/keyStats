@@ -67,6 +67,12 @@ class InputMonitor {
         
         // 创建事件回调
         let callback: CGEventTapCallBack = { (proxy, type, event, refcon) -> Unmanaged<CGEvent>? in
+            if isTapDisabledSignal(type) {
+                if let tap = InputMonitor.shared.eventTap {
+                    CGEvent.tapEnable(tap: tap, enable: true)
+                }
+                return Unmanaged.passUnretained(event)
+            }
             InputMonitor.shared.handleEvent(type: type, event: event)
             return Unmanaged.passUnretained(event)
         }

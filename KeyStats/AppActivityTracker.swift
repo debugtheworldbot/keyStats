@@ -1,22 +1,23 @@
 import Cocoa
 import CoreGraphics
 
-struct AppIdentity: Equatable {
-    let bundleId: String
-    let displayName: String
-
-    static let unknown = AppIdentity(bundleId: "unknown", displayName: "")
-}
-
 final class AppActivityTracker {
     static let shared = AppActivityTracker()
 
-    private let lock = NSLock()
-    private var frontmostIdentity = AppIdentity.unknown
-    private var pidToBundleId: [pid_t: String] = [:]
-    private var bundleIdToName: [String: String] = [:]
+    private let cache: AppIdentityCache
 
     private init() {
+        let queue = DispatchQueue(label: "com.keystats.app-activity-resolver", qos: .utility)
+        self.cache = AppIdentityCache(
+            resolver: { pid in
+                guard let app = NSRunningApplication(processIdentifier: pid),
+                      let bundleId = app.bundleIdentifier else {
+                    return nil
+                }
+                return (bundleId: bundleId, name: app.localizedName ?? "")
+            },
+            dispatcher: QueueAppIdentityDispatcher(queue: queue)
+        )
         let workspace = NSWorkspace.shared
         updateFrontmostApp(workspace.frontmostApplication)
         workspace.notificationCenter.addObserver(
@@ -32,49 +33,8 @@ final class AppActivityTracker {
     }
 
     func appIdentity(for event: CGEvent?) -> AppIdentity {
-        if let event = event {
-            let pidValue = event.getIntegerValueField(.eventSourceUnixProcessID)
-            if pidValue > 0 {
-                let pid = pid_t(pidValue)
-                if let identity = identityForPID(pid) {
-                    return identity
-                }
-            }
-        }
-        return currentFrontmostIdentity()
-    }
-
-    private func identityForPID(_ pid: pid_t) -> AppIdentity? {
-        lock.lock()
-        if let bundleId = pidToBundleId[pid] {
-            let name = bundleIdToName[bundleId] ?? ""
-            let identity = AppIdentity(bundleId: bundleId, displayName: name)
-            lock.unlock()
-            return identity
-        }
-        lock.unlock()
-
-        guard let app = NSRunningApplication(processIdentifier: pid),
-              let bundleId = app.bundleIdentifier else {
-            return nil
-        }
-        let name = app.localizedName ?? ""
-
-        lock.lock()
-        pidToBundleId[pid] = bundleId
-        if !name.isEmpty {
-            bundleIdToName[bundleId] = name
-        }
-        let identity = AppIdentity(bundleId: bundleId, displayName: name)
-        lock.unlock()
-        return identity
-    }
-
-    private func currentFrontmostIdentity() -> AppIdentity {
-        lock.lock()
-        let identity = frontmostIdentity
-        lock.unlock()
-        return identity
+        let pid: pid_t? = event.map { pid_t($0.getIntegerValueField(.eventSourceUnixProcessID)) }
+        return cache.identity(forPID: pid)
     }
 
     @objc private func activeApplicationChanged(_ notification: Notification) {
@@ -86,12 +46,10 @@ final class AppActivityTracker {
 
     private func updateFrontmostApp(_ app: NSRunningApplication?) {
         guard let app = app, let bundleId = app.bundleIdentifier else { return }
-        let name = app.localizedName ?? ""
-        lock.lock()
-        frontmostIdentity = AppIdentity(bundleId: bundleId, displayName: name)
-        if !name.isEmpty {
-            bundleIdToName[bundleId] = name
-        }
-        lock.unlock()
+        cache.updateFrontmost(
+            bundleId: bundleId,
+            name: app.localizedName ?? "",
+            pid: app.processIdentifier
+        )
     }
 }

@@ -1,5 +1,106 @@
 import Foundation
 
+struct AppIdentity: Equatable {
+    let bundleId: String
+    let displayName: String
+
+    static let unknown = AppIdentity(bundleId: "unknown", displayName: "")
+}
+
+/// 允许测试注入同步调度器来驱动 AppIdentityCache 的异步路径。
+protocol AppIdentityDispatcher {
+    func dispatch(_ work: @escaping () -> Void)
+}
+
+struct QueueAppIdentityDispatcher: AppIdentityDispatcher {
+    let queue: DispatchQueue
+    func dispatch(_ work: @escaping () -> Void) {
+        queue.async(execute: work)
+    }
+}
+
+/// 线程安全的 PID → AppIdentity 缓存。未命中时派发后台解析，
+/// 同一 PID 的并发查询会被折叠成单次解析，避免在事件 tap 回调
+/// 线程上同步调用 NSRunningApplication 进而阻塞 IME 事件。
+final class AppIdentityCache {
+    typealias Resolver = (pid_t) -> (bundleId: String, name: String)?
+
+    private let lock = NSLock()
+    private var frontmost = AppIdentity.unknown
+    private var pidToBundleId: [pid_t: String] = [:]
+    private var bundleIdToName: [String: String] = [:]
+    private var pendingResolutions: Set<pid_t> = []
+    private let resolver: Resolver
+    private let dispatcher: AppIdentityDispatcher
+
+    init(resolver: @escaping Resolver, dispatcher: AppIdentityDispatcher) {
+        self.resolver = resolver
+        self.dispatcher = dispatcher
+    }
+
+    func identity(forPID pid: pid_t?) -> AppIdentity {
+        if let pid = pid, pid > 0 {
+            if let cached = cachedIdentity(forPID: pid) {
+                return cached
+            }
+            scheduleResolution(forPID: pid)
+        }
+        lock.lock()
+        defer { lock.unlock() }
+        return frontmost
+    }
+
+    func updateFrontmost(bundleId: String, name: String, pid: pid_t?) {
+        lock.lock()
+        frontmost = AppIdentity(bundleId: bundleId, displayName: name)
+        if !name.isEmpty {
+            bundleIdToName[bundleId] = name
+        }
+        if let pid = pid, pid > 0 {
+            pidToBundleId[pid] = bundleId
+        }
+        lock.unlock()
+    }
+
+    var currentFrontmost: AppIdentity {
+        lock.lock()
+        defer { lock.unlock() }
+        return frontmost
+    }
+
+    private func cachedIdentity(forPID pid: pid_t) -> AppIdentity? {
+        lock.lock()
+        defer { lock.unlock() }
+        guard let bundleId = pidToBundleId[pid] else { return nil }
+        let name = bundleIdToName[bundleId] ?? ""
+        return AppIdentity(bundleId: bundleId, displayName: name)
+    }
+
+    private func scheduleResolution(forPID pid: pid_t) {
+        lock.lock()
+        if pendingResolutions.contains(pid) || pidToBundleId[pid] != nil {
+            lock.unlock()
+            return
+        }
+        pendingResolutions.insert(pid)
+        lock.unlock()
+
+        dispatcher.dispatch { [weak self] in
+            guard let self = self else { return }
+            let result = self.resolver(pid)
+            self.lock.lock()
+            self.pendingResolutions.remove(pid)
+            if let result = result {
+                self.pidToBundleId[pid] = result.bundleId
+                if !result.name.isEmpty {
+                    self.bundleIdToName[result.bundleId] = result.name
+                }
+            }
+            self.lock.unlock()
+        }
+    }
+}
+
 struct AppStats: Codable {
     var bundleId: String
     var displayName: String
