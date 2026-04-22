@@ -444,8 +444,7 @@ public class StatsManager : IDisposable
             historySnapshot = CloneHistorySnapshot(History);
         }
 
-        var json = JsonSerializer.Serialize(statsSnapshot, new JsonSerializerOptions { WriteIndented = true });
-        WriteAllTextDurable(_statsFilePath, json, "stats");
+        WriteJsonDurable(_statsFilePath, statsSnapshot, "stats");
 
         SaveHistorySnapshot(historySnapshot);
     }
@@ -467,7 +466,10 @@ public class StatsManager : IDisposable
         if (History.TryGetValue(todayKey, out var fromHistory))
         {
             System.Diagnostics.Debug.WriteLine("Recovered daily_stats from history.json");
-            return CloneDailyStats(fromHistory, fromHistory.Date.Date);
+            // Force date to today: this branch only fires when history has a today-keyed
+            // entry, so a corrupt Date field shouldn't cause SynchronizeCurrentDay to
+            // discard the recovered counts on startup.
+            return CloneDailyStats(fromHistory, DateTime.Today);
         }
 
         return null;
@@ -504,8 +506,7 @@ public class StatsManager : IDisposable
 
     private void SaveHistorySnapshot(Dictionary<string, DailyStats> historySnapshot)
     {
-        var json = JsonSerializer.Serialize(historySnapshot, new JsonSerializerOptions { WriteIndented = true });
-        WriteAllTextDurable(_historyFilePath, json, "history");
+        WriteJsonDurable(_historyFilePath, historySnapshot, "history");
     }
 
     private Dictionary<string, DailyStats> LoadHistory()
@@ -525,8 +526,7 @@ public class StatsManager : IDisposable
 
     public void SaveSettings()
     {
-        var json = JsonSerializer.Serialize(Settings, new JsonSerializerOptions { WriteIndented = true });
-        WriteAllTextDurable(_settingsFilePath, json, "settings");
+        WriteJsonDurable(_settingsFilePath, Settings, "settings");
     }
 
     private AppSettings LoadSettings()
@@ -536,14 +536,18 @@ public class StatsManager : IDisposable
             ?? new AppSettings();
     }
 
-    private static void WriteAllTextDurable(string targetPath, string content, string contextLabel)
+    private static void WriteJsonDurable<T>(string targetPath, T value, string contextLabel)
     {
         var tempPath = targetPath + ".tmp";
         var backupPath = targetPath + ".bak";
-        var bytes = Encoding.UTF8.GetBytes(content);
 
         try
         {
+            // Serialize inside the try/catch — System.Text.Json throws on NaN/Infinity
+            // by default, and an autosave-thread escape would crash the app.
+            var json = JsonSerializer.Serialize(value, new JsonSerializerOptions { WriteIndented = true });
+            var bytes = Encoding.UTF8.GetBytes(json);
+
             // WriteThrough + Flush(true) ensures FlushFileBuffers is issued, so the
             // tmp file's data blocks are durable before we swap it in. Otherwise a
             // power loss right after Replace can leave a 0-byte / truncated target.
