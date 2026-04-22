@@ -444,45 +444,32 @@ public class StatsManager : IDisposable
             historySnapshot = CloneHistorySnapshot(History);
         }
 
-        try
-        {
-            var json = JsonSerializer.Serialize(statsSnapshot, new JsonSerializerOptions { WriteIndented = true });
-            var tempPath = _statsFilePath + ".tmp";
-            var backupPath = _statsFilePath + ".bak";
-            File.WriteAllText(tempPath, json);
-
-            if (File.Exists(_statsFilePath))
-            {
-                // Atomic replace: temp -> target, target -> backup
-                File.Replace(tempPath, _statsFilePath, backupPath);
-            }
-            else
-            {
-                File.Move(tempPath, _statsFilePath);
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error saving stats: {ex.Message}");
-        }
+        var json = JsonSerializer.Serialize(statsSnapshot, new JsonSerializerOptions { WriteIndented = true });
+        WriteAllTextDurable(_statsFilePath, json, "stats");
 
         SaveHistorySnapshot(historySnapshot);
     }
 
     private DailyStats? LoadStats()
     {
-        try
+        var primary = TryDeserialize<DailyStats>(_statsFilePath);
+        if (primary != null) return primary;
+
+        var backup = TryDeserialize<DailyStats>(_statsFilePath + ".bak");
+        if (backup != null)
         {
-            if (File.Exists(_statsFilePath))
-            {
-                var json = File.ReadAllText(_statsFilePath);
-                return JsonSerializer.Deserialize<DailyStats>(json);
-            }
+            System.Diagnostics.Debug.WriteLine("Recovered daily_stats from .bak");
+            return backup;
         }
-        catch (Exception ex)
+
+        // Last resort: today's entry in already-loaded History.
+        var todayKey = DateTime.Today.ToString("yyyy-MM-dd");
+        if (History.TryGetValue(todayKey, out var fromHistory))
         {
-            System.Diagnostics.Debug.WriteLine($"Error loading stats: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine("Recovered daily_stats from history.json");
+            return CloneDailyStats(fromHistory, fromHistory.Date.Date);
         }
+
         return null;
     }
 
@@ -517,85 +504,90 @@ public class StatsManager : IDisposable
 
     private void SaveHistorySnapshot(Dictionary<string, DailyStats> historySnapshot)
     {
-        try
-        {
-            var json = JsonSerializer.Serialize(historySnapshot, new JsonSerializerOptions { WriteIndented = true });
-            var tempPath = _historyFilePath + ".tmp";
-            var backupPath = _historyFilePath + ".bak";
-            File.WriteAllText(tempPath, json);
-
-            if (File.Exists(_historyFilePath))
-            {
-                File.Replace(tempPath, _historyFilePath, backupPath);
-            }
-            else
-            {
-                File.Move(tempPath, _historyFilePath);
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error saving history: {ex.Message}");
-        }
+        var json = JsonSerializer.Serialize(historySnapshot, new JsonSerializerOptions { WriteIndented = true });
+        WriteAllTextDurable(_historyFilePath, json, "history");
     }
 
     private Dictionary<string, DailyStats> LoadHistory()
     {
-        try
+        var primary = TryDeserialize<Dictionary<string, DailyStats>>(_historyFilePath);
+        if (primary != null) return primary;
+
+        var backup = TryDeserialize<Dictionary<string, DailyStats>>(_historyFilePath + ".bak");
+        if (backup != null)
         {
-            if (File.Exists(_historyFilePath))
-            {
-                var json = File.ReadAllText(_historyFilePath);
-                var history = JsonSerializer.Deserialize<Dictionary<string, DailyStats>>(json) ?? new();
-                return history;
-            }
+            System.Diagnostics.Debug.WriteLine("Recovered history from .bak");
+            return backup;
         }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error loading history: {ex.Message}");
-        }
+
         return new();
     }
 
     public void SaveSettings()
     {
-        try
-        {
-            var json = JsonSerializer.Serialize(Settings, new JsonSerializerOptions { WriteIndented = true });
-            var tempPath = _settingsFilePath + ".tmp";
-            var backupPath = _settingsFilePath + ".bak";
-            File.WriteAllText(tempPath, json);
-
-            if (File.Exists(_settingsFilePath))
-            {
-                File.Replace(tempPath, _settingsFilePath, backupPath);
-            }
-            else
-            {
-                File.Move(tempPath, _settingsFilePath);
-            }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error saving settings: {ex.Message}");
-        }
+        var json = JsonSerializer.Serialize(Settings, new JsonSerializerOptions { WriteIndented = true });
+        WriteAllTextDurable(_settingsFilePath, json, "settings");
     }
 
     private AppSettings LoadSettings()
     {
+        return TryDeserialize<AppSettings>(_settingsFilePath)
+            ?? TryDeserialize<AppSettings>(_settingsFilePath + ".bak")
+            ?? new AppSettings();
+    }
+
+    private static void WriteAllTextDurable(string targetPath, string content, string contextLabel)
+    {
+        var tempPath = targetPath + ".tmp";
+        var backupPath = targetPath + ".bak";
+        var bytes = Encoding.UTF8.GetBytes(content);
+
         try
         {
-            if (File.Exists(_settingsFilePath))
+            // WriteThrough + Flush(true) ensures FlushFileBuffers is issued, so the
+            // tmp file's data blocks are durable before we swap it in. Otherwise a
+            // power loss right after Replace can leave a 0-byte / truncated target.
+            using (var fs = new FileStream(
+                tempPath,
+                FileMode.Create,
+                FileAccess.Write,
+                FileShare.None,
+                bufferSize: 4096,
+                options: FileOptions.WriteThrough))
             {
-                var json = File.ReadAllText(_settingsFilePath);
-                return JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+                fs.Write(bytes, 0, bytes.Length);
+                fs.Flush(true);
+            }
+
+            if (File.Exists(targetPath))
+            {
+                File.Replace(tempPath, targetPath, backupPath);
+            }
+            else
+            {
+                File.Move(tempPath, targetPath);
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Error loading settings: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Error saving {contextLabel}: {ex.Message}");
         }
-        return new AppSettings();
+    }
+
+    private static T? TryDeserialize<T>(string path) where T : class
+    {
+        try
+        {
+            if (!File.Exists(path)) return null;
+            var json = File.ReadAllText(path);
+            if (string.IsNullOrWhiteSpace(json)) return null;
+            return JsonSerializer.Deserialize<T>(json);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading {path}: {ex.Message}");
+            return null;
+        }
     }
 
     #endregion
