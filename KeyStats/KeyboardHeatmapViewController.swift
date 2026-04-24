@@ -1126,7 +1126,7 @@ private final class KeyboardHeatmapView: NSView {
 
         let textPoint = CGPoint(
             x: badgeRect.minX + (badgeRect.width - textSize.width) / 2,
-            y: badgeRect.minY + (badgeRect.height - textSize.height) / 2
+            y: badgeRect.minY + (badgeRect.height - textSize.height) / 2 + font.descender * 0.45
         )
         text.draw(at: textPoint, withAttributes: attributes)
     }
