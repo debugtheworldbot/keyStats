@@ -129,7 +129,7 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		9479D3D72F9B66190083A75E /* helper */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (9479D3F72F9B665D0083A75E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = helper; sourceTree = "<group>"; };
+		9479D3D72F9B66190083A75E /* KeyStatsHelper */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (9479D3F72F9B665D0083A75E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = KeyStatsHelper; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -157,7 +157,7 @@
 			isa = PBXGroup;
 			children = (
 				A5000002 /* KeyStats */,
-				9479D3D72F9B66190083A75E /* helper */,
+				9479D3D72F9B66190083A75E /* KeyStatsHelper */,
 				A5000003 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -229,7 +229,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				9479D3D72F9B66190083A75E /* helper */,
+				9479D3D72F9B66190083A75E /* KeyStatsHelper */,
 			);
 			name = helper;
 			packageProductDependencies = (
@@ -398,7 +398,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = helper/KeyStatsHelper.entitlements;
+				CODE_SIGN_ENTITLEMENTS = KeyStatsHelper/KeyStatsHelper.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -406,7 +406,7 @@
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = NO;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = helper/Info.plist;
+				INFOPLIST_FILE = KeyStatsHelper/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -426,7 +426,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = helper/KeyStatsHelper.entitlements;
+				CODE_SIGN_ENTITLEMENTS = KeyStatsHelper/KeyStatsHelper.entitlements;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -434,7 +434,7 @@
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = NO;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = helper/Info.plist;
+				INFOPLIST_FILE = KeyStatsHelper/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
