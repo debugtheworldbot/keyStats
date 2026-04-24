@@ -59,14 +59,14 @@
 /* Begin PBXCopyFilesBuildPhase section */
 		9479D3FB2F9B67140083A75E /* Embed Helper */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 8;
+			buildActionMask = 2147483647;
 			dstPath = Contents/Resources;
 			dstSubfolderSpec = 1;
 			files = (
 				9479D3FC2F9B67480083A75E /* KeyStatsHelper.app in Embed Helper */,
 			);
 			name = "Embed Helper";
-			runOnlyForDeploymentPostprocessing = 1;
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
@@ -115,14 +115,9 @@
 		9479D3F72F9B665D0083A75E /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				ButtonRoleClassifier.swift,
-				EventTapController.swift,
-				HelperIdleSupervisor.swift,
-				HelperXPCListener.swift,
-				Info.plist,
-				KeyStatsHelper.entitlements,
-				main.swift,
-				PayloadBuilder.swift,
+				HelperLocations.swift,
+				HelperPayloadFields.swift,
+				HelperProtocols.swift,
 			);
 			target = A6000001 /* KeyStats */;
 		};
