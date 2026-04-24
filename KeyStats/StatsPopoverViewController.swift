@@ -97,6 +97,11 @@ class StatsPopoverViewController: NSViewController {
                 self?.updateAppearance()
             }
         }
+        HelperXPCClient.shared.addStateObserver { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.updatePermissionButtonVisibility()
+            }
+        }
     }
 
     override func viewWillAppear() {

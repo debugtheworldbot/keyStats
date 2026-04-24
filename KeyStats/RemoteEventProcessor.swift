@@ -109,9 +109,8 @@ final class RemoteEventProcessor: NSObject, KeyStatsEventSinkProtocol {
     }
 }
 
-/// 键码 → 可读键名（+修饰键前缀）。
-/// 复制自 InputMonitor 的解码逻辑，独立成类供 RemoteEventProcessor 使用。
-/// 老路径（InputMonitor.handleEvent）继续用其内部实现；两份会在 Phase 7 合并清理。
+/// 键码 → 可读键名（+修饰键前缀）。Helper payload 只带原始字段，
+/// 由主 app 端还原键名后喂给 StatsManager。
 final class InputEventDecoder {
     static let shared = InputEventDecoder()
 

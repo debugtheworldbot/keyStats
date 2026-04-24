@@ -17,7 +17,6 @@ let package = Package(
                 "en.lproj",
                 "zh-Hans.lproj",
                 "AppStatsViewController.swift",
-                "InputMonitor.swift",
                 "KeyStats.entitlements",
                 "NotificationManager.swift",
                 "StatsManager.swift",
