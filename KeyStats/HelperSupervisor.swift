@@ -105,11 +105,13 @@ final class HelperSupervisor {
     // MARK: - Helpers
 
     private func bundledHelperURL() -> URL? {
-        if let url = Bundle.main.url(forResource: "KeyStatsHelper", withExtension: "app") {
-            return url
-        }
-        if let url = Bundle.main.url(forResource: "KeyStatsHelper", withExtension: "app", subdirectory: "Helper") {
-            return url
+        let fm = FileManager.default
+        let candidates = [
+            Bundle.main.bundleURL.appendingPathComponent("Contents/Resources/KeyStatsHelper.app"),
+            Bundle.main.bundleURL.appendingPathComponent("Contents/Library/LoginItems/KeyStatsHelper.app"),
+        ]
+        for c in candidates where fm.fileExists(atPath: c.path) {
+            return c
         }
         return nil
     }

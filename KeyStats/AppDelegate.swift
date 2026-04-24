@@ -36,17 +36,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menuBarController = MenuBarController()
         applyAppIcon()
         _ = UpdateManager.shared
-        
+
         setupWindowMenu()
 
-        // 检查并请求辅助功能权限
-        checkAndRequestPermission()
+        // MVP: 走 helper XPC 路径。统计暂未接入（RemoteEventProcessor 仅打 NSLog）。
+        bootstrapHelperPipeline()
     }
-    
+
     func applicationWillTerminate(_ aNotification: Notification) {
         Self.trackEvent("app_exit")
-        // 停止输入监听
-        InputMonitor.shared.stopMonitoring()
+        HelperXPCClient.shared.stopMonitoring()
+        HelperXPCClient.shared.disconnect()
         permissionCheckTimer?.invalidate()
         StatsManager.shared.flushPendingSave()
     }
@@ -55,31 +55,64 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
     
-    // MARK: - 权限检查
-    
-    private func checkAndRequestPermission(retryCount: Int = 0) {
-        if InputMonitor.shared.hasAccessibilityPermission() {
-            handleAccessibilityPermissionGranted()
-        } else if retryCount < 5 {
-            // 开机启动时 TCC 服务可能还没完全初始化，快速重试几次
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                self?.checkAndRequestPermission(retryCount: retryCount + 1)
-            }
-        } else {
-            // Debug 启动时不主动打断开发流程，保留界面中的手动授权入口。
-            if shouldShowAccessibilityPromptOnLaunch {
-                // 重试后仍无权限，显示提示
-                showPermissionAlert()
-            } else {
-                print("开发模式启动：未授予辅助功能权限，跳过启动提示弹窗")
-            }
+    // MARK: - Helper 启动
 
-            startPermissionPolling()
+    private func bootstrapHelperPipeline() {
+        HelperXPCClient.shared.setEventSink(RemoteEventProcessor.shared)
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            do {
+                try HelperSupervisor.shared.ensureInstalled()
+                NSLog("[AppDelegate] helper installed + launchd registered")
+            } catch {
+                NSLog("[AppDelegate] HelperSupervisor.ensureInstalled failed: \(error)")
+            }
+            DispatchQueue.main.async {
+                self?.connectHelperAndStart()
+            }
         }
     }
-    
+
+    private func connectHelperAndStart() {
+        HelperXPCClient.shared.connect { [weak self] state in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                NSLog("[AppDelegate] helper xpc state = \(state)")
+                switch state {
+                case .connected(_, let granted):
+                    if granted {
+                        HelperXPCClient.shared.startMonitoring { ok, code in
+                            NSLog("[AppDelegate] helper startMonitoring ok=\(ok) code=\(code)")
+                        }
+                        self.promptLaunchAtLoginIfNeeded()
+                    } else {
+                        if self.shouldShowAccessibilityPromptOnLaunch {
+                            self.showPermissionAlert()
+                        } else {
+                            print("开发模式启动：helper 未获辅助功能授权，跳过启动提示")
+                        }
+                        self.startPermissionPolling()
+                    }
+                case .disconnected(let reason):
+                    NSLog("[AppDelegate] helper disconnected: \(reason); retry in 5s")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+                        self?.connectHelperAndStart()
+                    }
+                default:
+                    break
+                }
+            }
+        }
+    }
+
+    private func isHelperAccessibilityGranted() -> Bool {
+        if case .connected(_, let granted) = HelperXPCClient.shared.state {
+            return granted
+        }
+        return false
+    }
+
     func requestAccessibilityPermission(from sourceView: NSView? = nil, analyticsSource: String) {
-        guard !InputMonitor.shared.hasAccessibilityPermission() else {
+        if isHelperAccessibilityGranted() {
             handleAccessibilityPermissionGranted()
             return
         }
@@ -118,7 +151,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func handleAccessibilityPermissionGranted() {
         permissionCheckTimer?.invalidate()
         permissionCheckTimer = nil
-        InputMonitor.shared.startMonitoring()
+        HelperXPCClient.shared.startMonitoring { ok, code in
+            NSLog("[AppDelegate] helper startMonitoring after grant ok=\(ok) code=\(code)")
+        }
         promptLaunchAtLoginIfNeeded()
     }
 
@@ -133,19 +168,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
             self.permissionCheckCount += 1
 
-            if InputMonitor.shared.hasAccessibilityPermission() {
-                timer.invalidate()
-                self.permissionCheckTimer = nil
-                self.handleAccessibilityPermissionGranted()
-                Self.trackEvent("permission_granted", properties: ["permission": "accessibility"])
-                print("权限已授予，开始监听")
-                return
+            // 每次 poll 都重新 connect/刷新 handshake，以便读 helper 的最新授权状态
+            HelperXPCClient.shared.connect { state in
+                DispatchQueue.main.async {
+                    if case .connected(_, let granted) = state, granted {
+                        timer.invalidate()
+                        self.permissionCheckTimer = nil
+                        self.handleAccessibilityPermissionGranted()
+                        Self.trackEvent("permission_granted", properties: ["permission": "accessibility"])
+                        print("权限已授予，helper 开始监听")
+                    }
+                }
             }
 
             if self.permissionCheckCount >= self.maxPermissionChecks {
                 timer.invalidate()
                 self.permissionCheckTimer = nil
-                print("权限检查超时（5分钟），请手动在系统设置中授予辅助功能权限后重试")
+                print("权限检查超时（5分钟），请手动在系统设置中授予 KeyStatsHelper 辅助功能权限")
             }
         }
 
@@ -155,7 +194,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func promptLaunchAtLoginIfNeeded() {
-        guard InputMonitor.shared.hasAccessibilityPermission() else { return }
+        guard isHelperAccessibilityGranted() else { return }
         let defaults = UserDefaults.standard
         guard !defaults.bool(forKey: launchAtLoginPromptedKey) else { return }
         defaults.set(true, forKey: launchAtLoginPromptedKey)

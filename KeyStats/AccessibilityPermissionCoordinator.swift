@@ -13,26 +13,45 @@ extension NSView {
 final class AccessibilityPermissionCoordinator {
     static let shared = AccessibilityPermissionCoordinator()
 
-    private let appURLs: [URL]
-    private let controller: PermissionFlowController
+    private var controller: PermissionFlowController
+    private var lastAppURLs: [URL]
 
     private init() {
-        let appURLs = [Bundle.main.bundleURL]
-        self.appURLs = appURLs
+        let initial = Self.currentAppURLs()
+        self.lastAppURLs = initial
         self.controller = PermissionFlow.makeController(
             configuration: .init(
-                requiredAppURLs: appURLs,
+                requiredAppURLs: initial,
                 promptForAccessibilityTrust: false
             )
         )
     }
 
     func requestPermission(sourceFrameInScreen: CGRect? = nil) {
+        let urls = Self.currentAppURLs()
+        if urls != lastAppURLs {
+            // helper 刚装好后 URL 变了，重建 controller 让 PermissionFlow 指新的
+            lastAppURLs = urls
+            controller = PermissionFlow.makeController(
+                configuration: .init(
+                    requiredAppURLs: urls,
+                    promptForAccessibilityTrust: false
+                )
+            )
+        }
         controller.authorize(
             pane: .accessibility,
-            suggestedAppURLs: appURLs,
+            suggestedAppURLs: urls,
             sourceFrameInScreen: sourceFrameInScreen ?? fallbackSourceFrameInScreen()
         )
+    }
+
+    private static func currentAppURLs() -> [URL] {
+        let helperURL = HelperLocations.installedHelperURL
+        if FileManager.default.fileExists(atPath: helperURL.path) {
+            return [helperURL]
+        }
+        return [Bundle.main.bundleURL]
     }
 
     private func fallbackSourceFrameInScreen() -> CGRect {
