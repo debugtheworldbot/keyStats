@@ -235,3 +235,11 @@
 "helperMigration.autoReset.manual" = "Please open System Settings → Privacy & Security → Accessibility, remove the old \"KeyStats\" entry with the minus button, then authorize \"KeyStatsHelper\".";
 "helperMigration.openSettings" = "Open System Settings";
 "helperMigration.later" = "Later";
+"settings.uninstallHelper" = "Uninstall Helper";
+"settings.uninstallHelper.confirm.title" = "Uninstall KeyStatsHelper?";
+"settings.uninstallHelper.confirm.body" = "This stops keyboard and mouse monitoring and removes the helper. The next launch of KeyStats will reinstall it.";
+"settings.uninstallHelper.confirm.ok" = "Uninstall";
+"settings.uninstallHelper.done.title" = "Helper uninstalled.";
+"settings.uninstallHelper.done.body" = "KeyStatsHelper has been removed. Open KeyStats again to reinstall it.";
+"settings.uninstallHelper.failed.title" = "Uninstall failed";
+"button.cancel" = "Cancel";
