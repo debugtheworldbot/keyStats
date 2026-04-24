@@ -48,7 +48,6 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
     private var isHoveringHelpButton = false
     private var isHoveringHelpPopover = false
     private var resetButton: NSButton!
-    private var uninstallHelperButton: NSButton!
     private var importButton: NSButton!
     private var exportButton: NSButton!
     private var mouseDistanceCalibrationButton: NSButton!
@@ -389,13 +388,7 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
         resetButton.bezelColor = nil
         resetButton.contentTintColor = nil
 
-        uninstallHelperButton = NSButton(title: NSLocalizedString("settings.uninstallHelper", comment: ""),
-                                         target: self,
-                                         action: #selector(handleUninstallHelper))
-        uninstallHelperButton.bezelStyle = .rounded
-        uninstallHelperButton.controlSize = .regular
-
-        let actionStack = NSStackView(views: [mouseDistanceCalibrationButton, importButton, exportButton, resetButton, uninstallHelperButton])
+        let actionStack = NSStackView(views: [mouseDistanceCalibrationButton, importButton, exportButton, resetButton])
         actionStack.orientation = .horizontal
         actionStack.alignment = .centerY
         actionStack.spacing = 10
@@ -1054,40 +1047,6 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
         if alert.runModal() == .alertFirstButtonReturn {
             StatsManager.shared.resetStats()
             AppDelegate.trackEvent("stats_reset")
-        }
-    }
-
-    @objc private func handleUninstallHelper() {
-        AppDelegate.trackClick("uninstall_helper_button")
-        let alert = NSAlert()
-        alert.messageText = NSLocalizedString("settings.uninstallHelper.confirm.title", comment: "")
-        alert.informativeText = NSLocalizedString("settings.uninstallHelper.confirm.body", comment: "")
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: NSLocalizedString("settings.uninstallHelper.confirm.ok", comment: ""))
-        alert.addButton(withTitle: NSLocalizedString("button.cancel", comment: ""))
-        guard alert.runModal() == .alertFirstButtonReturn else {
-            AppDelegate.trackEvent("uninstall_helper_cancelled")
-            return
-        }
-
-        // 先停掉主 app 当前的 XPC 连接/监听，否则 bootout 可能报 busy。
-        HelperXPCClient.shared.stopMonitoring()
-        HelperXPCClient.shared.disconnect()
-
-        do {
-            try HelperSupervisor.shared.uninstallAndCleanTCC()
-            AppDelegate.trackEvent("uninstall_helper_succeeded")
-            let done = NSAlert()
-            done.messageText = NSLocalizedString("settings.uninstallHelper.done.title", comment: "")
-            done.informativeText = NSLocalizedString("settings.uninstallHelper.done.body", comment: "")
-            done.runModal()
-        } catch {
-            AppDelegate.trackEvent("uninstall_helper_failed", properties: ["error": "\(error)"])
-            let fail = NSAlert()
-            fail.messageText = NSLocalizedString("settings.uninstallHelper.failed.title", comment: "")
-            fail.informativeText = "\(error)"
-            fail.alertStyle = .warning
-            fail.runModal()
         }
     }
 

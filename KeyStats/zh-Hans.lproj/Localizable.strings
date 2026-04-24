@@ -235,11 +235,3 @@
 "helperMigration.autoReset.manual" = "请到系统设置 → 隐私与安全性 → 辅助功能，先用减号删除旧的 \"KeyStats\" 条目，再授权 \"KeyStatsHelper\"。";
 "helperMigration.openSettings" = "打开系统设置";
 "helperMigration.later" = "稍后";
-"settings.uninstallHelper" = "卸载 Helper";
-"settings.uninstallHelper.confirm.title" = "卸载 KeyStatsHelper？";
-"settings.uninstallHelper.confirm.body" = "将停止键鼠监控并删除 Helper。下次启动 KeyStats 时会自动重新安装。";
-"settings.uninstallHelper.confirm.ok" = "卸载";
-"settings.uninstallHelper.done.title" = "Helper 已卸载。";
-"settings.uninstallHelper.done.body" = "KeyStatsHelper 已被删除。下次打开 KeyStats 会重新安装。";
-"settings.uninstallHelper.failed.title" = "卸载失败";
-"button.cancel" = "取消";

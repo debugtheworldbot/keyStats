@@ -60,13 +60,6 @@ final class HelperSupervisor {
         }
     }
 
-    /// 完全卸载：bootout LaunchAgent + 删 Application Support 里的 helper + 尽力 tccutil reset。
-    func uninstallAndCleanTCC() throws {
-        try? unregisterLaunchAgent()
-        try uninstall()
-        _ = runTccutilReset(HelperLocations.helperBundleId)
-    }
-
     // MARK: - LaunchAgent
 
     private func ensureLaunchAgentRegistered() throws {
@@ -158,17 +151,6 @@ final class HelperSupervisor {
         p.standardError = Pipe()
         try? p.run()
         p.waitUntilExit()
-    }
-
-    private func runTccutilReset(_ bundleId: String) -> Int32 {
-        let p = Process()
-        p.launchPath = "/usr/bin/tccutil"
-        p.arguments = ["reset", "Accessibility", bundleId]
-        p.standardOutput = Pipe()
-        p.standardError = Pipe()
-        do { try p.run() } catch { return -1 }
-        p.waitUntilExit()
-        return p.terminationStatus
     }
 
     private func runLaunchctl(_ args: [String]) -> (status: Int32, stderr: String) {
