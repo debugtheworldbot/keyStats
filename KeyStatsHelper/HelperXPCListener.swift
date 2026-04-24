@@ -63,7 +63,7 @@ final class HelperXPCListener: NSObject, NSXPCListenerDelegate, KeyStatsHelperPr
         activeConnection = newConnection
         stateLock.unlock()
 
-        idle.noteActivity()
+        idle.connectionDidOpen()
         NSLog("[KeyStatsHelper] accepted connection from pid=\(newConnection.processIdentifier)")
         return true
     }
