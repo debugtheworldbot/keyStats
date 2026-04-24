@@ -14,6 +14,14 @@ final class RemoteEventProcessor: NSObject, KeyStatsEventSinkProtocol {
     private override init() { super.init() }
 
     func receiveEvent(_ payload: [String: Any]) {
+        #if DEBUG
+        struct Counter { static var n: Int = 0; static let lock = NSLock() }
+        Counter.lock.lock(); Counter.n += 1; let n = Counter.n; Counter.lock.unlock()
+        if n <= 3 || n % 50 == 0 {
+            let typeRaw = (payload[HelperPayloadFields.type] as? NSNumber)?.uint32Value ?? 0
+            NSLog("[RemoteEventProcessor] #\(n) raw type=\(typeRaw) keys=\(payload.keys.sorted())")
+        }
+        #endif
         guard let typeRaw = (payload[HelperPayloadFields.type] as? NSNumber)?.uint32Value,
               let type = CGEventType(rawValue: typeRaw) else { return }
 

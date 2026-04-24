@@ -7,8 +7,8 @@ final class HelperXPCListener: NSObject, NSXPCListenerDelegate, KeyStatsHelperPr
     private let idle = HelperIdleSupervisor()
     private let tap = EventTapController()
     private let stateLock = NSLock()
-    private weak var activeConnection: NSXPCConnection?
-    private weak var activeSink: KeyStatsEventSinkProtocol?
+    private var activeConnection: NSXPCConnection?
+    private var forwardCount: Int = 0
 
     override init() {
         self.listener = NSXPCListener(machServiceName: HelperLocations.machServiceName)
@@ -57,13 +57,13 @@ final class HelperXPCListener: NSObject, NSXPCListenerDelegate, KeyStatsHelperPr
             self?.handleConnectionClosed(newConnection)
         }
 
+        newConnection.resume()
+
         stateLock.lock()
         activeConnection = newConnection
-        activeSink = newConnection.remoteObjectProxy as? KeyStatsEventSinkProtocol
         stateLock.unlock()
 
         idle.noteActivity()
-        newConnection.resume()
         NSLog("[KeyStatsHelper] accepted connection from pid=\(newConnection.processIdentifier)")
         return true
     }
@@ -103,7 +103,6 @@ final class HelperXPCListener: NSObject, NSXPCListenerDelegate, KeyStatsHelperPr
         stateLock.lock()
         if activeConnection === conn {
             activeConnection = nil
-            activeSink = nil
             tap.stop()
         }
         stateLock.unlock()
@@ -133,8 +132,20 @@ final class HelperXPCListener: NSObject, NSXPCListenerDelegate, KeyStatsHelperPr
 
     func forward(payload: [String: Any]) {
         stateLock.lock()
-        let sink = activeSink
+        let conn = activeConnection
+        forwardCount += 1
+        let n = forwardCount
         stateLock.unlock()
-        sink?.receiveEvent(payload)
+        guard let conn = conn else {
+            if n <= 3 { NSLog("[KeyStatsHelper] forward #\(n) no active connection") }
+            return
+        }
+        let proxy = conn.remoteObjectProxyWithErrorHandler { err in
+            NSLog("[KeyStatsHelper] remote proxy error: \(err)")
+        } as? KeyStatsEventSinkProtocol
+        if n <= 3 || n % 100 == 0 {
+            NSLog("[KeyStatsHelper] forward #\(n) proxy=\(proxy == nil ? "nil" : "ok")")
+        }
+        proxy?.receiveEvent(payload)
     }
 }
