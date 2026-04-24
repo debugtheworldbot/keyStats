@@ -33,6 +33,15 @@ final class EventTapController {
         AXIsProcessTrusted()
     }
 
+    /// 触发系统的"辅助功能"授权弹窗，同时把 helper 写进 TCC 的列表里。
+    /// 单独 `AXIsProcessTrusted()` 不一定会让进程出现在系统设置里 ——
+    /// 只有带 prompt 选项的 `AXIsProcessTrustedWithOptions` 才会强制注册。
+    @discardableResult
+    func promptAccessibilityTrust() -> Bool {
+        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+        return AXIsProcessTrustedWithOptions(options)
+    }
+
     @discardableResult
     func start(sink: EventPayloadSink) -> Int {
         lock.lock(); defer { lock.unlock() }

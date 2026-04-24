@@ -898,14 +898,7 @@ class StatsPopoverViewController: NSViewController {
     }
 
     @objc private func requestPermission() {
-        if let appDelegate = AppDelegate.shared {
-            appDelegate.requestAccessibilityPermission(from: permissionButton, analyticsSource: "popover_button")
-        } else {
-            let sourceFrameInScreen = permissionButton.permissionFlowSourceFrameInScreen()
-            Task { @MainActor in
-                AccessibilityPermissionCoordinator.shared.requestPermission(sourceFrameInScreen: sourceFrameInScreen)
-            }
-        }
+        AppDelegate.shared?.requestAccessibilityPermission(analyticsSource: "popover_button")
         updatePermissionButtonVisibility()
     }
 

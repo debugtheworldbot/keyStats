@@ -126,6 +126,11 @@ final class HelperXPCListener: NSObject, NSXPCListenerDelegate, KeyStatsHelperPr
         tap.stop()
     }
 
+    func promptAccessibility(reply: @escaping (Bool) -> Void) {
+        idle.noteActivity()
+        reply(tap.promptAccessibilityTrust())
+    }
+
     func helperBundleURL(reply: @escaping (String) -> Void) {
         reply(Bundle.main.bundleURL.path)
     }

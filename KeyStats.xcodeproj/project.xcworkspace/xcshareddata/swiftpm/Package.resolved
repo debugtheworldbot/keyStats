@@ -1,15 +1,6 @@
 {
-  "originHash" : "2efd3f159008df2ccc2950da6567f055d8af5019644da3c0934e516d9f827e05",
+  "originHash" : "a41aebe9ff4daa704a4ff1a2fbfaff004ac2123ee6e7b02c67aff3b0f24ebfbd",
   "pins" : [
-    {
-      "identity" : "permissionflow",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/jaywcjlove/PermissionFlow",
-      "state" : {
-        "revision" : "57dea061e9dddd5309509c70ef8570269424a9b5",
-        "version" : "1.0.0"
-      }
-    },
     {
       "identity" : "posthog-ios",
       "kind" : "remoteSourceControl",

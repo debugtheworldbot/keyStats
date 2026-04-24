@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		941ADB172F18D1AE00B2D578 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 941ADB162F18D1AE00B2D578 /* PostHog */; };
 		941ADB182F18D1AE00B2D578 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 941ADB1A2F18D1AE00B2D578 /* Sparkle */; };
-		941ADB1C2F18D1AE00B2D578 /* PermissionFlow in Frameworks */ = {isa = PBXBuildFile; productRef = 941ADB1D2F18D1AE00B2D578 /* PermissionFlow */; };
 		9479D3FC2F9B67480083A75E /* KeyStatsHelper.app in Embed Helper */ = {isa = PBXBuildFile; fileRef = 9479D3D62F9B66190083A75E /* KeyStatsHelper.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		9A10000A /* HelperSupervisor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A20000A /* HelperSupervisor.swift */; };
 		9A10000B /* HelperXPCClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A20000B /* HelperXPCClient.swift */; };
@@ -43,7 +42,6 @@
 		A1000031 /* KeyboardHeatmapViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000031 /* KeyboardHeatmapViewController.swift */; };
 		A1000032 /* StatsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000032 /* StatsModels.swift */; };
 		A1000033 /* KPSDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000033 /* KPSDetailView.swift */; };
-		A1000034 /* AccessibilityPermissionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000034 /* AccessibilityPermissionCoordinator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -105,7 +103,6 @@
 		A2000031 /* KeyboardHeatmapViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardHeatmapViewController.swift; sourceTree = "<group>"; };
 		A2000032 /* StatsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsModels.swift; sourceTree = "<group>"; };
 		A2000033 /* KPSDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KPSDetailView.swift; sourceTree = "<group>"; };
-		A2000034 /* AccessibilityPermissionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityPermissionCoordinator.swift; sourceTree = "<group>"; };
 		A3000001 /* KeyStats.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KeyStats.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A3000002 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A3000003 /* KeyStats.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KeyStats.entitlements; sourceTree = "<group>"; };
@@ -141,7 +138,6 @@
 			files = (
 				941ADB172F18D1AE00B2D578 /* PostHog in Frameworks */,
 				941ADB182F18D1AE00B2D578 /* Sparkle in Frameworks */,
-				941ADB1C2F18D1AE00B2D578 /* PermissionFlow in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -161,7 +157,6 @@
 			isa = PBXGroup;
 			children = (
 				A2000001 /* AppDelegate.swift */,
-				A2000034 /* AccessibilityPermissionCoordinator.swift */,
 				A2000023 /* AppActivityTracker.swift */,
 				A2000003 /* StatsManager.swift */,
 				A2000022 /* AppStats.swift */,
@@ -251,7 +246,6 @@
 			packageProductDependencies = (
 				941ADB162F18D1AE00B2D578 /* PostHog */,
 				941ADB1A2F18D1AE00B2D578 /* Sparkle */,
-				941ADB1D2F18D1AE00B2D578 /* PermissionFlow */,
 			);
 			productName = KeyStats;
 			productReference = A3000001 /* KeyStats.app */;
@@ -289,7 +283,6 @@
 			packageReferences = (
 				941ADB152F18D1AE00B2D578 /* XCRemoteSwiftPackageReference "posthog-ios" */,
 				941ADB192F18D1AE00B2D578 /* XCRemoteSwiftPackageReference "Sparkle" */,
-				941ADB1B2F18D1AE00B2D578 /* XCRemoteSwiftPackageReference "PermissionFlow" */,
 			);
 			productRefGroup = A5000003 /* Products */;
 			projectDirPath = "";
@@ -334,7 +327,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1000001 /* AppDelegate.swift in Sources */,
-				A1000034 /* AccessibilityPermissionCoordinator.swift in Sources */,
 				9A10000A /* HelperSupervisor.swift in Sources */,
 				9A10000B /* HelperXPCClient.swift in Sources */,
 				9A10000C /* RemoteEventProcessor.swift in Sources */,
@@ -669,14 +661,6 @@
 				minimumVersion = 2.0.0;
 			};
 		};
-		941ADB1B2F18D1AE00B2D578 /* XCRemoteSwiftPackageReference "PermissionFlow" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/jaywcjlove/PermissionFlow";
-			requirement = {
-				kind = exactVersion;
-				version = 1.0.0;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -689,11 +673,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 941ADB192F18D1AE00B2D578 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
-		};
-		941ADB1D2F18D1AE00B2D578 /* PermissionFlow */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 941ADB1B2F18D1AE00B2D578 /* XCRemoteSwiftPackageReference "PermissionFlow" */;
-			productName = PermissionFlow;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -121,6 +121,13 @@ final class HelperXPCClient {
         withProxy({ $0.stopMonitoring() }, fallback: {})
     }
 
+    /// 让 helper 主动调一次 `AXIsProcessTrustedWithOptions(prompt: true)`，把自己注册进
+    /// 系统设置的辅助功能列表。completion 回调发生在 XPC 队列，调用方自行切主队列。
+    func promptAccessibility(completion: @escaping (Bool) -> Void) {
+        withProxy({ proxy in proxy.promptAccessibility(reply: completion) },
+                  fallback: { completion(false) })
+    }
+
     func disconnect() {
         lock.lock()
         let c = connection

@@ -111,21 +111,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return false
     }
 
-    func requestAccessibilityPermission(from sourceView: NSView? = nil, analyticsSource: String) {
+    func requestAccessibilityPermission(analyticsSource: String) {
         if isHelperAccessibilityGranted() {
             handleAccessibilityPermissionGranted()
             return
         }
 
-        let sourceFrameInScreen = sourceView?.permissionFlowSourceFrameInScreen()
         Self.trackClick("request_accessibility_permission", properties: [
             "permission": "accessibility",
             "source": analyticsSource
         ])
-        Task { @MainActor in
-            AccessibilityPermissionCoordinator.shared.requestPermission(sourceFrameInScreen: sourceFrameInScreen)
-        }
+        // 先让 helper 调一次 AXIsProcessTrustedWithOptions，把自己写进系统设置的
+        // 辅助功能列表；然后跳转到那个 pane 方便用户授权。
+        HelperXPCClient.shared.promptAccessibility { _ in }
+        openAccessibilitySettingsPane()
         startPermissionPolling()
+    }
+
+    private func openAccessibilitySettingsPane() {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") else { return }
+        NSWorkspace.shared.open(url)
     }
 
     private func showPermissionAlert() {
@@ -151,9 +156,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func handleAccessibilityPermissionGranted() {
         permissionCheckTimer?.invalidate()
         permissionCheckTimer = nil
-        Task { @MainActor in
-            AccessibilityPermissionCoordinator.shared.closePanel()
-        }
         HelperXPCClient.shared.startMonitoring { ok, code in
             NSLog("[AppDelegate] helper startMonitoring after grant ok=\(ok) code=\(code)")
         }
