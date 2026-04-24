@@ -673,8 +673,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/jaywcjlove/PermissionFlow";
 			requirement = {
-				kind = revision;
-				revision = 0859d8447bdc796eab04822f0782a9b85ba676f2;
+				kind = exactVersion;
+				version = 1.0.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

@@ -47,7 +47,7 @@ final class AccessibilityPermissionCoordinator {
     }
 
     func closePanel() {
-        controller.closePanel()
+        controller.closePanel(returnToPreviousApp: true)
     }
 
     private static func currentAppURLs() -> [URL] {
