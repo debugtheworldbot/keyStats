@@ -3,13 +3,17 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		941ADB172F18D1AE00B2D578 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 941ADB162F18D1AE00B2D578 /* PostHog */; };
 		941ADB182F18D1AE00B2D578 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 941ADB1A2F18D1AE00B2D578 /* Sparkle */; };
 		941ADB1C2F18D1AE00B2D578 /* PermissionFlow in Frameworks */ = {isa = PBXBuildFile; productRef = 941ADB1D2F18D1AE00B2D578 /* PermissionFlow */; };
+		9479D3FC2F9B67480083A75E /* KeyStatsHelper.app in Embed Helper */ = {isa = PBXBuildFile; fileRef = 9479D3D62F9B66190083A75E /* KeyStatsHelper.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		9A10000A /* HelperSupervisor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A20000A /* HelperSupervisor.swift */; };
+		9A10000B /* HelperXPCClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A20000B /* HelperXPCClient.swift */; };
+		9A10000C /* RemoteEventProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A20000C /* RemoteEventProcessor.swift */; };
 		A1000001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001 /* AppDelegate.swift */; };
 		A1000002 /* InputMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002 /* InputMonitor.swift */; };
 		A1000003 /* StatsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000003 /* StatsManager.swift */; };
@@ -28,8 +32,6 @@
 		A1000020 /* AllTimeStatsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000020 /* AllTimeStatsWindowController.swift */; };
 		A1000021 /* AllTimeStatsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000021 /* AllTimeStatsViewController.swift */; };
 		A1000022 /* AppStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000022 /* AppStats.swift */; };
-		A1000032 /* StatsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000032 /* StatsModels.swift */; };
-		A1000033 /* KPSDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000033 /* KPSDetailView.swift */; };
 		A1000023 /* AppActivityTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000023 /* AppActivityTracker.swift */; };
 		A1000024 /* AppStatsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000024 /* AppStatsWindowController.swift */; };
 		A1000025 /* AppStatsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000025 /* AppStatsViewController.swift */; };
@@ -39,10 +41,40 @@
 		A1000029 /* UpdateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000029 /* UpdateManager.swift */; };
 		A1000030 /* KeyboardHeatmapWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000030 /* KeyboardHeatmapWindowController.swift */; };
 		A1000031 /* KeyboardHeatmapViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000031 /* KeyboardHeatmapViewController.swift */; };
+		A1000032 /* StatsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000032 /* StatsModels.swift */; };
+		A1000033 /* KPSDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000033 /* KPSDetailView.swift */; };
 		A1000034 /* AccessibilityPermissionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000034 /* AccessibilityPermissionCoordinator.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		9479D3F92F9B66FB0083A75E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A8000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9479D3D52F9B66190083A75E;
+			remoteInfo = helper;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		9479D3FB2F9B67140083A75E /* Embed Helper */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 8;
+			dstPath = Contents/Resources;
+			dstSubfolderSpec = 1;
+			files = (
+				9479D3FC2F9B67480083A75E /* KeyStatsHelper.app in Embed Helper */,
+			);
+			name = "Embed Helper";
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		9479D3D62F9B66190083A75E /* KeyStatsHelper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KeyStatsHelper.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9A20000A /* HelperSupervisor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperSupervisor.swift; sourceTree = "<group>"; };
+		9A20000B /* HelperXPCClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperXPCClient.swift; sourceTree = "<group>"; };
+		9A20000C /* RemoteEventProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteEventProcessor.swift; sourceTree = "<group>"; };
 		A2000001 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A2000002 /* InputMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputMonitor.swift; sourceTree = "<group>"; };
 		A2000003 /* StatsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsManager.swift; sourceTree = "<group>"; };
@@ -62,9 +94,6 @@
 		A2000020 /* AllTimeStatsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllTimeStatsWindowController.swift; sourceTree = "<group>"; };
 		A2000021 /* AllTimeStatsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllTimeStatsViewController.swift; sourceTree = "<group>"; };
 		A2000022 /* AppStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStats.swift; sourceTree = "<group>"; };
-		A2000032 /* StatsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsModels.swift; sourceTree = "<group>"; };
-		A2000033 /* KPSDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KPSDetailView.swift; sourceTree = "<group>"; };
-		A2000034 /* AccessibilityPermissionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityPermissionCoordinator.swift; sourceTree = "<group>"; };
 		A2000023 /* AppActivityTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppActivityTracker.swift; sourceTree = "<group>"; };
 		A2000024 /* AppStatsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStatsWindowController.swift; sourceTree = "<group>"; };
 		A2000025 /* AppStatsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStatsViewController.swift; sourceTree = "<group>"; };
@@ -74,22 +103,53 @@
 		A2000029 /* UpdateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateManager.swift; sourceTree = "<group>"; };
 		A2000030 /* KeyboardHeatmapWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardHeatmapWindowController.swift; sourceTree = "<group>"; };
 		A2000031 /* KeyboardHeatmapViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardHeatmapViewController.swift; sourceTree = "<group>"; };
+		A2000032 /* StatsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsModels.swift; sourceTree = "<group>"; };
+		A2000033 /* KPSDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KPSDetailView.swift; sourceTree = "<group>"; };
+		A2000034 /* AccessibilityPermissionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityPermissionCoordinator.swift; sourceTree = "<group>"; };
 		A3000001 /* KeyStats.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KeyStats.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A3000002 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A3000003 /* KeyStats.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KeyStats.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		9479D3F72F9B665D0083A75E /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				ButtonRoleClassifier.swift,
+				EventTapController.swift,
+				HelperIdleSupervisor.swift,
+				HelperXPCListener.swift,
+				Info.plist,
+				KeyStatsHelper.entitlements,
+				main.swift,
+				PayloadBuilder.swift,
+			);
+			target = A6000001 /* KeyStats */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		9479D3D72F9B66190083A75E /* helper */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (9479D3F72F9B665D0083A75E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = helper; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
-			A4000001 /* Frameworks */ = {
-				isa = PBXFrameworksBuildPhase;
-				buildActionMask = 2147483647;
-				files = (
-					941ADB172F18D1AE00B2D578 /* PostHog in Frameworks */,
-					941ADB182F18D1AE00B2D578 /* Sparkle in Frameworks */,
-					941ADB1C2F18D1AE00B2D578 /* PermissionFlow in Frameworks */,
-				);
-				runOnlyForDeploymentPostprocessing = 0;
-			};
+		9479D3D32F9B66190083A75E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A4000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				941ADB172F18D1AE00B2D578 /* PostHog in Frameworks */,
+				941ADB182F18D1AE00B2D578 /* Sparkle in Frameworks */,
+				941ADB1C2F18D1AE00B2D578 /* PermissionFlow in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -97,6 +157,7 @@
 			isa = PBXGroup;
 			children = (
 				A5000002 /* KeyStats */,
+				9479D3D72F9B66190083A75E /* helper */,
 				A5000003 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -104,12 +165,15 @@
 		A5000002 /* KeyStats */ = {
 			isa = PBXGroup;
 			children = (
-					A2000001 /* AppDelegate.swift */,
-					A2000034 /* AccessibilityPermissionCoordinator.swift */,
-					A2000002 /* InputMonitor.swift */,
-					A2000023 /* AppActivityTracker.swift */,
+				A2000001 /* AppDelegate.swift */,
+				A2000034 /* AccessibilityPermissionCoordinator.swift */,
+				A2000002 /* InputMonitor.swift */,
+				A2000023 /* AppActivityTracker.swift */,
 				A2000003 /* StatsManager.swift */,
 				A2000022 /* AppStats.swift */,
+				9A20000A /* HelperSupervisor.swift */,
+				9A20000B /* HelperXPCClient.swift */,
+				9A20000C /* RemoteEventProcessor.swift */,
 				A2000032 /* StatsModels.swift */,
 				A2000004 /* MenuBarController.swift */,
 				A2000033 /* KPSDetailView.swift */,
@@ -144,6 +208,7 @@
 			isa = PBXGroup;
 			children = (
 				A3000001 /* KeyStats.app */,
+				9479D3D62F9B66190083A75E /* KeyStatsHelper.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -151,6 +216,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		9479D3D52F9B66190083A75E /* helper */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9479D3DE2F9B66190083A75E /* Build configuration list for PBXNativeTarget "helper" */;
+			buildPhases = (
+				9479D3D22F9B66190083A75E /* Sources */,
+				9479D3D32F9B66190083A75E /* Frameworks */,
+				9479D3D42F9B66190083A75E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				9479D3D72F9B66190083A75E /* helper */,
+			);
+			name = helper;
+			packageProductDependencies = (
+			);
+			productName = helper;
+			productReference = 9479D3D62F9B66190083A75E /* KeyStatsHelper.app */;
+			productType = "com.apple.product-type.application";
+		};
 		A6000001 /* KeyStats */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A7000003 /* Build configuration list for PBXNativeTarget "KeyStats" */;
@@ -158,17 +245,19 @@
 				A4000002 /* Sources */,
 				A4000001 /* Frameworks */,
 				A4000003 /* Resources */,
+				9479D3FB2F9B67140083A75E /* Embed Helper */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				9479D3FA2F9B66FB0083A75E /* PBXTargetDependency */,
 			);
 			name = KeyStats;
-				packageProductDependencies = (
-					941ADB162F18D1AE00B2D578 /* PostHog */,
-					941ADB1A2F18D1AE00B2D578 /* Sparkle */,
-					941ADB1D2F18D1AE00B2D578 /* PermissionFlow */,
-				);
+			packageProductDependencies = (
+				941ADB162F18D1AE00B2D578 /* PostHog */,
+				941ADB1A2F18D1AE00B2D578 /* Sparkle */,
+				941ADB1D2F18D1AE00B2D578 /* PermissionFlow */,
+			);
 			productName = KeyStats;
 			productReference = A3000001 /* KeyStats.app */;
 			productType = "com.apple.product-type.application";
@@ -180,9 +269,13 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1500;
+				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
+					9479D3D52F9B66190083A75E = {
+						CreatedOnToolsVersion = 26.4;
+						LastSwiftMigration = 2640;
+					};
 					A6000001 = {
 						CreatedOnToolsVersion = 15.0;
 					};
@@ -198,21 +291,29 @@
 				"zh-Hans",
 			);
 			mainGroup = A5000001;
-				packageReferences = (
-					941ADB152F18D1AE00B2D578 /* XCRemoteSwiftPackageReference "posthog-ios" */,
-					941ADB192F18D1AE00B2D578 /* XCRemoteSwiftPackageReference "Sparkle" */,
-					941ADB1B2F18D1AE00B2D578 /* XCRemoteSwiftPackageReference "PermissionFlow" */,
-				);
+			packageReferences = (
+				941ADB152F18D1AE00B2D578 /* XCRemoteSwiftPackageReference "posthog-ios" */,
+				941ADB192F18D1AE00B2D578 /* XCRemoteSwiftPackageReference "Sparkle" */,
+				941ADB1B2F18D1AE00B2D578 /* XCRemoteSwiftPackageReference "PermissionFlow" */,
+			);
 			productRefGroup = A5000003 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				A6000001 /* KeyStats */,
+				9479D3D52F9B66190083A75E /* helper */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		9479D3D42F9B66190083A75E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A4000003 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -226,14 +327,24 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		9479D3D22F9B66190083A75E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A4000002 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
-				files = (
-					A1000001 /* AppDelegate.swift in Sources */,
-					A1000034 /* AccessibilityPermissionCoordinator.swift in Sources */,
-					A1000002 /* InputMonitor.swift in Sources */,
-					A1000023 /* AppActivityTracker.swift in Sources */,
+			files = (
+				A1000001 /* AppDelegate.swift in Sources */,
+				A1000034 /* AccessibilityPermissionCoordinator.swift in Sources */,
+				9A10000A /* HelperSupervisor.swift in Sources */,
+				9A10000B /* HelperXPCClient.swift in Sources */,
+				9A10000C /* RemoteEventProcessor.swift in Sources */,
+				A1000002 /* InputMonitor.swift in Sources */,
+				A1000023 /* AppActivityTracker.swift in Sources */,
 				A1000003 /* StatsManager.swift in Sources */,
 				A1000022 /* AppStats.swift in Sources */,
 				A1000032 /* StatsModels.swift in Sources */,
@@ -262,6 +373,14 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		9479D3FA2F9B66FB0083A75E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9479D3D52F9B66190083A75E /* helper */;
+			targetProxy = 9479D3F92F9B66FB0083A75E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin PBXVariantGroup section */
 		A2000012 /* Localizable.strings */ = {
 			isa = PBXVariantGroup;
@@ -275,6 +394,61 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		9479D3DF2F9B66190083A75E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = helper/KeyStatsHelper.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = helper/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.keystats.app.helper;
+				PRODUCT_NAME = KeyStatsHelper;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		9479D3E02F9B66190083A75E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = helper/KeyStatsHelper.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = helper/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.keystats.app.helper;
+				PRODUCT_NAME = KeyStatsHelper;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		A9000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -452,6 +626,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		9479D3DE2F9B66190083A75E /* Build configuration list for PBXNativeTarget "helper" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9479D3DF2F9B66190083A75E /* Debug */,
+				9479D3E02F9B66190083A75E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		A7000001 /* Build configuration list for PBXProject "KeyStats" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
