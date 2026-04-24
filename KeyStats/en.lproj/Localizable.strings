@@ -229,3 +229,9 @@
 "heatmap.more" = "More";
 "heatmap.totalFormat" = "%d activities";
 "heatmap.detailFormat" = "%d keys · %d clicks";
+"helperMigration.title" = "One-time authorization required";
+"helperMigration.body" = "KeyStats now uses a lightweight helper for keyboard and mouse monitoring. After this one-time step, future updates will not ask for authorization again.";
+"helperMigration.autoReset.success" = "We cleared the old \"KeyStats\" entry for you. Please authorize \"KeyStatsHelper\" in the Accessibility list that opens next.";
+"helperMigration.autoReset.manual" = "Please open System Settings → Privacy & Security → Accessibility, remove the old \"KeyStats\" entry with the minus button, then authorize \"KeyStatsHelper\".";
+"helperMigration.openSettings" = "Open System Settings";
+"helperMigration.later" = "Later";

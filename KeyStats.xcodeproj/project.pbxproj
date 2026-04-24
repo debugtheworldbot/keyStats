@@ -14,6 +14,7 @@
 		9A10000A /* HelperSupervisor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A20000A /* HelperSupervisor.swift */; };
 		9A10000B /* HelperXPCClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A20000B /* HelperXPCClient.swift */; };
 		9A10000C /* RemoteEventProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A20000C /* RemoteEventProcessor.swift */; };
+		9A10000D /* HelperMigrationPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A20000D /* HelperMigrationPresenter.swift */; };
 		A1000001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001 /* AppDelegate.swift */; };
 		A1000003 /* StatsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000003 /* StatsManager.swift */; };
 		A1000004 /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004 /* MenuBarController.swift */; };
@@ -74,6 +75,7 @@
 		9A20000A /* HelperSupervisor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperSupervisor.swift; sourceTree = "<group>"; };
 		9A20000B /* HelperXPCClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperXPCClient.swift; sourceTree = "<group>"; };
 		9A20000C /* RemoteEventProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteEventProcessor.swift; sourceTree = "<group>"; };
+		9A20000D /* HelperMigrationPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperMigrationPresenter.swift; sourceTree = "<group>"; };
 		A2000001 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A2000003 /* StatsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsManager.swift; sourceTree = "<group>"; };
 		A2000004 /* MenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
@@ -166,6 +168,7 @@
 				9A20000A /* HelperSupervisor.swift */,
 				9A20000B /* HelperXPCClient.swift */,
 				9A20000C /* RemoteEventProcessor.swift */,
+				9A20000D /* HelperMigrationPresenter.swift */,
 				A2000032 /* StatsModels.swift */,
 				A2000004 /* MenuBarController.swift */,
 				A2000033 /* KPSDetailView.swift */,
@@ -335,6 +338,7 @@
 				9A10000A /* HelperSupervisor.swift in Sources */,
 				9A10000B /* HelperXPCClient.swift in Sources */,
 				9A10000C /* RemoteEventProcessor.swift in Sources */,
+				9A10000D /* HelperMigrationPresenter.swift in Sources */,
 				A1000023 /* AppActivityTracker.swift in Sources */,
 				A1000003 /* StatsManager.swift in Sources */,
 				A1000022 /* AppStats.swift in Sources */,

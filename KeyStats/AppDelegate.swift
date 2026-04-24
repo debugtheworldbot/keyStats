@@ -39,7 +39,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         setupWindowMenu()
 
-        // MVP: 走 helper XPC 路径。统计暂未接入（RemoteEventProcessor 仅打 NSLog）。
         bootstrapHelperPipeline()
     }
 
@@ -58,6 +57,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Helper 启动
 
     private func bootstrapHelperPipeline() {
+        Task { @MainActor in HelperMigrationPresenter.shared.showIfNeeded() }
         HelperXPCClient.shared.setEventSink(RemoteEventProcessor.shared)
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             do {
