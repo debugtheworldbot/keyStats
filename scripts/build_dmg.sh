@@ -58,6 +58,15 @@ fi
 # 复制到 DMG 目录
 cp -R "$APP_PATH" "$DMG_DIR/"
 
+# 核对 helper 产物已嵌入（Embed Helper build phase 生效）
+HELPER_BIN="$DMG_DIR/$APP_NAME.app/Contents/Resources/KeyStatsHelper.app/Contents/MacOS/KeyStatsHelper"
+if [ ! -f "$HELPER_BIN" ]; then
+    echo "❌ 未找到嵌入的 KeyStatsHelper：$HELPER_BIN"
+    echo "   检查 KeyStats target 的 'Embed Helper' build phase 是否包含 KeyStatsHelper.app。"
+    exit 1
+fi
+echo "✅ Helper 已嵌入: $HELPER_BIN"
+
 # Ad-hoc 签名（重要：确保辅助功能权限正常工作）
 echo "🔏 签名应用..."
 ENTITLEMENTS="$PROJECT_DIR/KeyStats/KeyStats.entitlements"

@@ -14,13 +14,20 @@ KeyStats is a **macOS menu bar app** (LSUIElement) that tracks keyboard/mouse in
 
 **Data flow:**
 ```
-CGEventTap (InputMonitor) → StatsManager → MenuBarController (display)
-                                         → UserDefaults (persistence, debounced 2s)
-                                         → StatsPopoverViewController (detail panel)
+KeyStatsHelper (launchd agent)
+  └─ CGEventTap @ cgSessionEventTap
+       └─ XPC (com.keystats.app.helper)
+            └─ RemoteEventProcessor → StatsManager → MenuBarController (display)
+                                                   → UserDefaults (persistence, debounced 2s)
+                                                   → StatsPopoverViewController (detail panel)
 ```
 
+Helper 是独立 `.app` bundle（target 名 `helper`，产物 `KeyStatsHelper.app`、bundle id `com.keystats.app.helper`）。首次启动时主 app 把它从 `Contents/Resources/KeyStatsHelper.app` 拷到 `~/Library/Application Support/KeyStats/Helper/`，写入 `~/Library/LaunchAgents/com.keystats.app.helper.plist`，再通过 XPC 握手。cdhash 稳定跨主 app 升级 ⇒ TCC 授权保留。
+
 **Core singletons:**
-- `InputMonitor.shared` — Global event tap at `cgSessionEventTap` level; monitors key presses, mouse clicks, movement (30Hz sampling), scroll. Requires Accessibility permission.
+- `HelperSupervisor.shared` — 安装 / 升级 Helper，注册 LaunchAgent。用 cdhash 判断是否重装。
+- `HelperXPCClient.shared` — 主 app 侧 XPC 客户端（握手、startMonitoring、state observer）。
+- `RemoteEventProcessor.shared` — 接收 helper 事件，还原键名（内嵌 `InputEventDecoder`），喂给 `StatsManager`。
 - `StatsManager.shared` — Aggregates daily stats, per-app stats, per-key counts, peak KPS/CPS (sliding window). Handles persistence, midnight auto-reset, and menu bar update callbacks.
 - `MenuBarController` — NSStatusItem with compact dual-line display (SwiftUI `MenuBarStatusSwiftUIView` hosted in `MenuBarStatusView`). Manages popover lifecycle and highlight state.
 
@@ -37,8 +44,9 @@ CGEventTap (InputMonitor) → StatsManager → MenuBarController (display)
 - NEVER log actual keystrokes, mouse positions, or user input content — only aggregate counts and distances
 
 ### Thread Safety
-- Event callbacks run on background CGEventTap thread — dispatch UI updates to `DispatchQueue.main`
+- Helper 的 CGEventTap 回调在 helper 进程主 run loop 执行；事件通过 XPC 跨进程进入主 app（回调线程为 XPC 队列）。`RemoteEventProcessor` 自己加 lock，UI 更新仍要 dispatch 回 main。
 - Three `NSLock`s protect concurrent access: `inputRateLock`, `statsStateLock`, `mouseDistanceCalibrationLock`
+- `HelperXPCClient.State` observer 可能在任意线程触发，订阅方（如 `StatsPopoverViewController`）自行切主队列。
 
 ### Dark Mode
 - `CALayer.backgroundColor`/`borderColor` use `CGColor` (static snapshot) — they don't auto-follow appearance changes

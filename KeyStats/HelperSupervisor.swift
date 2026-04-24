@@ -1,9 +1,9 @@
 import Foundation
+import Security
 
-/// MVP 版本：
 /// - 从主 app Resources 里找 KeyStatsHelper.app 并拷到 Application Support
+/// - 按 cdhash 判断是否需要覆盖（cdhash 稳定 ⇒ TCC 授权跨升级保留的前提）
 /// - 写入 LaunchAgent plist 并 bootstrap
-/// - 跳过 manifest / cdhash 校验（后续引入）
 final class HelperSupervisor {
     static let shared = HelperSupervisor()
     private init() {}
@@ -13,6 +13,7 @@ final class HelperSupervisor {
         case copyFailed(Error)
         case plistWriteFailed(Error)
         case launchctlFailed(Int32, String)
+        case cdhashUnavailable(OSStatus)
     }
 
     func ensureInstalled() throws {
@@ -27,9 +28,13 @@ final class HelperSupervisor {
 
         let shouldCopy: Bool = {
             guard fm.fileExists(atPath: target.path) else { return true }
-            let bundledMTime = (try? bundledHelper.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
-            let targetMTime = (try? target.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
-            return bundledMTime > targetMTime
+            // 关键：用 cdhash 判定，保持 TCC 授权稳定。文件系统上随便碰到的
+            // mtime 变化（rsync、备份还原）不应触发重装。
+            guard let bundledHash = try? readCDHash(at: bundledHelper),
+                  let installedHash = try? readCDHash(at: target) else {
+                return true
+            }
+            return bundledHash != installedHash
         }()
 
         if shouldCopy {
@@ -121,6 +126,28 @@ final class HelperSupervisor {
             return c
         }
         return nil
+    }
+
+    /// 读 .app bundle 的 CDHash，返回 hex 字符串（对应 codesign -dvvv 的 CDHash）。
+    private func readCDHash(at url: URL) throws -> String {
+        var staticCode: SecStaticCode?
+        let createStatus = SecStaticCodeCreateWithPath(url as CFURL, [], &staticCode)
+        guard createStatus == errSecSuccess, let staticCode = staticCode else {
+            throw SupervisorError.cdhashUnavailable(createStatus)
+        }
+        var info: CFDictionary?
+        let infoStatus = SecCodeCopySigningInformation(
+            staticCode,
+            SecCSFlags(rawValue: UInt32(kSecCSSigningInformation)),
+            &info
+        )
+        guard infoStatus == errSecSuccess,
+              let d = info as? [String: Any],
+              let hashes = d["cdhashes"] as? [Data],
+              let primary = hashes.first else {
+            throw SupervisorError.cdhashUnavailable(infoStatus)
+        }
+        return primary.map { String(format: "%02x", $0) }.joined()
     }
 
     private func stripQuarantine(at url: URL) {
