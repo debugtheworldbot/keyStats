@@ -787,7 +787,11 @@ class StatsPopoverViewController: NSViewController {
     }
 
     private func updatePermissionButtonVisibility() {
-        permissionButton.isHidden = InputMonitor.shared.hasAccessibilityPermission()
+        if case .connected(_, let granted) = HelperXPCClient.shared.state {
+            permissionButton.isHidden = granted
+        } else {
+            permissionButton.isHidden = false
+        }
     }
 
     private func focusPrimaryControl() {

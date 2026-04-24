@@ -44,6 +44,14 @@ final class AppActivityTracker {
         return currentFrontmostIdentity()
     }
 
+    /// 直接基于 PID 查询（helper 路径只带 PID，无 CGEvent）。
+    func appIdentity(forPID pid: pid_t) -> AppIdentity {
+        if pid > 0, let identity = identityForPID(pid) {
+            return identity
+        }
+        return currentFrontmostIdentity()
+    }
+
     private func identityForPID(_ pid: pid_t) -> AppIdentity? {
         lock.lock()
         if let bundleId = pidToBundleId[pid] {

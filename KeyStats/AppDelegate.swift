@@ -168,8 +168,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
             self.permissionCheckCount += 1
 
-            // 每次 poll 都重新 connect/刷新 handshake，以便读 helper 的最新授权状态
-            HelperXPCClient.shared.connect { state in
+            // 每次 poll 都重新握手，以便读 helper 的最新授权状态
+            HelperXPCClient.shared.refreshState { state in
                 DispatchQueue.main.async {
                     if case .connected(_, let granted) = state, granted {
                         timer.invalidate()

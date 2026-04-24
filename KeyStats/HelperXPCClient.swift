@@ -93,6 +93,30 @@ final class HelperXPCClient {
                   fallback: { completion(false, HelperErrorCode.accessibilityDenied) })
     }
 
+    /// 重发握手，获取 helper 最新的 accessibility 授权状态。
+    /// 用于用户完成 System Settings 授权后刷新 UI。
+    func refreshState(completion: @escaping (State) -> Void) {
+        lock.lock()
+        let c = connection
+        lock.unlock()
+        guard let c = c else {
+            connect(completion: completion)
+            return
+        }
+        let proxy = c.remoteObjectProxyWithErrorHandler { [weak self] err in
+            self?.transition(to: .disconnected(reason: "\(err)"))
+        } as? KeyStatsHelperProtocol
+        guard let proxy = proxy else {
+            connect(completion: completion)
+            return
+        }
+        proxy.handshake(clientInterfaceVersion: HelperLocations.interfaceVersion) { [weak self] v, g in
+            let newState: State = .connected(helperVersion: v, accessibilityGranted: g)
+            self?.transition(to: newState)
+            completion(newState)
+        }
+    }
+
     func stopMonitoring() {
         withProxy({ $0.stopMonitoring() }, fallback: {})
     }
