@@ -46,6 +46,10 @@ final class AccessibilityPermissionCoordinator {
         )
     }
 
+    func closePanel() {
+        controller.closePanel()
+    }
+
     private static func currentAppURLs() -> [URL] {
         let helperURL = HelperLocations.installedHelperURL
         if FileManager.default.fileExists(atPath: helperURL.path) {

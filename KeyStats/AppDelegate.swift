@@ -151,6 +151,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func handleAccessibilityPermissionGranted() {
         permissionCheckTimer?.invalidate()
         permissionCheckTimer = nil
+        Task { @MainActor in
+            AccessibilityPermissionCoordinator.shared.closePanel()
+        }
         HelperXPCClient.shared.startMonitoring { ok, code in
             NSLog("[AppDelegate] helper startMonitoring after grant ok=\(ok) code=\(code)")
         }
