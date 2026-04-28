@@ -200,6 +200,8 @@ jobs:
             release-assets/macos/appcast.xml
             release-assets/windows/*.zip
           generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-beta') }}
+          make_latest: ${{ contains(github.ref_name, '-beta') && 'false' || 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
