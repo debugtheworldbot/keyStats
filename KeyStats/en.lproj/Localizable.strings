@@ -1,5 +1,5 @@
 "permission.title" = "Accessibility Permission Required";
-"permission.message" = "KeyStats needs Accessibility access to count keyboard and mouse activity.\n\nClick \"Open Permission Guide\" to open Privacy & Security > Accessibility. Then drag KeyStatsHelper into the permission list to finish authorization.";
+"permission.message" = "KeyStats needs Accessibility access to count keyboard and mouse activity.\n\nClick \"Open Permission Guide\" to open Privacy & Security > Accessibility. Find KeyStatsHelper in the list and toggle it on to finish authorization.";
 "permission.reinstallTip" = "You only need to grant access once — future updates will not ask for authorization again.";
 "permission.openSettings" = "Open Permission Guide";
 "permission.later" = "Later";
