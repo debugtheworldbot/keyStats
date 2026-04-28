@@ -34,6 +34,9 @@ jobs:
           sed -i '' "s/MARKETING_VERSION = .*/MARKETING_VERSION = $VERSION;/" KeyStats.xcodeproj/project.pbxproj
           echo "Updated MARKETING_VERSION to $VERSION"
 
+      - name: Verify vendored helper
+        run: ./scripts/check_vendored_helper.sh
+
       - name: Build DMG
         run: ./scripts/build_dmg.sh
 
@@ -87,6 +90,7 @@ jobs:
           APP_PATH="$ARCHIVE_PATH/Products/Applications/$APP_NAME.app"
           cp -R "$APP_PATH" "$STAGING_DIR/"
 
+          ./scripts/embed_vendored_helper.sh "$STAGING_DIR/$APP_NAME.app"
           ./scripts/sign_app.sh "$STAGING_DIR/$APP_NAME.app"
           ditto -c -k --sequesterRsrc --keepParent "$STAGING_DIR/$APP_NAME.app" "$OUTPUT_DIR/$APP_NAME.zip"
 
