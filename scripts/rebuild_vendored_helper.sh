@@ -18,7 +18,7 @@ trap 'rm -rf "$BUILD_DIR"' EXIT
 
 echo "🔨 Building KeyStatsHelper (Release, universal)..."
 xcodebuild -project KeyStats.xcodeproj \
-    -scheme KeyStatsHelper \
+    -scheme helper \
     -configuration Release \
     -derivedDataPath "$BUILD_DIR/dd" \
     CODE_SIGN_IDENTITY="-" \
