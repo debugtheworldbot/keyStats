@@ -59,19 +59,8 @@ if [ ! -d "$APP_PATH" ]; then
     exit 1
 fi
 
-# 复制到 DMG 目录
+# 复制到 DMG 目录，再用 vendor/ 里预先签好的 helper 覆盖 Xcode 嵌入的那个
 cp -R "$APP_PATH" "$DMG_DIR/"
-
-# 核对 helper 产物已嵌入（Embed Helper build phase 生效）
-HELPER_BIN="$DMG_DIR/$APP_NAME.app/Contents/Resources/KeyStatsHelper.app/Contents/MacOS/KeyStatsHelper"
-if [ ! -f "$HELPER_BIN" ]; then
-    echo "❌ 未找到嵌入的 KeyStatsHelper：$HELPER_BIN"
-    echo "   检查 KeyStats target 的 'Embed Helper' build phase 是否包含 KeyStatsHelper.app。"
-    exit 1
-fi
-echo "✅ Helper 已嵌入: $HELPER_BIN"
-
-# 用 vendor/ 里预先签好的 helper 替换 Xcode 嵌入的 helper
 "$SCRIPT_DIR/embed_vendored_helper.sh" "$DMG_DIR/$APP_NAME.app"
 
 echo "🔏 签名应用..."

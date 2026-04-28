@@ -52,24 +52,11 @@ final class HelperSupervisor {
         try ensureLaunchAgentRegistered()
     }
 
-    func uninstall() throws {
-        try? unregisterLaunchAgent()
-        let fm = FileManager.default
-        if fm.fileExists(atPath: HelperLocations.installedHelperURL.path) {
-            try fm.removeItem(at: HelperLocations.installedHelperURL)
-        }
-    }
-
     // MARK: - LaunchAgent
 
     private func ensureLaunchAgentRegistered() throws {
         try writeLaunchAgentPlist()
         try bootstrapLaunchAgent()
-    }
-
-    private func unregisterLaunchAgent() throws {
-        try bootoutLaunchAgent()
-        try? FileManager.default.removeItem(at: HelperLocations.launchAgentPlistURL)
     }
 
     private func writeLaunchAgentPlist() throws {
@@ -96,13 +83,6 @@ final class HelperSupervisor {
         _ = runLaunchctl(["bootout", "gui/\(getuid())/\(HelperLocations.launchAgentLabel)"])
         let res = runLaunchctl(["bootstrap", "gui/\(getuid())", HelperLocations.launchAgentPlistURL.path])
         if res.status != 0 {
-            throw SupervisorError.launchctlFailed(res.status, res.stderr)
-        }
-    }
-
-    private func bootoutLaunchAgent() throws {
-        let res = runLaunchctl(["bootout", "gui/\(getuid())/\(HelperLocations.launchAgentLabel)"])
-        if res.status != 0 && !res.stderr.contains("No such process") && !res.stderr.contains("Could not find") {
             throw SupervisorError.launchctlFailed(res.status, res.stderr)
         }
     }
