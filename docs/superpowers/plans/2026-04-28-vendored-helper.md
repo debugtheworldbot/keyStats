@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Implementation note (added during execution):** Task 5's original design — a Run Script build phase inside the KeyStats Xcode target — was abandoned after hitting two Xcode constraints during implementation: (a) declaring `BUILT_PRODUCTS_DIR/KeyStatsHelper.app` as the script's `outputPaths` collides with the helper target's own production of the same file ("Multiple commands produce" error); (b) the project has `ENABLE_USER_SCRIPT_SANDBOXING = YES`, and Xcode's script sandbox denies recursive reads inside `vendor/KeyStatsHelper.app/` even when the bundle root is declared in `inputPaths`. The actual implementation switched to **Approach E**: do the helper swap as a post-archive step in `scripts/build_dmg.sh` and `.github/workflows/release.yml`, via a new `scripts/embed_vendored_helper.sh`. No pbxproj changes. Tasks 5–7 below document the originally-planned Xcode approach for historical reference; the shipped implementation is in commits a02ee2f / af10eeb / ecabb06.
+
 **Goal:** Eliminate helper cdhash drift by vendoring a pre-built, pre-signed `KeyStatsHelper.app` into the repo so CI/local builds produce a `KeyStatsHelper.app` whose cdhash equals the committed vendor copy regardless of toolchain. Result: TCC Accessibility grant survives Sparkle updates that don't touch helper sources.
 
 **Architecture:**

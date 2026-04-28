@@ -64,6 +64,17 @@ Helper 是独立 `.app` bundle（target 名 `helper`，产物 `KeyStatsHelper.ap
 - Use `[weak self]` in closures to prevent retain cycles
 - Maintain backward compatibility with existing UserDefaults keys when changing data models
 
+### Vendored Helper
+
+`KeyStatsHelper.app` is **vendored** at `vendor/KeyStatsHelper.app/` (binary-tracked via `.gitattributes`). Both `scripts/build_dmg.sh` and `.github/workflows/release.yml` overwrite Xcode's freshly-built helper with this exact bundle (via `scripts/embed_vendored_helper.sh`) before `sign_app.sh` re-signs the outer app. Re-signing the helper with the unchanged `KeyStatsHelper.entitlements` is deterministic, so the shipped helper's cdhash equals `vendor/KeyStatsHelper.cdhash.txt` regardless of toolchain — TCC Accessibility grant survives Sparkle updates.
+
+**Dev builds (Xcode `⌘R`) use the freshly-built helper, not the vendored copy** (no Xcode build phase changes). That's intentional: dev iteration shouldn't require re-vendoring after every helper edit. Only `build_dmg.sh` and CI use the vendored bundle.
+
+**When you change anything under `KeyStatsHelper/` (sources, Info.plist, entitlements, build settings):**
+1. Run `./scripts/rebuild_vendored_helper.sh` (rebuilds + signs + writes new `vendor/KeyStatsHelper.app` and `cdhash.txt`).
+2. Commit `vendor/` together with the helper source change.
+3. CI's `Verify vendored helper` step + `build_dmg.sh`'s fail-fast check will reject the build if you forget — the actual cdhash of `vendor/KeyStatsHelper.app` won't match the committed `cdhash.txt`.
+
 ## Dependencies (SPM)
 
 - **PostHog** (posthog-ios) — Analytics, initialized in AppDelegate
