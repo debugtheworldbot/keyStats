@@ -112,7 +112,16 @@ final class HelperXPCListener: NSObject, NSXPCListenerDelegate, KeyStatsHelperPr
     func handshake(clientInterfaceVersion: Int,
                    reply: @escaping (Int, Bool) -> Void) {
         idle.noteActivity()
-        reply(HelperLocations.interfaceVersion, tap.isAccessibilityGranted())
+        if tap.isAccessibilityGranted() {
+            reply(HelperLocations.interfaceVersion, true)
+            return
+        }
+        // AXIsProcessTrusted() 在 helper 进程刚被 launchd spawn 出来时
+        // 偶尔会先返回 false（TCC 还没把当前 PID 跟 helper 的 cdhash 关联好）。
+        // 100ms 后重查一次，避免误报"未授权"导致主 app 弹错误提示。
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) { [tap] in
+            reply(HelperLocations.interfaceVersion, tap.isAccessibilityGranted())
+        }
     }
 
     func startMonitoring(reply: @escaping (Bool, Int) -> Void) {

@@ -49,17 +49,21 @@ final class HelperSupervisor {
             }
         }
 
-        try ensureLaunchAgentRegistered()
+        try ensureLaunchAgentRegistered(helperWasCopied: shouldCopy)
     }
 
     // MARK: - LaunchAgent
 
-    private func ensureLaunchAgentRegistered() throws {
-        try writeLaunchAgentPlist()
-        try bootstrapLaunchAgent()
+    private func ensureLaunchAgentRegistered(helperWasCopied: Bool) throws {
+        let plistChanged = try writeLaunchAgentPlist()
+        guard helperWasCopied || plistChanged || !isLaunchAgentLoaded() else {
+            return
+        }
+        try bootstrapLaunchAgent(restartExisting: helperWasCopied || plistChanged)
     }
 
-    private func writeLaunchAgentPlist() throws {
+    @discardableResult
+    private func writeLaunchAgentPlist() throws -> Bool {
         let binary = HelperLocations.installedHelperBinaryURL.path
         let plist: [String: Any] = [
             "Label": HelperLocations.launchAgentLabel,
@@ -73,18 +77,38 @@ final class HelperSupervisor {
             let url = HelperLocations.launchAgentPlistURL
             try FileManager.default.createDirectory(
                 at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            if let existingData = try? Data(contentsOf: url),
+               let existingPlist = try? PropertyListSerialization.propertyList(
+                   from: existingData,
+                   options: [],
+                   format: nil
+               ) as? NSDictionary,
+               existingPlist.isEqual(plist as NSDictionary) {
+                return false
+            }
             try data.write(to: url, options: .atomic)
+            return true
         } catch {
             throw SupervisorError.plistWriteFailed(error)
         }
     }
 
-    private func bootstrapLaunchAgent() throws {
-        _ = runLaunchctl(["bootout", "gui/\(getuid())/\(HelperLocations.launchAgentLabel)"])
+    private func bootstrapLaunchAgent(restartExisting: Bool) throws {
+        if restartExisting {
+            _ = runLaunchctl(["bootout", "gui/\(getuid())/\(HelperLocations.launchAgentLabel)"])
+        }
         let res = runLaunchctl(["bootstrap", "gui/\(getuid())", HelperLocations.launchAgentPlistURL.path])
         if res.status != 0 {
+            if isLaunchAgentLoaded() {
+                return
+            }
             throw SupervisorError.launchctlFailed(res.status, res.stderr)
         }
+    }
+
+    private func isLaunchAgentLoaded() -> Bool {
+        let res = runLaunchctl(["print", "gui/\(getuid())/\(HelperLocations.launchAgentLabel)"])
+        return res.status == 0
     }
 
     // MARK: - Helpers
