@@ -87,7 +87,7 @@ jobs:
           APP_PATH="$ARCHIVE_PATH/Products/Applications/$APP_NAME.app"
           cp -R "$APP_PATH" "$STAGING_DIR/"
 
-          codesign --force --deep --sign - --entitlements KeyStats/KeyStats.entitlements "$STAGING_DIR/$APP_NAME.app"
+          ./scripts/sign_app.sh "$STAGING_DIR/$APP_NAME.app"
           ditto -c -k --sequesterRsrc --keepParent "$STAGING_DIR/$APP_NAME.app" "$OUTPUT_DIR/$APP_NAME.zip"
 
       - name: Generate Sparkle appcast

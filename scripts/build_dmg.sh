@@ -67,36 +67,8 @@ if [ ! -f "$HELPER_BIN" ]; then
 fi
 echo "✅ Helper 已嵌入: $HELPER_BIN"
 
-# Ad-hoc 签名（重要：确保辅助功能权限正常工作）
-#
-# Helper 必须单独先签，外层 app 再签且不带 --deep。这样 helper 的 cdhash 只取决于
-# 它自己的字节内容；外层主 app 重签不会污染 helper，Sparkle 升级时若 helper 源码
-# 和资源没变，cdhash 保持稳定 ⇒ HelperSupervisor 跳过替换 ⇒ TCC 辅助功能授权保留。
-# `--deep` 会把外层 entitlements 递归盖到 helper 上，并且每次都重算 helper 签名。
 echo "🔏 签名应用..."
-ENTITLEMENTS="$PROJECT_DIR/KeyStats/KeyStats.entitlements"
-HELPER_APP_PATH="$DMG_DIR/$APP_NAME.app/Contents/Resources/KeyStatsHelper.app"
-HELPER_ENTITLEMENTS="$PROJECT_DIR/KeyStatsHelper/KeyStatsHelper.entitlements"
-
-# 1) Helper 内部如果还有嵌套的 signable bundle（当前没有）应从最内层开始签；
-#    现在只需要签 helper.app 自身。
-if [ -f "$HELPER_ENTITLEMENTS" ]; then
-    codesign --force --sign - --entitlements "$HELPER_ENTITLEMENTS" "$HELPER_APP_PATH"
-else
-    codesign --force --sign - "$HELPER_APP_PATH"
-fi
-
-# 2) 外层主 app：不要 --deep，这样 helper 已经存在的签名原样作为 nested bundle
-#    被参照进来，不会被重签。
-if [ -f "$ENTITLEMENTS" ]; then
-    codesign --force --sign - --entitlements "$ENTITLEMENTS" "$DMG_DIR/$APP_NAME.app"
-else
-    codesign --force --sign - "$DMG_DIR/$APP_NAME.app"
-fi
-
-# 打印 helper 的 cdhash，方便跨版本对照：只要两次打包结果相同，用户升级后不会被要求重新授权。
-HELPER_CDHASH=$(codesign -d -vvv "$HELPER_APP_PATH" 2>&1 | awk -F'=' '/^CDHash=/ {print $2}')
-echo "🔑 KeyStatsHelper CDHash: ${HELPER_CDHASH:-<unknown>}"
+"$SCRIPT_DIR/sign_app.sh" "$DMG_DIR/$APP_NAME.app"
 
 # 创建 Applications 文件夹的符号链接
 ln -s /Applications "$DMG_DIR/Applications"
