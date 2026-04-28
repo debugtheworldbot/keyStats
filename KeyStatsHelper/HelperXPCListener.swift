@@ -118,9 +118,29 @@ final class HelperXPCListener: NSObject, NSXPCListenerDelegate, KeyStatsHelperPr
         }
         // AXIsProcessTrusted() 在 helper 进程刚被 launchd spawn 出来时
         // 偶尔会先返回 false（TCC 还没把当前 PID 跟 helper 的 cdhash 关联好）。
-        // 100ms 后重查一次，避免误报"未授权"导致主 app 弹错误提示。
-        DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) { [tap] in
-            reply(HelperLocations.interfaceVersion, tap.isAccessibilityGranted())
+        // 100ms / 400ms / 1000ms 后逐级重查，最多 ~1.5s 内若有任何一次返回
+        // true 就立刻返回，否则才报"未授权"。
+        Self.recheckAccessibility(tap: tap, delays: [0.1, 0.4, 1.0]) { granted in
+            reply(HelperLocations.interfaceVersion, granted)
+        }
+    }
+
+    private static func recheckAccessibility(
+        tap: EventTapController,
+        delays: [TimeInterval],
+        completion: @escaping (Bool) -> Void
+    ) {
+        guard let next = delays.first else {
+            completion(false)
+            return
+        }
+        let rest = Array(delays.dropFirst())
+        DispatchQueue.global().asyncAfter(deadline: .now() + next) {
+            if tap.isAccessibilityGranted() {
+                completion(true)
+            } else {
+                recheckAccessibility(tap: tap, delays: rest, completion: completion)
+            }
         }
     }
 
