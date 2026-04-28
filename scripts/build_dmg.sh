@@ -25,6 +25,10 @@ echo "🧹 清理旧的构建..."
 rm -rf "$BUILD_DIR"
 mkdir -p "$DMG_DIR" "$OUTPUT_DIR"
 
+# Fail fast: 校验 vendor 里的 helper 跟 cdhash.txt 一致
+echo "🔍 校验 vendored helper..."
+"$SCRIPT_DIR/check_vendored_helper.sh"
+
 # 构建 Release 版本
 echo "🔨 构建 Release 版本..."
 xcodebuild -project "$PROJECT" \
@@ -66,6 +70,9 @@ if [ ! -f "$HELPER_BIN" ]; then
     exit 1
 fi
 echo "✅ Helper 已嵌入: $HELPER_BIN"
+
+# 用 vendor/ 里预先签好的 helper 替换 Xcode 嵌入的 helper
+"$SCRIPT_DIR/embed_vendored_helper.sh" "$DMG_DIR/$APP_NAME.app"
 
 echo "🔏 签名应用..."
 "$SCRIPT_DIR/sign_app.sh" "$DMG_DIR/$APP_NAME.app"
