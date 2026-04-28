@@ -1,6 +1,6 @@
 "permission.title" = "Accessibility Permission Required";
-"permission.message" = "KeyStats needs Accessibility access to count keyboard and mouse activity.\n\nClick \"Open Permission Guide\" to open Privacy & Security > Accessibility. Then drag KeyStats into the permission list to finish authorization.";
-"permission.reinstallTip" = "If reinstalled, remove the old KeyStats entry in Privacy & Security > Accessibility and run the permission guide again.";
+"permission.message" = "KeyStats needs Accessibility access to count keyboard and mouse activity.\n\nClick \"Open Permission Guide\" to open Privacy & Security > Accessibility. Then drag KeyStatsHelper into the permission list to finish authorization.";
+"permission.reinstallTip" = "You only need to grant access once — future updates will not ask for authorization again.";
 "permission.openSettings" = "Open Permission Guide";
 "permission.later" = "Later";
 "button.permission" = "Permissions";
@@ -230,7 +230,7 @@
 "heatmap.totalFormat" = "%d activities";
 "heatmap.detailFormat" = "%d keys · %d clicks";
 "helperMigration.title" = "One-time authorization required";
-"helperMigration.body" = "KeyStats now uses a lightweight helper for keyboard and mouse monitoring. After this one-time step, future updates will not ask for authorization again.";
+"helperMigration.body" = "KeyStats now uses a lightweight helper for keyboard and mouse monitoring. This is the last manual authorization — once done, no future update will ask for it again.";
 "helperMigration.autoReset.success" = "We cleared the old \"KeyStats\" entry for you. Please authorize \"KeyStatsHelper\" in the Accessibility list that opens next.";
 "helperMigration.autoReset.manual" = "Please open System Settings → Privacy & Security → Accessibility, remove the old \"KeyStats\" entry with the minus button, then authorize \"KeyStatsHelper\".";
 "helperMigration.openSettings" = "Open System Settings";

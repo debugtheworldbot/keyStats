@@ -1,6 +1,6 @@
 "permission.title" = "需要辅助功能权限";
-"permission.message" = "KeyStats 需要辅助功能权限来统计键盘和鼠标活动。\n\n点击“打开授权引导”后，系统会打开“隐私与安全性 > 辅助功能”，并显示拖拽浮层。请将 KeyStats 拖入权限列表完成授权。";
-"permission.reinstallTip" = "重装/升级提示：未签名版本重装后需重新授权。请先在“隐私与安全性 > 辅助功能”删除旧 KeyStats，再重新运行授权引导。";
+"permission.message" = "KeyStats 需要辅助功能权限来统计键盘和鼠标活动。\n\n点击“打开授权引导”后，系统会打开“隐私与安全性 > 辅助功能”，并显示拖拽浮层。请将 KeyStatsHelper 拖入权限列表完成授权。";
+"permission.reinstallTip" = "授权一次即可，今后版本升级不会再要求重新授权。";
 "permission.openSettings" = "打开授权引导";
 "permission.later" = "稍后";
 "button.permission" = "获取权限";
@@ -230,7 +230,7 @@
 "heatmap.totalFormat" = "%d 次活动";
 "heatmap.detailFormat" = "%d 按键 · %d 点击";
 "helperMigration.title" = "一次性授权更新";
-"helperMigration.body" = "KeyStats 现在通过一个轻量 Helper 监听键鼠，这次授权完成后，以后升级不会再要求重新授权。";
+"helperMigration.body" = "KeyStats 现在通过一个轻量 Helper 监听键鼠。这是最后一次手动授权 —— 完成后，今后所有版本升级都不会再要求重新授权。";
 "helperMigration.autoReset.success" = "我们已为你自动清理旧的 \"KeyStats\" 条目。在打开的系统设置里授权 \"KeyStatsHelper\" 即可。";
 "helperMigration.autoReset.manual" = "请到系统设置 → 隐私与安全性 → 辅助功能，先用减号删除旧的 \"KeyStats\" 条目，再授权 \"KeyStatsHelper\"。";
 "helperMigration.openSettings" = "打开系统设置";
