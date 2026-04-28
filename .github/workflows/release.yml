@@ -34,6 +34,14 @@ jobs:
           sed -i '' "s/MARKETING_VERSION = .*/MARKETING_VERSION = $VERSION;/" KeyStats.xcodeproj/project.pbxproj
           echo "Updated MARKETING_VERSION to $VERSION"
 
+      - name: Override SUFeedURL for beta channel
+        if: contains(github.ref_name, '-beta')
+        run: |
+          BETA_FEED="https://github.com/${{ github.repository }}/releases/download/beta-channel/appcast.xml"
+          sed -i '' "s|<string>https://github.com/[^<]*appcast.xml</string>|<string>$BETA_FEED</string>|" KeyStats/Info.plist
+          echo "Beta SUFeedURL set to: $BETA_FEED"
+          grep -A1 SUFeedURL KeyStats/Info.plist
+
       - name: Verify vendored helper
         run: ./scripts/check_vendored_helper.sh
 
@@ -208,6 +216,28 @@ jobs:
           make_latest: ${{ contains(github.ref_name, '-beta') && 'false' || 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update beta-channel appcast (beta only)
+        if: contains(github.ref_name, '-beta')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Ensure beta-channel release exists (one-time auto-create)
+          if ! gh release view beta-channel --repo ${{ github.repository }} >/dev/null 2>&1; then
+            gh release create beta-channel \
+              --repo ${{ github.repository }} \
+              --prerelease \
+              --title "Beta Channel Feed" \
+              --notes "Auto-updated by CI. Sparkle clients on the beta channel pull releases-assets/appcast.xml from this release. Tag exists only as a container — does not correspond to any source revision."
+          fi
+
+          # Overwrite the appcast.xml asset with the one this build just produced
+          gh release upload beta-channel \
+            release-assets/macos/appcast.xml \
+            --repo ${{ github.repository }} \
+            --clobber
+
+          echo "beta-channel/appcast.xml updated to ${{ github.ref_name }}"
 
       - name: Update Homebrew Tap
         if: ${{ !contains(github.ref_name, '-beta') }}
