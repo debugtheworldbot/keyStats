@@ -134,4 +134,13 @@
   <data name="Metric_Scroll" xml:space="preserve"><value>Scroll</value></data>
   <data name="Stats_PeakKpsTooltipLabel" xml:space="preserve"><value>Peak Keys/sec (KPS)</value></data>
   <data name="Stats_PeakCpsTooltipLabel" xml:space="preserve"><value>Peak Clicks/sec (CPS)</value></data>
+
+  <data name="AppStats_WindowTitle" xml:space="preserve"><value>App Stats</value></data>
+  <data name="AppStats_HeaderTitle" xml:space="preserve"><value>App Stats</value></data>
+  <data name="AppStats_HeaderSubtitle" xml:space="preserve"><value>Per-app keyboard/click/scroll stats; only aggregates are saved</value></data>
+  <data name="AppStats_RangeToday" xml:space="preserve"><value>Today</value></data>
+  <data name="AppStats_Range7Days" xml:space="preserve"><value>Last 7 days</value></data>
+  <data name="AppStats_Range30Days" xml:space="preserve"><value>Last 30 days</value></data>
+  <data name="AppStats_RangeAll" xml:space="preserve"><value>All</value></data>
+  <data name="AppStats_ColumnApp" xml:space="preserve"><value>App</value></data>
 </root>

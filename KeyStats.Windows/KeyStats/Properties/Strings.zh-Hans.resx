@@ -134,4 +134,13 @@
   <data name="Metric_Scroll" xml:space="preserve"><value>滚动</value></data>
   <data name="Stats_PeakKpsTooltipLabel" xml:space="preserve"><value>峰值按键速度(KPS)</value></data>
   <data name="Stats_PeakCpsTooltipLabel" xml:space="preserve"><value>峰值点击速度(CPS)</value></data>
+
+  <data name="AppStats_WindowTitle" xml:space="preserve"><value>按应用统计</value></data>
+  <data name="AppStats_HeaderTitle" xml:space="preserve"><value>按应用统计</value></data>
+  <data name="AppStats_HeaderSubtitle" xml:space="preserve"><value>按应用统计键盘/点击/滚动，仅保存聚合数据</value></data>
+  <data name="AppStats_RangeToday" xml:space="preserve"><value>今天</value></data>
+  <data name="AppStats_Range7Days" xml:space="preserve"><value>过去7天</value></data>
+  <data name="AppStats_Range30Days" xml:space="preserve"><value>过去30天</value></data>
+  <data name="AppStats_RangeAll" xml:space="preserve"><value>全部</value></data>
+  <data name="AppStats_ColumnApp" xml:space="preserve"><value>应用</value></data>
 </root>

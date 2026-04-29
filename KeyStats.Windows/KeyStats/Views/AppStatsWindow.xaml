@@ -2,7 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:viewmodels="clr-namespace:KeyStats.ViewModels"
-        Title="按应用统计"
+        xmlns:p="clr-namespace:KeyStats.Properties"
+        Title="{x:Static p:Strings.AppStats_WindowTitle}"
         Width="720"
         Height="640"
         MinWidth="640"
@@ -26,9 +27,9 @@
 
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,10">
-            <TextBlock Text="按应用统计" FontSize="20" FontWeight="SemiBold"
+            <TextBlock Text="{x:Static p:Strings.AppStats_HeaderTitle}" FontSize="20" FontWeight="SemiBold"
                        Foreground="{DynamicResource TextPrimaryBrush}"/>
-            <TextBlock Text="按应用统计键盘/点击/滚动，仅保存聚合数据"
+            <TextBlock Text="{x:Static p:Strings.AppStats_HeaderSubtitle}"
                        FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
                        TextWrapping="Wrap" Margin="0,4,0,0"/>
         </StackPanel>
@@ -36,16 +37,16 @@
         <!-- Range -->
         <Border Grid.Row="1" Background="{DynamicResource SubtleFillBrush}" CornerRadius="6" Padding="3" Margin="0,0,0,10">
             <StackPanel Orientation="Horizontal">
-                <RadioButton Content="今天" GroupName="AppStatsRange"
+                <RadioButton Content="{x:Static p:Strings.AppStats_RangeToday}" GroupName="AppStatsRange"
                              Style="{DynamicResource SegmentedButton}" FontSize="11" Padding="10,4"
                              IsChecked="{Binding SelectedRangeIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=0}"/>
-                <RadioButton Content="过去7天" GroupName="AppStatsRange"
+                <RadioButton Content="{x:Static p:Strings.AppStats_Range7Days}" GroupName="AppStatsRange"
                              Style="{DynamicResource SegmentedButton}" FontSize="11" Padding="10,4"
                              IsChecked="{Binding SelectedRangeIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=1}"/>
-                <RadioButton Content="过去30天" GroupName="AppStatsRange"
+                <RadioButton Content="{x:Static p:Strings.AppStats_Range30Days}" GroupName="AppStatsRange"
                              Style="{DynamicResource SegmentedButton}" FontSize="11" Padding="10,4"
                              IsChecked="{Binding SelectedRangeIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=2}"/>
-                <RadioButton Content="全部" GroupName="AppStatsRange"
+                <RadioButton Content="{x:Static p:Strings.AppStats_RangeAll}" GroupName="AppStatsRange"
                              Style="{DynamicResource SegmentedButton}" FontSize="11" Padding="10,4"
                              IsChecked="{Binding SelectedRangeIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=3}"/>
             </StackPanel>
@@ -65,7 +66,7 @@
                 <ColumnDefinition Width="120"/>
                 <ColumnDefinition Width="120"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="应用" FontSize="12" FontWeight="SemiBold"
+            <TextBlock Grid.Column="0" Text="{x:Static p:Strings.AppStats_ColumnApp}" FontSize="12" FontWeight="SemiBold"
                        Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center"/>
             <Button Grid.Column="1" Content="{Binding KeysHeader}" Style="{DynamicResource AppStatsHeaderButton}"
                     Command="{Binding SortCommand}" CommandParameter="Keys"/>

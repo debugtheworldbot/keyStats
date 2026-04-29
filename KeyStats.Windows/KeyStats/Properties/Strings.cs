@@ -94,4 +94,13 @@ public static class Strings
     public static string Metric_Scroll => Get(nameof(Metric_Scroll));
     public static string Stats_PeakKpsTooltipLabel => Get(nameof(Stats_PeakKpsTooltipLabel));
     public static string Stats_PeakCpsTooltipLabel => Get(nameof(Stats_PeakCpsTooltipLabel));
+
+    public static string AppStats_WindowTitle => Get(nameof(AppStats_WindowTitle));
+    public static string AppStats_HeaderTitle => Get(nameof(AppStats_HeaderTitle));
+    public static string AppStats_HeaderSubtitle => Get(nameof(AppStats_HeaderSubtitle));
+    public static string AppStats_RangeToday => Get(nameof(AppStats_RangeToday));
+    public static string AppStats_Range7Days => Get(nameof(AppStats_Range7Days));
+    public static string AppStats_Range30Days => Get(nameof(AppStats_Range30Days));
+    public static string AppStats_RangeAll => Get(nameof(AppStats_RangeAll));
+    public static string AppStats_ColumnApp => Get(nameof(AppStats_ColumnApp));
 }
