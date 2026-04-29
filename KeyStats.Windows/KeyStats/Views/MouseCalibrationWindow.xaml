@@ -1,7 +1,8 @@
 <Window x:Class="KeyStats.Views.MouseCalibrationWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="距离校准 - KeyStats"
+        xmlns:p="clr-namespace:KeyStats.Properties"
+        Title="{x:Static p:Strings.Calibration_WindowTitle}"
         Width="360" SizeToContent="Height"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
@@ -10,15 +11,15 @@
         PreviewKeyDown="Window_PreviewKeyDown">
 
     <StackPanel Margin="24,20">
-        <TextBlock Text="距离校准" FontSize="16" FontWeight="SemiBold"
+        <TextBlock Text="{x:Static p:Strings.Calibration_HeaderTitle}" FontSize="16" FontWeight="SemiBold"
                    Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"/>
-        <TextBlock Text="按回车开始记录，再按回车结束记录并计算距离系数"
+        <TextBlock Text="{x:Static p:Strings.Calibration_InstructionEnter}"
                    Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"
                    TextWrapping="Wrap" Margin="0,0,0,16"/>
 
         <Border Style="{DynamicResource CardBorder}" Margin="0,0,0,8" Padding="14,12">
             <StackPanel>
-                <TextBlock Text="标尺长度" FontSize="13" FontWeight="SemiBold"
+                <TextBlock Text="{x:Static p:Strings.Calibration_LengthLabel}" FontSize="13" FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBox x:Name="LengthTextBox" Width="80" TextAlignment="Center"
@@ -33,14 +34,14 @@
 
         <Border Style="{DynamicResource CardBorder}" Margin="0,0,0,8" Padding="14,12">
             <StackPanel>
-                <TextBlock Text="校准步骤" FontSize="13" FontWeight="SemiBold"
+                <TextBlock Text="{x:Static p:Strings.Calibration_StepsLabel}" FontSize="13" FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
-                <TextBlock x:Name="StatusText" Text="未开始，按回车开始" FontSize="12"
+                <TextBlock x:Name="StatusText" FontSize="12"
                            Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,10"/>
                 <StackPanel Orientation="Horizontal">
-                    <Button x:Name="StartButton" Content="开始" Width="70" Margin="0,0,6,0"
+                    <Button x:Name="StartButton" Content="{x:Static p:Strings.Calibration_Start}" Width="70" Margin="0,0,6,0"
                             Click="StartButton_Click"/>
-                    <Button x:Name="FinishButton" Content="完成" Width="70"
+                    <Button x:Name="FinishButton" Content="{x:Static p:Strings.Calibration_Finish}" Width="70"
                             Click="FinishButton_Click" IsEnabled="False"/>
                 </StackPanel>
             </StackPanel>
@@ -48,27 +49,27 @@
 
         <Border Style="{DynamicResource CardBorder}" Margin="0,0,0,8" Padding="14,12">
             <StackPanel>
-                <TextBlock Text="显示单位" FontSize="13" FontWeight="SemiBold"
+                <TextBlock Text="{x:Static p:Strings.Calibration_DisplayUnitLabel}" FontSize="13" FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
                 <ComboBox x:Name="UnitComboBox" Width="160" SelectionChanged="UnitComboBox_SelectionChanged">
-                    <ComboBoxItem Content="自动 (cm/m/km)" Tag="auto"/>
-                    <ComboBoxItem Content="像素 (px)" Tag="px"/>
+                    <ComboBoxItem Content="{x:Static p:Strings.Calibration_UnitAuto}" Tag="auto"/>
+                    <ComboBoxItem Content="{x:Static p:Strings.Calibration_UnitPixel}" Tag="px"/>
                 </ComboBox>
             </StackPanel>
         </Border>
 
         <Border Style="{DynamicResource CardBorder}" Margin="0,0,0,8" Padding="14,12">
             <StackPanel>
-                <TextBlock Text="当前结果" FontSize="13" FontWeight="SemiBold"
+                <TextBlock Text="{x:Static p:Strings.Calibration_CurrentResultLabel}" FontSize="13" FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
-                <TextBlock x:Name="PixelsText" Text="像素距离: --" FontSize="12"
+                <TextBlock x:Name="PixelsText" FontSize="12"
                            Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
-                <TextBlock x:Name="ScaleText" Text="换算系数: --" FontSize="12"
+                <TextBlock x:Name="ScaleText" FontSize="12"
                            Foreground="{DynamicResource TextSecondaryBrush}"/>
             </StackPanel>
         </Border>
 
-        <TextBlock Text="提示：如需更准确，请关闭系统鼠标加速并保持匀速移动。"
+        <TextBlock Text="{x:Static p:Strings.Calibration_TipFooter}"
                    Foreground="{DynamicResource TextTertiaryBrush}" FontSize="11"
                    TextWrapping="Wrap" Margin="0,4,0,0"/>
     </StackPanel>

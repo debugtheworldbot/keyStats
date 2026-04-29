@@ -165,4 +165,39 @@
   <data name="History_Range_Last7Days" xml:space="preserve"><value>过去7天</value></data>
   <data name="History_Range_Last30Days" xml:space="preserve"><value>过去30天</value></data>
   <data name="History_Range_All" xml:space="preserve"><value>全部</value></data>
+
+  <data name="Calibration_WindowTitle" xml:space="preserve"><value>鼠标距离校准</value></data>
+  <data name="Calibration_HeaderTitle" xml:space="preserve"><value>鼠标距离校准</value></data>
+  <data name="Calibration_Instruction" xml:space="preserve"><value>按任意键开始记录，沿直线移动 10cm，然后再按任意键结束。</value></data>
+  <data name="Calibration_StartTitle" xml:space="preserve"><value>鼠标距离校准</value></data>
+  <data name="Calibration_StartMessage" xml:space="preserve"><value>准备一把 10cm 标尺。点击“开始”后，将鼠标放在起点，按任意键开始记录；沿直线移动 10cm 后，再按任意键结束。</value></data>
+  <data name="Calibration_Start" xml:space="preserve"><value>开始</value></data>
+  <data name="Calibration_FinishTitle" xml:space="preserve"><value>正在校准</value></data>
+  <data name="Calibration_FinishMessage" xml:space="preserve"><value>请在 10cm 标尺上直线移动鼠标，完成后点击“完成”。</value></data>
+  <data name="Calibration_Finish" xml:space="preserve"><value>完成</value></data>
+  <data name="Calibration_SuccessTitle" xml:space="preserve"><value>校准完成</value></data>
+  <data name="Calibration_SuccessMessageFormat" xml:space="preserve"><value>10cm &#8776; {0}，系数已更新为 {1}。</value></data>
+  <data name="Calibration_FailureTitle" xml:space="preserve"><value>校准失败</value></data>
+  <data name="Calibration_FailureMessage" xml:space="preserve"><value>移动距离过短或未检测到移动，请重试。</value></data>
+  <data name="Calibration_StatusWaiting" xml:space="preserve"><value>按任意键开始记录...</value></data>
+  <data name="Calibration_StatusMovingFormat" xml:space="preserve"><value>已移动 {0}</value></data>
+
+  <data name="Calibration_InstructionEnter" xml:space="preserve"><value>按回车开始记录，再按回车结束记录并计算距离系数</value></data>
+  <data name="Calibration_LengthLabel" xml:space="preserve"><value>标尺长度</value></data>
+  <data name="Calibration_StepsLabel" xml:space="preserve"><value>校准步骤</value></data>
+  <data name="Calibration_StatusIdle" xml:space="preserve"><value>未开始，按回车开始</value></data>
+  <data name="Calibration_StatusRecording" xml:space="preserve"><value>已开始，移动标尺长度后按回车结束</value></data>
+  <data name="Calibration_StatusPressEnterFirst" xml:space="preserve"><value>请先按回车开始</value></data>
+  <data name="Calibration_StatusMovementTooShort" xml:space="preserve"><value>移动距离过短，请重新校准</value></data>
+  <data name="Calibration_StatusInvalidLength" xml:space="preserve"><value>标尺长度无效</value></data>
+  <data name="Calibration_StatusComplete" xml:space="preserve"><value>校准完成</value></data>
+  <data name="Calibration_DisplayUnitLabel" xml:space="preserve"><value>显示单位</value></data>
+  <data name="Calibration_UnitAuto" xml:space="preserve"><value>自动 (cm/m/km)</value></data>
+  <data name="Calibration_UnitPixel" xml:space="preserve"><value>像素 (px)</value></data>
+  <data name="Calibration_CurrentResultLabel" xml:space="preserve"><value>当前结果</value></data>
+  <data name="Calibration_PixelsLabelEmpty" xml:space="preserve"><value>像素距离: --</value></data>
+  <data name="Calibration_PixelsLabelFormat" xml:space="preserve"><value>像素距离: {0:F0} px</value></data>
+  <data name="Calibration_ScaleLabelEmpty" xml:space="preserve"><value>换算系数: --</value></data>
+  <data name="Calibration_ScaleLabelFormat" xml:space="preserve"><value>换算系数: {0:E4} m/px</value></data>
+  <data name="Calibration_TipFooter" xml:space="preserve"><value>提示：如需更准确，请关闭系统鼠标加速并保持匀速移动。</value></data>
 </root>

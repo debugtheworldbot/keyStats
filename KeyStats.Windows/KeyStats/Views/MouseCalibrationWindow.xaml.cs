@@ -23,6 +23,7 @@ public partial class MouseCalibrationWindow : Window
         InitializeComponent();
         _isInitializing = true;
         LengthTextBox.Text = "10";
+        StatusText.Text = KeyStats.Properties.Strings.Calibration_StatusIdle;
         LoadSettings();
         _isInitializing = false;
         Loaded += (_, _) => Keyboard.Focus(this);
@@ -72,7 +73,7 @@ public partial class MouseCalibrationWindow : Window
     {
         _startPoint = GetCursorPosition();
         _isMeasuring = true;
-        StatusText.Text = "已开始，移动标尺长度后按回车结束";
+        StatusText.Text = KeyStats.Properties.Strings.Calibration_StatusRecording;
         StartButton.IsEnabled = false;
         FinishButton.IsEnabled = true;
         _lastLiveDistance = 0;
@@ -84,7 +85,7 @@ public partial class MouseCalibrationWindow : Window
     {
         if (!_isMeasuring || !_startPoint.HasValue)
         {
-            StatusText.Text = "请先按回车开始";
+            StatusText.Text = KeyStats.Properties.Strings.Calibration_StatusPressEnterFirst;
             return;
         }
 
@@ -95,14 +96,14 @@ public partial class MouseCalibrationWindow : Window
 
         if (distance < 10)
         {
-            StatusText.Text = "移动距离过短，请重新校准";
+            StatusText.Text = KeyStats.Properties.Strings.Calibration_StatusMovementTooShort;
             ResetMeasureState();
             return;
         }
 
         if (!TryGetLengthCm(out var lengthCm) || lengthCm <= 0)
         {
-            StatusText.Text = "标尺长度无效";
+            StatusText.Text = KeyStats.Properties.Strings.Calibration_StatusInvalidLength;
             ResetMeasureState();
             return;
         }
@@ -113,7 +114,7 @@ public partial class MouseCalibrationWindow : Window
         UpdatePixelsText(distance);
         UpdateScaleText(metersPerPixel);
 
-        StatusText.Text = "校准完成";
+        StatusText.Text = KeyStats.Properties.Strings.Calibration_StatusComplete;
         ResetMeasureState();
     }
 
@@ -167,17 +168,19 @@ public partial class MouseCalibrationWindow : Window
 
     private void UpdatePixelsText(double? distance)
     {
-        PixelsText.Text = distance.HasValue ? $"像素距离: {distance.Value:F0} px" : "像素距离: --";
+        PixelsText.Text = distance.HasValue
+            ? string.Format(KeyStats.Properties.Strings.Calibration_PixelsLabelFormat, distance.Value)
+            : KeyStats.Properties.Strings.Calibration_PixelsLabelEmpty;
     }
 
     private void UpdateScaleText(double metersPerPixel)
     {
         if (double.IsNaN(metersPerPixel) || double.IsInfinity(metersPerPixel) || metersPerPixel <= 0)
         {
-            ScaleText.Text = "换算系数: --";
+            ScaleText.Text = KeyStats.Properties.Strings.Calibration_ScaleLabelEmpty;
             return;
         }
-        ScaleText.Text = $"换算系数: {metersPerPixel:E4} m/px";
+        ScaleText.Text = string.Format(KeyStats.Properties.Strings.Calibration_ScaleLabelFormat, metersPerPixel);
     }
 
     private void ResetMeasureState()
@@ -187,7 +190,7 @@ public partial class MouseCalibrationWindow : Window
         _startPoint = null;
         StartButton.IsEnabled = true;
         FinishButton.IsEnabled = false;
-        StatusText.Text = "未开始，按回车开始";
+        StatusText.Text = KeyStats.Properties.Strings.Calibration_StatusIdle;
     }
 
     private void StartLiveUpdate()

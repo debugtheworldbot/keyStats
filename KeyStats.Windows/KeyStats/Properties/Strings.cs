@@ -125,4 +125,39 @@ public static class Strings
     public static string History_Range_Last7Days => Get(nameof(History_Range_Last7Days));
     public static string History_Range_Last30Days => Get(nameof(History_Range_Last30Days));
     public static string History_Range_All => Get(nameof(History_Range_All));
+
+    public static string Calibration_WindowTitle => Get(nameof(Calibration_WindowTitle));
+    public static string Calibration_HeaderTitle => Get(nameof(Calibration_HeaderTitle));
+    public static string Calibration_Instruction => Get(nameof(Calibration_Instruction));
+    public static string Calibration_StartTitle => Get(nameof(Calibration_StartTitle));
+    public static string Calibration_StartMessage => Get(nameof(Calibration_StartMessage));
+    public static string Calibration_Start => Get(nameof(Calibration_Start));
+    public static string Calibration_FinishTitle => Get(nameof(Calibration_FinishTitle));
+    public static string Calibration_FinishMessage => Get(nameof(Calibration_FinishMessage));
+    public static string Calibration_Finish => Get(nameof(Calibration_Finish));
+    public static string Calibration_SuccessTitle => Get(nameof(Calibration_SuccessTitle));
+    public static string Calibration_SuccessMessageFormat => Get(nameof(Calibration_SuccessMessageFormat));
+    public static string Calibration_FailureTitle => Get(nameof(Calibration_FailureTitle));
+    public static string Calibration_FailureMessage => Get(nameof(Calibration_FailureMessage));
+    public static string Calibration_StatusWaiting => Get(nameof(Calibration_StatusWaiting));
+    public static string Calibration_StatusMovingFormat => Get(nameof(Calibration_StatusMovingFormat));
+
+    public static string Calibration_InstructionEnter => Get(nameof(Calibration_InstructionEnter));
+    public static string Calibration_LengthLabel => Get(nameof(Calibration_LengthLabel));
+    public static string Calibration_StepsLabel => Get(nameof(Calibration_StepsLabel));
+    public static string Calibration_StatusIdle => Get(nameof(Calibration_StatusIdle));
+    public static string Calibration_StatusRecording => Get(nameof(Calibration_StatusRecording));
+    public static string Calibration_StatusPressEnterFirst => Get(nameof(Calibration_StatusPressEnterFirst));
+    public static string Calibration_StatusMovementTooShort => Get(nameof(Calibration_StatusMovementTooShort));
+    public static string Calibration_StatusInvalidLength => Get(nameof(Calibration_StatusInvalidLength));
+    public static string Calibration_StatusComplete => Get(nameof(Calibration_StatusComplete));
+    public static string Calibration_DisplayUnitLabel => Get(nameof(Calibration_DisplayUnitLabel));
+    public static string Calibration_UnitAuto => Get(nameof(Calibration_UnitAuto));
+    public static string Calibration_UnitPixel => Get(nameof(Calibration_UnitPixel));
+    public static string Calibration_CurrentResultLabel => Get(nameof(Calibration_CurrentResultLabel));
+    public static string Calibration_PixelsLabelEmpty => Get(nameof(Calibration_PixelsLabelEmpty));
+    public static string Calibration_PixelsLabelFormat => Get(nameof(Calibration_PixelsLabelFormat));
+    public static string Calibration_ScaleLabelEmpty => Get(nameof(Calibration_ScaleLabelEmpty));
+    public static string Calibration_ScaleLabelFormat => Get(nameof(Calibration_ScaleLabelFormat));
+    public static string Calibration_TipFooter => Get(nameof(Calibration_TipFooter));
 }

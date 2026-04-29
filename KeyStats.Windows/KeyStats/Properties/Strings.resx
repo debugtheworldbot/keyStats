@@ -165,4 +165,39 @@
   <data name="History_Range_Last7Days" xml:space="preserve"><value>Last 7 days</value></data>
   <data name="History_Range_Last30Days" xml:space="preserve"><value>Last 30 days</value></data>
   <data name="History_Range_All" xml:space="preserve"><value>All</value></data>
+
+  <data name="Calibration_WindowTitle" xml:space="preserve"><value>Mouse Distance Calibration</value></data>
+  <data name="Calibration_HeaderTitle" xml:space="preserve"><value>Mouse Distance Calibration</value></data>
+  <data name="Calibration_Instruction" xml:space="preserve"><value>Press any key to start recording, move 10 cm in a straight line, then press any key again to finish.</value></data>
+  <data name="Calibration_StartTitle" xml:space="preserve"><value>Mouse Distance Calibration</value></data>
+  <data name="Calibration_StartMessage" xml:space="preserve"><value>Prepare a 10 cm ruler. After clicking "Start", place the cursor at the start, press any key to begin recording, move 10 cm in a straight line, then press any key again to finish.</value></data>
+  <data name="Calibration_Start" xml:space="preserve"><value>Start</value></data>
+  <data name="Calibration_FinishTitle" xml:space="preserve"><value>Calibration in Progress</value></data>
+  <data name="Calibration_FinishMessage" xml:space="preserve"><value>Move the mouse in a straight line for 10 cm, then click "Finish".</value></data>
+  <data name="Calibration_Finish" xml:space="preserve"><value>Finish</value></data>
+  <data name="Calibration_SuccessTitle" xml:space="preserve"><value>Calibration Complete</value></data>
+  <data name="Calibration_SuccessMessageFormat" xml:space="preserve"><value>10 cm &#8776; {0}, factor updated to {1}.</value></data>
+  <data name="Calibration_FailureTitle" xml:space="preserve"><value>Calibration Failed</value></data>
+  <data name="Calibration_FailureMessage" xml:space="preserve"><value>Movement was too short or not detected. Please try again.</value></data>
+  <data name="Calibration_StatusWaiting" xml:space="preserve"><value>Press any key to start recording...</value></data>
+  <data name="Calibration_StatusMovingFormat" xml:space="preserve"><value>Moved {0}</value></data>
+
+  <data name="Calibration_InstructionEnter" xml:space="preserve"><value>Press Enter to start recording, press Enter again to finish and compute the distance factor</value></data>
+  <data name="Calibration_LengthLabel" xml:space="preserve"><value>Ruler Length</value></data>
+  <data name="Calibration_StepsLabel" xml:space="preserve"><value>Calibration Steps</value></data>
+  <data name="Calibration_StatusIdle" xml:space="preserve"><value>Not started, press Enter to begin</value></data>
+  <data name="Calibration_StatusRecording" xml:space="preserve"><value>Recording, move the ruler length and press Enter to finish</value></data>
+  <data name="Calibration_StatusPressEnterFirst" xml:space="preserve"><value>Please press Enter to start first</value></data>
+  <data name="Calibration_StatusMovementTooShort" xml:space="preserve"><value>Movement was too short, please recalibrate</value></data>
+  <data name="Calibration_StatusInvalidLength" xml:space="preserve"><value>Invalid ruler length</value></data>
+  <data name="Calibration_StatusComplete" xml:space="preserve"><value>Calibration complete</value></data>
+  <data name="Calibration_DisplayUnitLabel" xml:space="preserve"><value>Display Unit</value></data>
+  <data name="Calibration_UnitAuto" xml:space="preserve"><value>Auto (cm/m/km)</value></data>
+  <data name="Calibration_UnitPixel" xml:space="preserve"><value>Pixels (px)</value></data>
+  <data name="Calibration_CurrentResultLabel" xml:space="preserve"><value>Current Result</value></data>
+  <data name="Calibration_PixelsLabelEmpty" xml:space="preserve"><value>Pixel distance: --</value></data>
+  <data name="Calibration_PixelsLabelFormat" xml:space="preserve"><value>Pixel distance: {0:F0} px</value></data>
+  <data name="Calibration_ScaleLabelEmpty" xml:space="preserve"><value>Scale factor: --</value></data>
+  <data name="Calibration_ScaleLabelFormat" xml:space="preserve"><value>Scale factor: {0:E4} m/px</value></data>
+  <data name="Calibration_TipFooter" xml:space="preserve"><value>Tip: for better accuracy, disable system mouse acceleration and move at a steady speed.</value></data>
 </root>
