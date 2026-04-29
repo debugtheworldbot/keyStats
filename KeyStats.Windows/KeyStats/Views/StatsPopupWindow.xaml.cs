@@ -82,12 +82,12 @@ public partial class StatsPopupWindow : Window
             PositionNearTray();
         }
         
-        // 追踪页面浏览
+        // Track page view
         App.CurrentApp?.TrackPageView("stats_popup");
-        
+
         if (!_isWindowMode)
         {
-            // 确定动画方向（从任务栏方向滑入）
+            // Determine animation direction (slide in from taskbar side)
             var mousePos = System.Windows.Forms.Control.MousePosition;
             var screen = Screen.FromPoint(new System.Drawing.Point(mousePos.X, mousePos.Y)) ?? Screen.PrimaryScreen;
             if (screen != null)
@@ -145,7 +145,7 @@ public partial class StatsPopupWindow : Window
         var transform = (System.Windows.Media.TranslateTransform)FindName("WindowTransform");
         if (transform == null) return;
         
-        // 淡入动画
+        // Fade-in animation
         var opacityAnimation = new DoubleAnimation
         {
             From = 0,
@@ -153,8 +153,8 @@ public partial class StatsPopupWindow : Window
             Duration = TimeSpan.FromMilliseconds(200),
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
-        
-        // 滑入动画
+
+        // Slide-in animation
         var translateXAnimation = new DoubleAnimation
         {
             From = startX,
@@ -282,7 +282,7 @@ public partial class StatsPopupWindow : Window
             return;
         }
         
-        // 确定滑出方向（向任务栏方向滑出）
+        // Determine slide-out direction (toward taskbar side)
         var mousePos = System.Windows.Forms.Control.MousePosition;
         var screen = Screen.FromPoint(new System.Drawing.Point(mousePos.X, mousePos.Y)) ?? Screen.PrimaryScreen;
         if (screen == null)
@@ -304,26 +304,26 @@ public partial class StatsPopupWindow : Window
         
         if (taskbarAtBottom)
         {
-            endY = slideDistance; // 向下滑出
+            endY = slideDistance; // slide down
         }
         else if (taskbarAtTop)
         {
-            endY = -slideDistance; // 向上滑出
+            endY = -slideDistance; // slide up
         }
         else if (taskbarAtRight)
         {
-            endX = slideDistance; // 向右滑出
+            endX = slideDistance; // slide right
         }
         else if (taskbarAtLeft)
         {
-            endX = -slideDistance; // 向左滑出
+            endX = -slideDistance; // slide left
         }
         else
         {
-            endY = slideDistance; // 默认向下滑出
+            endY = slideDistance; // default: slide down
         }
-        
-        // 淡出动画
+
+        // Fade-out animation
         var opacityAnimation = new DoubleAnimation
         {
             From = Opacity,
@@ -332,7 +332,7 @@ public partial class StatsPopupWindow : Window
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
         };
         
-        // 滑出动画
+        // Slide-out animation
         var translateXAnimation = new DoubleAnimation
         {
             From = transform.X,
@@ -349,7 +349,7 @@ public partial class StatsPopupWindow : Window
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
         };
         
-        // 动画完成后关闭窗口
+        // Close the window after the animation completes
         opacityAnimation.Completed += (s, e) => Close();
         
         BeginAnimation(UIElement.OpacityProperty, opacityAnimation);
@@ -359,35 +359,35 @@ public partial class StatsPopupWindow : Window
 
     private void PositionNearTray()
     {
-        // 获取鼠标当前位置（优先使用点击时的锚点，避免异步延迟导致位置偏移）
+        // Get current mouse position (prefer the click-time anchor to avoid async delay drift)
         var mousePos = _anchorPoint ?? System.Windows.Forms.Control.MousePosition;
         var mouseX = mousePos.X;
         var mouseY = mousePos.Y;
 
-        // 获取主屏幕信息
+        // Get the primary screen info
         var screen = Screen.FromPoint(new System.Drawing.Point(mouseX, mouseY));
         if (screen == null) screen = Screen.PrimaryScreen;
         if (screen == null) return;
 
         var workingArea = screen.WorkingArea;
         var screenBounds = screen.Bounds;
-        
-        // DPI 缩放因子（独立处理 X/Y，兼容非等比 DPI）
+
+        // DPI scale factors (handle X/Y independently for non-uniform DPI)
         var transformToDevice = PresentationSource.FromVisual(this)?.CompositionTarget?.TransformToDevice;
         var dpiScaleX = transformToDevice?.M11 ?? 1.0;
         var dpiScaleY = transformToDevice?.M22 ?? dpiScaleX;
 
-        // 确定任务栏位置
+        // Determine taskbar position
         bool taskbarAtBottom = workingArea.Bottom < screenBounds.Bottom;
         bool taskbarAtTop = workingArea.Top > screenBounds.Top;
         bool taskbarAtRight = workingArea.Right < screenBounds.Right;
         bool taskbarAtLeft = workingArea.Left > screenBounds.Left;
 
-        // 系统托盘区域预留空间（避免遮挡图标）
-        const int trayAreaWidth = 250; // 系统托盘区域宽度（右侧）
-        const int spacing = 10; // 窗口与鼠标/任务栏的最小间距
+        // Reserve space for the system tray area (avoid covering icons)
+        const int trayAreaWidth = 250; // System tray area width (right side)
+        const int spacing = 10; // Minimum gap between window and mouse/taskbar
 
-        // 避免高缩放下窗口超出工作区：先按当前屏幕可用高度约束窗口，再读取实际尺寸参与定位
+        // Prevent window from exceeding working area at high DPI: clamp window by current screen's available height first, then read actual size for positioning
         var maxHeightDip = Math.Max(200, (workingArea.Height - spacing * 2) / dpiScaleY);
         if (Math.Abs(MaxHeight - maxHeightDip) > 0.5)
         {
@@ -407,20 +407,20 @@ public partial class StatsPopupWindow : Window
 
         if (taskbarAtBottom)
         {
-            // 任务栏在底部：窗口显示在鼠标上方
+            // Taskbar at bottom: show window above the mouse
             left = mouseX - windowWidth / 2;
-            
-            // 如果鼠标在屏幕右侧（系统托盘区域），窗口定位到左侧，避免遮挡图标
+
+            // If the mouse is on the right side of the screen (system tray area), position the window to the left to avoid covering icons
             if (mouseX > screenBounds.Right - trayAreaWidth)
             {
-                // 窗口定位到屏幕右侧，但留出系统托盘区域
+                // Position the window to the right side of the screen, but leave space for the system tray area
                 left = screenBounds.Right - windowWidth - trayAreaWidth - spacing;
             }
-            
-            // 窗口紧贴鼠标上方显示，只保留很小的间距
+
+            // Display the window just above the mouse with a tiny gap
             top = mouseY - windowHeight - spacing;
-            
-            // 确保窗口完全在工作区域内
+
+            // Ensure the window stays fully within the working area
             if (top + windowHeight > workingArea.Bottom - spacing)
             {
                 top = workingArea.Bottom - windowHeight - spacing;
@@ -428,31 +428,31 @@ public partial class StatsPopupWindow : Window
         }
         else if (taskbarAtTop)
         {
-            // 任务栏在顶部：窗口显示在鼠标下方
+            // Taskbar at top: show window below the mouse
             left = mouseX - windowWidth / 2;
             top = workingArea.Top + 10;
         }
         else if (taskbarAtRight)
         {
-            // 任务栏在右侧：窗口显示在鼠标左侧
-            // 如果鼠标在任务栏右侧区域（可能有点击托盘图标），窗口定位到更左侧
+            // Taskbar on the right: show window to the left of the mouse
+            // If the mouse is in the right-side taskbar region (likely a tray-icon click), position the window further left
             left = workingArea.Right - windowWidth - trayAreaWidth - 10;
             top = mouseY - windowHeight / 2;
         }
         else if (taskbarAtLeft)
         {
-            // 任务栏在左侧：窗口显示在鼠标右侧
+            // Taskbar on the left: show window to the right of the mouse
             left = workingArea.Left + 10;
             top = mouseY - windowHeight / 2;
         }
         else
         {
-            // 默认：窗口显示在鼠标附近
+            // Default: show window near the mouse
             left = mouseX - windowWidth / 2;
             top = mouseY - windowHeight / 2;
         }
 
-        // 确保窗口完全在屏幕可见区域内
+        // Ensure the window is fully within the visible screen area
         if (left < workingArea.Left)
             left = workingArea.Left + 10;
         if (left + windowWidth > workingArea.Right)
@@ -460,11 +460,11 @@ public partial class StatsPopupWindow : Window
         if (top < workingArea.Top)
             top = workingArea.Top + 10;
 
-        // 确保窗口底部不会延伸到任务栏区域，保持小间距
+        // Ensure the window bottom does not extend into the taskbar area, leaving a small gap
         if (top + windowHeight > workingArea.Bottom - spacing)
             top = workingArea.Bottom - windowHeight - spacing;
 
-        // 转换为 WPF 坐标（考虑 DPI）
+        // Convert to WPF coordinates (factoring in DPI)
         Left = left / dpiScaleX;
         Top = top / dpiScaleY;
     }

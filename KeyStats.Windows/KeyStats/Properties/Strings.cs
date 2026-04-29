@@ -64,4 +64,34 @@ public static class Strings
     public static string Settings_DistanceCalibrationDesc => Get(nameof(Settings_DistanceCalibrationDesc));
     public static string Settings_VersionFormat => Get(nameof(Settings_VersionFormat));
     public static string Settings_OpenGitHubFailedMessage => Get(nameof(Settings_OpenGitHubFailedMessage));
+
+    public static string Stats_TodayHeader => Get(nameof(Stats_TodayHeader));
+    public static string Stats_PeakKpsLabel => Get(nameof(Stats_PeakKpsLabel));
+    public static string Stats_PeakCpsLabel => Get(nameof(Stats_PeakCpsLabel));
+    public static string Stats_KeyPresses => Get(nameof(Stats_KeyPresses));
+    public static string Stats_MouseClicks => Get(nameof(Stats_MouseClicks));
+    public static string Stats_MouseClickDetail => Get(nameof(Stats_MouseClickDetail));
+    public static string Click_Left => Get(nameof(Click_Left));
+    public static string Click_Middle => Get(nameof(Click_Middle));
+    public static string Click_Right => Get(nameof(Click_Right));
+    public static string Click_Back => Get(nameof(Click_Back));
+    public static string Click_Forward => Get(nameof(Click_Forward));
+    public static string Stats_MouseDistance => Get(nameof(Stats_MouseDistance));
+    public static string Stats_ScrollDistance => Get(nameof(Stats_ScrollDistance));
+    public static string Stats_KeyBreakdown => Get(nameof(Stats_KeyBreakdown));
+    public static string Stats_KeyboardHeatmap => Get(nameof(Stats_KeyboardHeatmap));
+    public static string Stats_KeyHistory => Get(nameof(Stats_KeyHistory));
+    public static string Stats_ActiveApps => Get(nameof(Stats_ActiveApps));
+    public static string Stats_AppStatsDetail => Get(nameof(Stats_AppStatsDetail));
+    public static string Stats_HistoryHeader => Get(nameof(Stats_HistoryHeader));
+    public static string Chart_Line => Get(nameof(Chart_Line));
+    public static string Chart_Bar => Get(nameof(Chart_Bar));
+    public static string Range_7Days => Get(nameof(Range_7Days));
+    public static string Range_30Days => Get(nameof(Range_30Days));
+    public static string Metric_Clicks => Get(nameof(Metric_Clicks));
+    public static string Metric_Keys => Get(nameof(Metric_Keys));
+    public static string Metric_Move => Get(nameof(Metric_Move));
+    public static string Metric_Scroll => Get(nameof(Metric_Scroll));
+    public static string Stats_PeakKpsTooltipLabel => Get(nameof(Stats_PeakKpsTooltipLabel));
+    public static string Stats_PeakCpsTooltipLabel => Get(nameof(Stats_PeakCpsTooltipLabel));
 }

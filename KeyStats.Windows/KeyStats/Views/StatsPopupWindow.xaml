@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:KeyStats.Views.Controls"
         xmlns:viewmodels="clr-namespace:KeyStats.ViewModels"
+        xmlns:p="clr-namespace:KeyStats.Properties"
         Title="KeyStats"
         Width="360"
         SizeToContent="Height"
@@ -37,7 +38,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="今日统计" FontSize="14" FontWeight="SemiBold"
+                <TextBlock Grid.Column="0" Text="{x:Static p:Strings.Stats_TodayHeader}" FontSize="14" FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimaryBrush}"/>
                 <ToggleButton x:Name="PeakToggle" Grid.Column="2"
                               IsChecked="{Binding IsPeakPopupOpen, Mode=TwoWay}"
@@ -94,7 +95,7 @@
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                         <TextBlock Text="&#xE945;" FontFamily="Segoe MDL2 Assets" FontSize="10"
                                                    Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                        <TextBlock Text="峰值按键速度(KPS)" FontSize="10"
+                                        <TextBlock Text="{x:Static p:Strings.Stats_PeakKpsTooltipLabel}" FontSize="10"
                                                    Foreground="{DynamicResource TextSecondaryBrush}"/>
                                     </StackPanel>
                                     <TextBlock Text="{Binding PeakKPS}" FontSize="20" FontWeight="SemiBold"
@@ -104,7 +105,7 @@
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                         <TextBlock Text="&#xE945;" FontFamily="Segoe MDL2 Assets" FontSize="10"
                                                    Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                        <TextBlock Text="峰值点击速度(CPS)" FontSize="10"
+                                        <TextBlock Text="{x:Static p:Strings.Stats_PeakCpsTooltipLabel}" FontSize="10"
                                                    Foreground="{DynamicResource TextSecondaryBrush}"/>
                                     </StackPanel>
                                     <TextBlock Text="{Binding PeakCPS}" FontSize="20" FontWeight="SemiBold"
@@ -124,10 +125,10 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <Border Grid.Column="0" Style="{DynamicResource CardBorder}" Padding="9,8">
-                    <controls:StatItemControl Icon="&#xE765;" Title="按键次数" Value="{Binding KeyPresses}"/>
+                    <controls:StatItemControl Icon="&#xE765;" Title="{x:Static p:Strings.Stats_KeyPresses}" Value="{Binding KeyPresses}"/>
                 </Border>
                 <Border Grid.Column="2" Style="{DynamicResource CardBorder}" Padding="9,8">
-                    <controls:StatItemControl Icon="&#xE8B0;" Title="鼠标点击" Value="{Binding TotalClicks}"/>
+                    <controls:StatItemControl Icon="&#xE8B0;" Title="{x:Static p:Strings.Stats_MouseClicks}" Value="{Binding TotalClicks}"/>
                 </Border>
             </Grid>
 
@@ -153,7 +154,7 @@
                                        VerticalAlignment="Center"/>
                         </Border>
                         <TextBlock Grid.Column="1"
-                                   Text="鼠标点击明细"
+                                   Text="{x:Static p:Strings.Stats_MouseClickDetail}"
                                    FontSize="10"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    VerticalAlignment="Center"/>
@@ -170,19 +171,19 @@
 
                         <Border Grid.Column="0" Background="{DynamicResource SubtleFillBrush}" CornerRadius="7" Padding="10,8">
                             <StackPanel>
-                                <TextBlock Text="左键" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{x:Static p:Strings.Click_Left}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                 <TextBlock Text="{Binding LeftClicks}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,2,0,0"/>
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="2" Background="{DynamicResource SubtleFillBrush}" CornerRadius="7" Padding="10,8">
                             <StackPanel>
-                                <TextBlock Text="中键" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{x:Static p:Strings.Click_Middle}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                 <TextBlock Text="{Binding MiddleClicks}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,2,0,0"/>
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="4" Background="{DynamicResource SubtleFillBrush}" CornerRadius="7" Padding="10,8">
                             <StackPanel>
-                                <TextBlock Text="右键" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{x:Static p:Strings.Click_Right}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                 <TextBlock Text="{Binding RightClicks}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,2,0,0"/>
                             </StackPanel>
                         </Border>
@@ -207,13 +208,13 @@
 
                         <Border Grid.Column="0" Background="{DynamicResource SubtleFillBrush}" CornerRadius="7" Padding="10,8" Opacity="0.9">
                             <StackPanel>
-                                <TextBlock Text="后退" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{x:Static p:Strings.Click_Back}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                 <TextBlock Text="{Binding SideBackClicks}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,2,0,0"/>
                             </StackPanel>
                         </Border>
                         <Border Grid.Column="2" Background="{DynamicResource SubtleFillBrush}" CornerRadius="7" Padding="10,8" Opacity="0.9">
                             <StackPanel>
-                                <TextBlock Text="前进" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <TextBlock Text="{x:Static p:Strings.Click_Forward}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                 <TextBlock Text="{Binding SideForwardClicks}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,2,0,0"/>
                             </StackPanel>
                         </Border>
@@ -228,10 +229,10 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <Border Grid.Column="0" Style="{DynamicResource CardBorder}" Padding="8,7">
-                    <controls:StatItemControl Icon="&#xE8AB;" Title="鼠标移动" Value="{Binding MouseDistance}"/>
+                    <controls:StatItemControl Icon="&#xE8AB;" Title="{x:Static p:Strings.Stats_MouseDistance}" Value="{Binding MouseDistance}"/>
                 </Border>
                 <Border Grid.Column="2" Style="{DynamicResource CardBorder}" Padding="8,7">
-                    <controls:StatItemControl Icon="&#xE74A;" Title="滚轮滚动" Value="{Binding ScrollDistance}"/>
+                    <controls:StatItemControl Icon="&#xE74A;" Title="{x:Static p:Strings.Stats_ScrollDistance}" Value="{Binding ScrollDistance}"/>
                 </Border>
             </Grid>
 
@@ -243,10 +244,10 @@
                     <ColumnDefinition Width="6"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="按键分布" Style="{DynamicResource SectionTitle}" Margin="0" VerticalAlignment="Center"/>
-                <Button Grid.Column="1" Content="键盘热力图" Style="{DynamicResource GhostButton}"
+                <TextBlock Grid.Column="0" Text="{x:Static p:Strings.Stats_KeyBreakdown}" Style="{DynamicResource SectionTitle}" Margin="0" VerticalAlignment="Center"/>
+                <Button Grid.Column="1" Content="{x:Static p:Strings.Stats_KeyboardHeatmap}" Style="{DynamicResource GhostButton}"
                         Click="OpenKeyboardHeatmap_Click" Padding="12,5"/>
-                <Button Grid.Column="3" Content="历史按键统计" Style="{DynamicResource GhostButton}"
+                <Button Grid.Column="3" Content="{x:Static p:Strings.Stats_KeyHistory}" Style="{DynamicResource GhostButton}"
                         Click="OpenKeyHistory_Click" Padding="12,5"/>
             </Grid>
             <Border Style="{DynamicResource CardBorder}" Padding="8,6" Margin="0,0,0,6">
@@ -262,8 +263,8 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="活跃应用" Style="{DynamicResource SectionTitle}" Margin="0" VerticalAlignment="Center"/>
-                <Button Grid.Column="1" Content="应用统计详情" Style="{DynamicResource GhostButton}"
+                <TextBlock Grid.Column="0" Text="{x:Static p:Strings.Stats_ActiveApps}" Style="{DynamicResource SectionTitle}" Margin="0" VerticalAlignment="Center"/>
+                <Button Grid.Column="1" Content="{x:Static p:Strings.Stats_AppStatsDetail}" Style="{DynamicResource GhostButton}"
                         Click="OpenAppStats_Click" Padding="12,5"/>
             </Grid>
             <Border Style="{DynamicResource CardBorder}" Padding="8,6" Margin="0,0,0,6">
@@ -367,7 +368,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="历史记录" Style="{DynamicResource SectionTitle}" Margin="0" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="0" Text="{x:Static p:Strings.Stats_HistoryHeader}" Style="{DynamicResource SectionTitle}" Margin="0" VerticalAlignment="Center"/>
                 <Border Grid.Column="2" Background="{DynamicResource SubtleFillBrush}" CornerRadius="4" Padding="2">
                     <StackPanel Orientation="Horizontal">
                         <RadioButton GroupName="ChartStyle"
@@ -375,7 +376,7 @@
                                      IsChecked="{Binding SelectedChartStyleIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=0}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE9D9;" FontFamily="Segoe MDL2 Assets" FontSize="9" VerticalAlignment="Center"/>
-                                <TextBlock Text=" 折线" FontSize="10" VerticalAlignment="Center"/>
+                                <TextBlock Text="{x:Static p:Strings.Chart_Line}" FontSize="10" VerticalAlignment="Center" Margin="2,0,0,0"/>
                             </StackPanel>
                         </RadioButton>
                         <RadioButton GroupName="ChartStyle"
@@ -383,7 +384,7 @@
                                      IsChecked="{Binding SelectedChartStyleIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=1}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE9D2;" FontFamily="Segoe MDL2 Assets" FontSize="9" VerticalAlignment="Center"/>
-                                <TextBlock Text=" 柱状" FontSize="10" VerticalAlignment="Center"/>
+                                <TextBlock Text="{x:Static p:Strings.Chart_Bar}" FontSize="10" VerticalAlignment="Center" Margin="2,0,0,0"/>
                             </StackPanel>
                         </RadioButton>
                     </StackPanel>
@@ -401,10 +402,10 @@
                 <!-- Range -->
                 <Border Grid.Column="0" Background="{DynamicResource SubtleFillBrush}" CornerRadius="5" Padding="3">
                     <StackPanel Orientation="Horizontal">
-                        <RadioButton Content="7天" GroupName="Range"
+                        <RadioButton Content="{x:Static p:Strings.Range_7Days}" GroupName="Range"
                                      Style="{DynamicResource SegmentedButton}" FontSize="11" Padding="8,4"
                                      IsChecked="{Binding SelectedRangeIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=0}"/>
-                        <RadioButton Content="30天" GroupName="Range"
+                        <RadioButton Content="{x:Static p:Strings.Range_30Days}" GroupName="Range"
                                      Style="{DynamicResource SegmentedButton}" FontSize="11" Padding="8,4"
                                      IsChecked="{Binding SelectedRangeIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=1}"/>
                     </StackPanel>
@@ -419,16 +420,16 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <RadioButton Grid.Column="0" Content="点击" GroupName="Metric"
+                        <RadioButton Grid.Column="0" Content="{x:Static p:Strings.Metric_Clicks}" GroupName="Metric"
                                      Style="{DynamicResource SegmentedButton}" FontSize="11" Padding="6,4"
                                      IsChecked="{Binding SelectedMetricIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=0}"/>
-                        <RadioButton Grid.Column="1" Content="按键" GroupName="Metric"
+                        <RadioButton Grid.Column="1" Content="{x:Static p:Strings.Metric_Keys}" GroupName="Metric"
                                      Style="{DynamicResource SegmentedButton}" FontSize="11" Padding="6,4"
                                      IsChecked="{Binding SelectedMetricIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=1}"/>
-                        <RadioButton Grid.Column="2" Content="移动" GroupName="Metric"
+                        <RadioButton Grid.Column="2" Content="{x:Static p:Strings.Metric_Move}" GroupName="Metric"
                                      Style="{DynamicResource SegmentedButton}" FontSize="11" Padding="6,4"
                                      IsChecked="{Binding SelectedMetricIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=2}"/>
-                        <RadioButton Grid.Column="3" Content="滚动" GroupName="Metric"
+                        <RadioButton Grid.Column="3" Content="{x:Static p:Strings.Metric_Scroll}" GroupName="Metric"
                                      Style="{DynamicResource SegmentedButton}" FontSize="11" Padding="6,4"
                                      IsChecked="{Binding SelectedMetricIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=3}"/>
                     </Grid>

@@ -104,4 +104,34 @@
   <data name="Settings_DistanceCalibrationDesc" xml:space="preserve"><value>Calibrate the mouse movement coefficient</value></data>
   <data name="Settings_VersionFormat" xml:space="preserve"><value>Current version {0}</value></data>
   <data name="Settings_OpenGitHubFailedMessage" xml:space="preserve"><value>Could not open the GitHub page.</value></data>
+
+  <data name="Stats_TodayHeader" xml:space="preserve"><value>Today's Stats</value></data>
+  <data name="Stats_PeakKpsLabel" xml:space="preserve"><value>Peak KPS</value></data>
+  <data name="Stats_PeakCpsLabel" xml:space="preserve"><value>Peak CPS</value></data>
+  <data name="Stats_KeyPresses" xml:space="preserve"><value>Key Presses</value></data>
+  <data name="Stats_MouseClicks" xml:space="preserve"><value>Mouse Clicks</value></data>
+  <data name="Stats_MouseClickDetail" xml:space="preserve"><value>Click Breakdown</value></data>
+  <data name="Click_Left" xml:space="preserve"><value>Left</value></data>
+  <data name="Click_Middle" xml:space="preserve"><value>Middle</value></data>
+  <data name="Click_Right" xml:space="preserve"><value>Right</value></data>
+  <data name="Click_Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Click_Forward" xml:space="preserve"><value>Forward</value></data>
+  <data name="Stats_MouseDistance" xml:space="preserve"><value>Mouse Distance</value></data>
+  <data name="Stats_ScrollDistance" xml:space="preserve"><value>Scroll Distance</value></data>
+  <data name="Stats_KeyBreakdown" xml:space="preserve"><value>Key Distribution</value></data>
+  <data name="Stats_KeyboardHeatmap" xml:space="preserve"><value>Keyboard Heatmap</value></data>
+  <data name="Stats_KeyHistory" xml:space="preserve"><value>Key History</value></data>
+  <data name="Stats_ActiveApps" xml:space="preserve"><value>Active Apps</value></data>
+  <data name="Stats_AppStatsDetail" xml:space="preserve"><value>App Stats Details</value></data>
+  <data name="Stats_HistoryHeader" xml:space="preserve"><value>History</value></data>
+  <data name="Chart_Line" xml:space="preserve"><value>Line</value></data>
+  <data name="Chart_Bar" xml:space="preserve"><value>Bar</value></data>
+  <data name="Range_7Days" xml:space="preserve"><value>7 days</value></data>
+  <data name="Range_30Days" xml:space="preserve"><value>30 days</value></data>
+  <data name="Metric_Clicks" xml:space="preserve"><value>Clicks</value></data>
+  <data name="Metric_Keys" xml:space="preserve"><value>Keys</value></data>
+  <data name="Metric_Move" xml:space="preserve"><value>Move</value></data>
+  <data name="Metric_Scroll" xml:space="preserve"><value>Scroll</value></data>
+  <data name="Stats_PeakKpsTooltipLabel" xml:space="preserve"><value>Peak Keys/sec (KPS)</value></data>
+  <data name="Stats_PeakCpsTooltipLabel" xml:space="preserve"><value>Peak Clicks/sec (CPS)</value></data>
 </root>

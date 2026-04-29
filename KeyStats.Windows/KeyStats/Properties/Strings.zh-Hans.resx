@@ -104,4 +104,34 @@
   <data name="Settings_DistanceCalibrationDesc" xml:space="preserve"><value>校准鼠标移动距离系数</value></data>
   <data name="Settings_VersionFormat" xml:space="preserve"><value>当前版本 {0}</value></data>
   <data name="Settings_OpenGitHubFailedMessage" xml:space="preserve"><value>无法打开 GitHub 页面。</value></data>
+
+  <data name="Stats_TodayHeader" xml:space="preserve"><value>今日统计</value></data>
+  <data name="Stats_PeakKpsLabel" xml:space="preserve"><value>峰值 KPS</value></data>
+  <data name="Stats_PeakCpsLabel" xml:space="preserve"><value>峰值 CPS</value></data>
+  <data name="Stats_KeyPresses" xml:space="preserve"><value>按键次数</value></data>
+  <data name="Stats_MouseClicks" xml:space="preserve"><value>鼠标点击</value></data>
+  <data name="Stats_MouseClickDetail" xml:space="preserve"><value>鼠标点击明细</value></data>
+  <data name="Click_Left" xml:space="preserve"><value>左键</value></data>
+  <data name="Click_Middle" xml:space="preserve"><value>中键</value></data>
+  <data name="Click_Right" xml:space="preserve"><value>右键</value></data>
+  <data name="Click_Back" xml:space="preserve"><value>后退</value></data>
+  <data name="Click_Forward" xml:space="preserve"><value>前进</value></data>
+  <data name="Stats_MouseDistance" xml:space="preserve"><value>鼠标移动</value></data>
+  <data name="Stats_ScrollDistance" xml:space="preserve"><value>滚轮滚动</value></data>
+  <data name="Stats_KeyBreakdown" xml:space="preserve"><value>按键分布</value></data>
+  <data name="Stats_KeyboardHeatmap" xml:space="preserve"><value>键盘热力图</value></data>
+  <data name="Stats_KeyHistory" xml:space="preserve"><value>历史按键统计</value></data>
+  <data name="Stats_ActiveApps" xml:space="preserve"><value>活跃应用</value></data>
+  <data name="Stats_AppStatsDetail" xml:space="preserve"><value>应用统计详情</value></data>
+  <data name="Stats_HistoryHeader" xml:space="preserve"><value>历史记录</value></data>
+  <data name="Chart_Line" xml:space="preserve"><value>折线</value></data>
+  <data name="Chart_Bar" xml:space="preserve"><value>柱状</value></data>
+  <data name="Range_7Days" xml:space="preserve"><value>7天</value></data>
+  <data name="Range_30Days" xml:space="preserve"><value>30天</value></data>
+  <data name="Metric_Clicks" xml:space="preserve"><value>点击</value></data>
+  <data name="Metric_Keys" xml:space="preserve"><value>按键</value></data>
+  <data name="Metric_Move" xml:space="preserve"><value>移动</value></data>
+  <data name="Metric_Scroll" xml:space="preserve"><value>滚动</value></data>
+  <data name="Stats_PeakKpsTooltipLabel" xml:space="preserve"><value>峰值按键速度(KPS)</value></data>
+  <data name="Stats_PeakCpsTooltipLabel" xml:space="preserve"><value>峰值点击速度(CPS)</value></data>
 </root>
