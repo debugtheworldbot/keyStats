@@ -62,6 +62,13 @@
   <data name="Error_AppAlreadyRunning" xml:space="preserve"><value>KeyStats is already running.</value></data>
   <data name="Error_StartupFailedFormat" xml:space="preserve"><value>Startup error: {0}</value></data>
   <data name="Error_AppErrorTitle" xml:space="preserve"><value>KeyStats Error</value></data>
+  <data name="Error_ImportInvalidFormat" xml:space="preserve"><value>Data format is invalid.</value></data>
+  <data name="Error_ImportUnsupportedVersion" xml:space="preserve"><value>Unsupported export version.</value></data>
+  <data name="Error_ImportEmpty" xml:space="preserve"><value>Selected file is empty.</value></data>
+
+  <data name="Notif_ThresholdTitle" xml:space="preserve"><value>KeyStats Reminder</value></data>
+  <data name="Notif_KeyThresholdReachedFormat" xml:space="preserve"><value>Today's key presses reached {0:N0}.</value></data>
+  <data name="Notif_ClickThresholdReachedFormat" xml:space="preserve"><value>Today's clicks reached {0:N0}.</value></data>
 
   <data name="Tray_OpenMainWindow" xml:space="preserve"><value>Open Main Window</value></data>
   <data name="Tray_Settings" xml:space="preserve"><value>Settings</value></data>

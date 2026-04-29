@@ -19,17 +19,17 @@ public class InputMonitorService : IDisposable
     private NativeInterop.LowLevelMouseProc? _mouseProc;
 
     private bool _isMonitoring;
-    private readonly HashSet<int> _pressedKeys = new(); // 跟踪当前按下的键，防止长按时重复计数
+    private readonly HashSet<int> _pressedKeys = new(); // Tracks currently held keys to avoid double-counting on key repeats.
     private readonly double _mouseSampleInterval = 1.0 / 30.0; // 30 FPS
     private DateTime _lastMouseSampleTime = DateTime.MinValue;
     private System.Drawing.Point? _lastMousePosition;
     private double _accumulatedDistance = 0.0;
 
-    // 专用 hook 线程，避免 UI 线程卡顿导致 hook 超时
+    // Dedicated hook thread so UI-thread stalls cannot cause hook callback timeouts.
     private Thread? _hookThread;
     private uint _hookThreadId;
 
-    // hook 健康检查：watchdog 定时检测 hook 是否被 Windows 静默移除
+    // Hook health watchdog: detects whether Windows has silently removed our hooks.
     private Timer? _watchdogTimer;
     private int _lastHookCallbackTick;
     private int _isReinstallingHooks;
@@ -65,7 +65,7 @@ public class InputMonitorService : IDisposable
 
         _isMonitoring = true;
 
-        // 启动 watchdog 定时检测 hook 是否存活
+        // Start the watchdog timer that periodically checks whether the hooks are still alive.
         _watchdogTimer = new Timer(WatchdogCallback, null, WatchdogIntervalMs, WatchdogIntervalMs);
 
         Debug.WriteLine("Input monitoring started successfully (dedicated hook thread)");
@@ -193,7 +193,7 @@ public class InputMonitorService : IDisposable
 
         if (!cursorMoved && !keyboardActivity) return;
 
-        // 光标在移动，但 hook 回调长时间未被触发 → hook 可能已被 Windows 静默移除
+        // The cursor is moving but no hook callback has fired in a while → Windows likely removed the hooks silently.
         var elapsed = unchecked((uint)(Environment.TickCount - Volatile.Read(ref _lastHookCallbackTick)));
         if (elapsed > HookDeadThresholdMs)
         {
@@ -225,7 +225,7 @@ public class InputMonitorService : IDisposable
         _watchdogTimer?.Dispose();
         _watchdogTimer = null;
 
-        // 终止 hook 线程的消息循环
+        // Terminate the hook thread's message loop.
         if (!TryStopHookThread())
         {
             Debug.WriteLine("Failed to stop the hook thread within the timeout. Continuing shutdown cleanup.");

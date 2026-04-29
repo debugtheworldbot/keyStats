@@ -491,7 +491,7 @@ public class StatsManager : IDisposable
     private void RecordCurrentStatsToHistory()
     {
         var key = CurrentStats.Date.ToString("yyyy-MM-dd");
-        // 创建 CurrentStats 的副本，避免引用共享导致的数据丢失
+        // Clone CurrentStats so callers cannot mutate the snapshot stored in History.
         var statsCopy = new DailyStats(CurrentStats.Date)
         {
             KeyPresses = CurrentStats.KeyPresses,
@@ -687,7 +687,7 @@ public class StatsManager : IDisposable
     {
         if (data == null || data.Length == 0)
         {
-            throw new InvalidDataException("导入文件为空。");
+            throw new InvalidDataException(KeyStats.Properties.Strings.Error_ImportEmpty);
         }
 
         var deserializeOptions = new JsonSerializerOptions
@@ -699,7 +699,7 @@ public class StatsManager : IDisposable
         try
         {
             payload = JsonSerializer.Deserialize<ExportPayload>(data, deserializeOptions)
-                ?? throw new InvalidDataException("数据格式无效。");
+                ?? throw new InvalidDataException(KeyStats.Properties.Strings.Error_ImportInvalidFormat);
         }
         catch (InvalidDataException)
         {
@@ -707,12 +707,12 @@ public class StatsManager : IDisposable
         }
         catch (Exception ex)
         {
-            throw new InvalidDataException("数据格式无效。", ex);
+            throw new InvalidDataException(KeyStats.Properties.Strings.Error_ImportInvalidFormat, ex);
         }
 
         if (payload.Version != 1)
         {
-            throw new InvalidDataException("不支持的导出版本。");
+            throw new InvalidDataException(KeyStats.Properties.Strings.Error_ImportUnsupportedVersion);
         }
 
         lock (_lock)
@@ -1013,10 +1013,10 @@ public class StatsManager : IDisposable
     {
         lock (_lock)
         {
-            // 先保存旧数据到 History，避免丢失最后一次保存后的增量
+            // Archive the old counters to History first so the increment since the last save isn't lost.
             RecordCurrentStatsToHistory();
 
-            // 然后创建新的统计对象
+            // Then create a fresh stats object for the new day.
             CurrentStats = new DailyStats(date);
         }
 
@@ -1102,11 +1102,11 @@ public class StatsManager : IDisposable
         var threshold = Settings.KeyPressNotifyThreshold;
         if (threshold <= 0) return;
         var count = CurrentStats.KeyPresses;
-        
-        // 计算当前计数对应的阈值里程碑（向下取整到最近的阈值倍数）
+
+        // Compute the threshold milestone for the current count (rounded down to the nearest multiple of threshold).
         var currentThreshold = NormalizedBaseline(count, threshold);
-        
-        // 如果当前阈值里程碑大于上次通知的阈值里程碑，则发送通知
+
+        // Fire a notification only when we've crossed into a new milestone since the last one.
         if (currentThreshold > _lastNotifiedKeyPresses)
         {
             _lastNotifiedKeyPresses = currentThreshold;
@@ -1120,11 +1120,11 @@ public class StatsManager : IDisposable
         var threshold = Settings.ClickNotifyThreshold;
         if (threshold <= 0) return;
         var count = CurrentStats.TotalClicks;
-        
-        // 计算当前计数对应的阈值里程碑（向下取整到最近的阈值倍数）
+
+        // Compute the threshold milestone for the current count (rounded down to the nearest multiple of threshold).
         var currentThreshold = NormalizedBaseline(count, threshold);
-        
-        // 如果当前阈值里程碑大于上次通知的阈值里程碑，则发送通知
+
+        // Fire a notification only when we've crossed into a new milestone since the last one.
         if (currentThreshold > _lastNotifiedClicks)
         {
             _lastNotifiedClicks = currentThreshold;

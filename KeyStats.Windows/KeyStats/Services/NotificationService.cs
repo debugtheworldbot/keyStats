@@ -18,18 +18,17 @@ public class NotificationService
 
     public void SendThresholdNotification(Metric metric, int count)
     {
-        var formattedCount = count.ToString("N0");
         var body = metric switch
         {
-            Metric.KeyPresses => $"今日按键次数已达到 {formattedCount}！",
-            Metric.Clicks => $"今日点击次数已达到 {formattedCount}！",
+            Metric.KeyPresses => string.Format(KeyStats.Properties.Strings.Notif_KeyThresholdReachedFormat, count),
+            Metric.Clicks => string.Format(KeyStats.Properties.Strings.Notif_ClickThresholdReachedFormat, count),
             _ => ""
         };
 
         try
         {
             new ToastContentBuilder()
-                .AddText("按键统计")
+                .AddText(KeyStats.Properties.Strings.Notif_ThresholdTitle)
                 .AddText(body)
                 .Show();
         }

@@ -22,6 +22,13 @@ public static class Strings
     public static string Error_AppAlreadyRunning => Get(nameof(Error_AppAlreadyRunning));
     public static string Error_StartupFailedFormat => Get(nameof(Error_StartupFailedFormat));
     public static string Error_AppErrorTitle => Get(nameof(Error_AppErrorTitle));
+    public static string Error_ImportInvalidFormat => Get(nameof(Error_ImportInvalidFormat));
+    public static string Error_ImportUnsupportedVersion => Get(nameof(Error_ImportUnsupportedVersion));
+    public static string Error_ImportEmpty => Get(nameof(Error_ImportEmpty));
+
+    public static string Notif_ThresholdTitle => Get(nameof(Notif_ThresholdTitle));
+    public static string Notif_KeyThresholdReachedFormat => Get(nameof(Notif_KeyThresholdReachedFormat));
+    public static string Notif_ClickThresholdReachedFormat => Get(nameof(Notif_ClickThresholdReachedFormat));
 
     public static string Tray_OpenMainWindow => Get(nameof(Tray_OpenMainWindow));
     public static string Tray_Settings => Get(nameof(Tray_Settings));

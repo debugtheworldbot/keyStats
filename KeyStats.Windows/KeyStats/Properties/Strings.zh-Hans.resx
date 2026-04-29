@@ -62,6 +62,13 @@
   <data name="Error_AppAlreadyRunning" xml:space="preserve"><value>按键统计已在运行中。</value></data>
   <data name="Error_StartupFailedFormat" xml:space="preserve"><value>启动错误：{0}</value></data>
   <data name="Error_AppErrorTitle" xml:space="preserve"><value>按键统计错误</value></data>
+  <data name="Error_ImportInvalidFormat" xml:space="preserve"><value>数据格式无效。</value></data>
+  <data name="Error_ImportUnsupportedVersion" xml:space="preserve"><value>不支持的导出版本。</value></data>
+  <data name="Error_ImportEmpty" xml:space="preserve"><value>所选文件为空。</value></data>
+
+  <data name="Notif_ThresholdTitle" xml:space="preserve"><value>统计提醒</value></data>
+  <data name="Notif_KeyThresholdReachedFormat" xml:space="preserve"><value>今日按键数已达到 {0:N0} 次</value></data>
+  <data name="Notif_ClickThresholdReachedFormat" xml:space="preserve"><value>今日点击数已达到 {0:N0} 次</value></data>
 
   <data name="Tray_OpenMainWindow" xml:space="preserve"><value>打开主界面</value></data>
   <data name="Tray_Settings" xml:space="preserve"><value>设置</value></data>
