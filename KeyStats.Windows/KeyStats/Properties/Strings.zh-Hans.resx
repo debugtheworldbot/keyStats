@@ -169,8 +169,6 @@
   <data name="Heatmap_NoData" xml:space="preserve"><value>当天暂无键盘活动</value></data>
   <data name="Heatmap_SummaryFormat" xml:space="preserve"><value>总计 {0} 次按键 · {1} 个活跃键</value></data>
   <data name="Heatmap_DatePickerTooltip" xml:space="preserve"><value>选择日期</value></data>
-  <data name="Heatmap_DateFormatShort" xml:space="preserve"><value>{0}月{1}日</value></data>
-  <data name="Heatmap_DateFormatLong" xml:space="preserve"><value>{0}年{1}月{2}日</value></data>
 
   <data name="KeyHistory_WindowTitle" xml:space="preserve"><value>历史按键统计</value></data>
   <data name="KeyHistory_HeaderTitle" xml:space="preserve"><value>历史按键统计</value></data>

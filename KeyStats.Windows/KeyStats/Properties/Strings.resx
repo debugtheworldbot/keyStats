@@ -169,8 +169,6 @@
   <data name="Heatmap_NoData" xml:space="preserve"><value>No keyboard activity for this day</value></data>
   <data name="Heatmap_SummaryFormat" xml:space="preserve"><value>{0} key presses · {1} active keys</value></data>
   <data name="Heatmap_DatePickerTooltip" xml:space="preserve"><value>Select date</value></data>
-  <data name="Heatmap_DateFormatShort" xml:space="preserve"><value>{0}/{1}</value></data>
-  <data name="Heatmap_DateFormatLong" xml:space="preserve"><value>{0}/{1}/{2}</value></data>
 
   <data name="KeyHistory_WindowTitle" xml:space="preserve"><value>Key History</value></data>
   <data name="KeyHistory_HeaderTitle" xml:space="preserve"><value>Key History</value></data>

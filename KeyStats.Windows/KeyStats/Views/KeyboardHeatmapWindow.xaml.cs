@@ -152,10 +152,10 @@ public partial class KeyboardHeatmapWindow : Window
     {
         if (date.Year == DateTime.Today.Year)
         {
-            return string.Format(CultureInfo.CurrentCulture, KeyStats.Properties.Strings.Heatmap_DateFormatShort, date.Month, date.Day);
+            return date.ToString("M", CultureInfo.CurrentCulture);
         }
 
-        return string.Format(CultureInfo.CurrentCulture, KeyStats.Properties.Strings.Heatmap_DateFormatLong, date.Year, date.Month, date.Day);
+        return date.ToString("d", CultureInfo.CurrentCulture);
     }
 
     private DateTime ClampDate(DateTime date)

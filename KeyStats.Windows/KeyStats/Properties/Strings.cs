@@ -129,8 +129,6 @@ public static class Strings
     public static string Heatmap_NoData => Get(nameof(Heatmap_NoData));
     public static string Heatmap_SummaryFormat => Get(nameof(Heatmap_SummaryFormat));
     public static string Heatmap_DatePickerTooltip => Get(nameof(Heatmap_DatePickerTooltip));
-    public static string Heatmap_DateFormatShort => Get(nameof(Heatmap_DateFormatShort));
-    public static string Heatmap_DateFormatLong => Get(nameof(Heatmap_DateFormatLong));
 
     public static string KeyHistory_WindowTitle => Get(nameof(KeyHistory_WindowTitle));
     public static string KeyHistory_HeaderTitle => Get(nameof(KeyHistory_HeaderTitle));
