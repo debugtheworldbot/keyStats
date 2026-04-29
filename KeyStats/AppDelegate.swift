@@ -23,6 +23,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        // 必须在 trackInstallIfNeeded()/MenuBarController 任何 UserDefaults 写入之前采集，
+        // 否则 fresh install 与升级用户在后续阶段已无差别。仅作为是否触发迁移提示的判据。
+        let wasPreviouslyInstalled = UserDefaults.standard.bool(forKey: analyticsInstallTrackedKey)
+
         // 初始化 PostHog
         let config = PostHogConfig(apiKey: "phc_TYyyKIfGgL1CXZx7t9dY7igE3yNwNpjj9aqItSpNVLx", host: "https://us.i.posthog.com")
         config.captureApplicationLifecycleEvents = true  // 自动采集应用生命周期事件
@@ -39,7 +43,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         setupWindowMenu()
 
-        bootstrapHelperPipeline()
+        bootstrapHelperPipeline(wasPreviouslyInstalled: wasPreviouslyInstalled)
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {
@@ -56,7 +60,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     // MARK: - Helper 启动
 
-    private func bootstrapHelperPipeline() {
+    private func bootstrapHelperPipeline(wasPreviouslyInstalled: Bool) {
         HelperXPCClient.shared.setEventSink(RemoteEventProcessor.shared)
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             do {
@@ -67,7 +71,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
             DispatchQueue.main.async {
                 Task { @MainActor in
-                    HelperMigrationPresenter.shared.showIfNeeded()
+                    HelperMigrationPresenter.shared.showIfNeeded(wasPreviouslyInstalled: wasPreviouslyInstalled)
                     self?.connectHelperAndStart()
                 }
             }

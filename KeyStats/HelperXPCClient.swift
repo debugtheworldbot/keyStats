@@ -60,11 +60,29 @@ final class HelperXPCClient {
             c.exportedObject = sink
         }
 
+        // One-shot guard: 错误回调和 reply 在 NSXPCConnection 上是互斥的，但
+        // invalidation/interruption handler 也会同路径触发；统一走 finish() 保证 completion
+        // 只触发一次，避免任一失败路径让 AppDelegate 的 5s 重连闭环 silently 断掉。
+        let completionLock = NSLock()
+        var didFinish = false
+        let finish: (State) -> Void = { state in
+            completionLock.lock()
+            let already = didFinish
+            didFinish = true
+            completionLock.unlock()
+            guard !already else { return }
+            completion?(state)
+        }
+
         c.invalidationHandler = { [weak self] in
-            self?.transition(to: .disconnected(reason: "invalidated"))
+            let reason = "invalidated"
+            self?.transition(to: .disconnected(reason: reason))
+            finish(.disconnected(reason: reason))
         }
         c.interruptionHandler = { [weak self] in
-            self?.transition(to: .disconnected(reason: "interrupted"))
+            let reason = "interrupted"
+            self?.transition(to: .disconnected(reason: reason))
+            finish(.disconnected(reason: reason))
         }
         c.resume()
         connection = c
@@ -72,19 +90,24 @@ final class HelperXPCClient {
         lock.unlock()
 
         let proxy = c.remoteObjectProxyWithErrorHandler { [weak self] err in
-            self?.transition(to: .disconnected(reason: "\(err)"))
+            let reason = "\(err)"
+            self?.transition(to: .disconnected(reason: reason))
+            finish(.disconnected(reason: reason))
         } as? KeyStatsHelperProtocol
 
         guard let proxy = proxy else {
             transition(to: .disconnected(reason: "no proxy"))
-            completion?(.disconnected(reason: "no proxy"))
+            finish(.disconnected(reason: "no proxy"))
             return
         }
 
         proxy.handshake(clientInterfaceVersion: HelperLocations.interfaceVersion) { [weak self] helperVersion, granted in
+            if helperVersion != HelperLocations.interfaceVersion {
+                NSLog("[HelperXPCClient] interface version mismatch: client=\(HelperLocations.interfaceVersion) helper=\(helperVersion)")
+            }
             let newState: State = .connected(helperVersion: helperVersion, accessibilityGranted: granted)
             self?.transition(to: newState)
-            completion?(newState)
+            finish(newState)
         }
     }
 
@@ -103,17 +126,32 @@ final class HelperXPCClient {
             connect(completion: completion)
             return
         }
+        let completionLock = NSLock()
+        var didFinish = false
+        let finish: (State) -> Void = { state in
+            completionLock.lock()
+            let already = didFinish
+            didFinish = true
+            completionLock.unlock()
+            guard !already else { return }
+            completion(state)
+        }
         let proxy = c.remoteObjectProxyWithErrorHandler { [weak self] err in
-            self?.transition(to: .disconnected(reason: "\(err)"))
+            let reason = "\(err)"
+            self?.transition(to: .disconnected(reason: reason))
+            finish(.disconnected(reason: reason))
         } as? KeyStatsHelperProtocol
         guard let proxy = proxy else {
             connect(completion: completion)
             return
         }
         proxy.handshake(clientInterfaceVersion: HelperLocations.interfaceVersion) { [weak self] v, g in
+            if v != HelperLocations.interfaceVersion {
+                NSLog("[HelperXPCClient] interface version mismatch: client=\(HelperLocations.interfaceVersion) helper=\(v)")
+            }
             let newState: State = .connected(helperVersion: v, accessibilityGranted: g)
             self?.transition(to: newState)
-            completion(newState)
+            finish(newState)
         }
     }
 
