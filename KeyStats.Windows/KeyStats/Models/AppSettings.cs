@@ -57,4 +57,7 @@ public class AppSettings
 
     [JsonPropertyName("mainWindowHeight")]
     public double? MainWindowHeight { get; set; }
+
+    [JsonPropertyName("languagePreference")]
+    public string LanguagePreference { get; set; } = "system";  // "system" | "zh-Hans" | "en"
 }
