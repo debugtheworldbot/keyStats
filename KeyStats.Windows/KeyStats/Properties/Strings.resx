@@ -103,4 +103,5 @@
   <data name="Settings_DistanceCalibration" xml:space="preserve"><value>Distance Calibration</value></data>
   <data name="Settings_DistanceCalibrationDesc" xml:space="preserve"><value>Calibrate the mouse movement coefficient</value></data>
   <data name="Settings_VersionFormat" xml:space="preserve"><value>Current version {0}</value></data>
+  <data name="Settings_OpenGitHubFailedMessage" xml:space="preserve"><value>Could not open the GitHub page.</value></data>
 </root>

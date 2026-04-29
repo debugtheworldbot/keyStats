@@ -63,4 +63,5 @@ public static class Strings
     public static string Settings_DistanceCalibration => Get(nameof(Settings_DistanceCalibration));
     public static string Settings_DistanceCalibrationDesc => Get(nameof(Settings_DistanceCalibrationDesc));
     public static string Settings_VersionFormat => Get(nameof(Settings_VersionFormat));
+    public static string Settings_OpenGitHubFailedMessage => Get(nameof(Settings_OpenGitHubFailedMessage));
 }

@@ -103,4 +103,5 @@
   <data name="Settings_DistanceCalibration" xml:space="preserve"><value>距离校准</value></data>
   <data name="Settings_DistanceCalibrationDesc" xml:space="preserve"><value>校准鼠标移动距离系数</value></data>
   <data name="Settings_VersionFormat" xml:space="preserve"><value>当前版本 {0}</value></data>
+  <data name="Settings_OpenGitHubFailedMessage" xml:space="preserve"><value>无法打开 GitHub 页面。</value></data>
 </root>
