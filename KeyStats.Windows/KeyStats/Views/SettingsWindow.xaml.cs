@@ -136,8 +136,11 @@ public partial class SettingsWindow : Window
 
         if (result == MessageBoxResult.OK)
         {
-            StatsManager.Instance.Settings.LanguagePreference = newPref;
-            StatsManager.Instance.SaveSettings();
+            StatsManager.Instance.Settings.LanguagePreference = newPref!;
+            // SaveSettings() is debounced (2s) — RestartApp would spawn the new
+            // process before the disk write happens, so it would read the old
+            // language. FlushPendingSave forces a synchronous write.
+            StatsManager.Instance.FlushPendingSave();
             RestartApp();
         }
         else
