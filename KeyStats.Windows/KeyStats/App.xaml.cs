@@ -85,8 +85,8 @@ public partial class App : System.Windows.Application
 
             if (!createdNew)
             {
-                // English fallback — keep simple and reliable for this edge case.
-                MessageBox.Show("KeyStats is already running.", "KeyStats",
+                MessageBox.Show(KeyStats.Properties.Strings.Error_AppAlreadyRunning,
+                                KeyStats.Properties.Strings.App_Name,
                                 MessageBoxButton.OK, MessageBoxImage.Information);
                 Shutdown();
                 return;

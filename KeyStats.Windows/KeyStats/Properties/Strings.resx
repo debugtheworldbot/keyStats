@@ -52,10 +52,7 @@
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
 
   <data name="App_Name" xml:space="preserve"><value>KeyStats</value></data>
-  <data name="Common_Ok" xml:space="preserve"><value>OK</value></data>
   <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
-  <data name="Common_Close" xml:space="preserve"><value>Close</value></data>
-  <data name="Common_Retry" xml:space="preserve"><value>Retry</value></data>
   <data name="Common_Open" xml:space="preserve"><value>Open</value></data>
   <data name="Common_Import" xml:space="preserve"><value>Import</value></data>
   <data name="Common_Export" xml:space="preserve"><value>Export</value></data>
@@ -113,8 +110,6 @@
   <data name="Settings_OpenGitHubFailedMessage" xml:space="preserve"><value>Could not open the GitHub page.</value></data>
 
   <data name="Stats_TodayHeader" xml:space="preserve"><value>Today's Stats</value></data>
-  <data name="Stats_PeakKpsLabel" xml:space="preserve"><value>Peak KPS</value></data>
-  <data name="Stats_PeakCpsLabel" xml:space="preserve"><value>Peak CPS</value></data>
   <data name="Stats_KeyPresses" xml:space="preserve"><value>Key Presses</value></data>
   <data name="Stats_MouseClicks" xml:space="preserve"><value>Mouse Clicks</value></data>
   <data name="Stats_MouseClickDetail" xml:space="preserve"><value>Click Breakdown</value></data>
@@ -189,19 +184,8 @@
 
   <data name="Calibration_WindowTitle" xml:space="preserve"><value>Mouse Distance Calibration</value></data>
   <data name="Calibration_HeaderTitle" xml:space="preserve"><value>Mouse Distance Calibration</value></data>
-  <data name="Calibration_Instruction" xml:space="preserve"><value>Press any key to start recording, move 10 cm in a straight line, then press any key again to finish.</value></data>
-  <data name="Calibration_StartTitle" xml:space="preserve"><value>Mouse Distance Calibration</value></data>
-  <data name="Calibration_StartMessage" xml:space="preserve"><value>Prepare a 10 cm ruler. After clicking "Start", place the cursor at the start, press any key to begin recording, move 10 cm in a straight line, then press any key again to finish.</value></data>
   <data name="Calibration_Start" xml:space="preserve"><value>Start</value></data>
-  <data name="Calibration_FinishTitle" xml:space="preserve"><value>Calibration in Progress</value></data>
-  <data name="Calibration_FinishMessage" xml:space="preserve"><value>Move the mouse in a straight line for 10 cm, then click "Finish".</value></data>
   <data name="Calibration_Finish" xml:space="preserve"><value>Finish</value></data>
-  <data name="Calibration_SuccessTitle" xml:space="preserve"><value>Calibration Complete</value></data>
-  <data name="Calibration_SuccessMessageFormat" xml:space="preserve"><value>10 cm &#8776; {0}, factor updated to {1}.</value></data>
-  <data name="Calibration_FailureTitle" xml:space="preserve"><value>Calibration Failed</value></data>
-  <data name="Calibration_FailureMessage" xml:space="preserve"><value>Movement was too short or not detected. Please try again.</value></data>
-  <data name="Calibration_StatusWaiting" xml:space="preserve"><value>Press any key to start recording...</value></data>
-  <data name="Calibration_StatusMovingFormat" xml:space="preserve"><value>Moved {0}</value></data>
 
   <data name="Calibration_InstructionEnter" xml:space="preserve"><value>Press Enter to start recording, press Enter again to finish and compute the distance factor</value></data>
   <data name="Calibration_LengthLabel" xml:space="preserve"><value>Ruler Length</value></data>

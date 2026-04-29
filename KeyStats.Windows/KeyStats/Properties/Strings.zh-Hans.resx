@@ -52,10 +52,7 @@
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
 
   <data name="App_Name" xml:space="preserve"><value>按键统计</value></data>
-  <data name="Common_Ok" xml:space="preserve"><value>确定</value></data>
   <data name="Common_Cancel" xml:space="preserve"><value>取消</value></data>
-  <data name="Common_Close" xml:space="preserve"><value>关闭</value></data>
-  <data name="Common_Retry" xml:space="preserve"><value>重试</value></data>
   <data name="Common_Open" xml:space="preserve"><value>打开</value></data>
   <data name="Common_Import" xml:space="preserve"><value>导入</value></data>
   <data name="Common_Export" xml:space="preserve"><value>导出</value></data>
@@ -113,8 +110,6 @@
   <data name="Settings_OpenGitHubFailedMessage" xml:space="preserve"><value>无法打开 GitHub 页面。</value></data>
 
   <data name="Stats_TodayHeader" xml:space="preserve"><value>今日统计</value></data>
-  <data name="Stats_PeakKpsLabel" xml:space="preserve"><value>峰值 KPS</value></data>
-  <data name="Stats_PeakCpsLabel" xml:space="preserve"><value>峰值 CPS</value></data>
   <data name="Stats_KeyPresses" xml:space="preserve"><value>按键次数</value></data>
   <data name="Stats_MouseClicks" xml:space="preserve"><value>鼠标点击</value></data>
   <data name="Stats_MouseClickDetail" xml:space="preserve"><value>鼠标点击明细</value></data>
@@ -189,19 +184,8 @@
 
   <data name="Calibration_WindowTitle" xml:space="preserve"><value>鼠标距离校准</value></data>
   <data name="Calibration_HeaderTitle" xml:space="preserve"><value>鼠标距离校准</value></data>
-  <data name="Calibration_Instruction" xml:space="preserve"><value>按任意键开始记录，沿直线移动 10cm，然后再按任意键结束。</value></data>
-  <data name="Calibration_StartTitle" xml:space="preserve"><value>鼠标距离校准</value></data>
-  <data name="Calibration_StartMessage" xml:space="preserve"><value>准备一把 10cm 标尺。点击“开始”后，将鼠标放在起点，按任意键开始记录；沿直线移动 10cm 后，再按任意键结束。</value></data>
   <data name="Calibration_Start" xml:space="preserve"><value>开始</value></data>
-  <data name="Calibration_FinishTitle" xml:space="preserve"><value>正在校准</value></data>
-  <data name="Calibration_FinishMessage" xml:space="preserve"><value>请在 10cm 标尺上直线移动鼠标，完成后点击“完成”。</value></data>
   <data name="Calibration_Finish" xml:space="preserve"><value>完成</value></data>
-  <data name="Calibration_SuccessTitle" xml:space="preserve"><value>校准完成</value></data>
-  <data name="Calibration_SuccessMessageFormat" xml:space="preserve"><value>10cm &#8776; {0}，系数已更新为 {1}。</value></data>
-  <data name="Calibration_FailureTitle" xml:space="preserve"><value>校准失败</value></data>
-  <data name="Calibration_FailureMessage" xml:space="preserve"><value>移动距离过短或未检测到移动，请重试。</value></data>
-  <data name="Calibration_StatusWaiting" xml:space="preserve"><value>按任意键开始记录...</value></data>
-  <data name="Calibration_StatusMovingFormat" xml:space="preserve"><value>已移动 {0}</value></data>
 
   <data name="Calibration_InstructionEnter" xml:space="preserve"><value>按回车开始记录，再按回车结束记录并计算距离系数</value></data>
   <data name="Calibration_LengthLabel" xml:space="preserve"><value>标尺长度</value></data>

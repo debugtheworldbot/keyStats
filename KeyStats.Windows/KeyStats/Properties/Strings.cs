@@ -12,10 +12,7 @@ public static class Strings
     private static string Get(string key) => Rm.GetString(key) ?? key;
 
     public static string App_Name => Get(nameof(App_Name));
-    public static string Common_Ok => Get(nameof(Common_Ok));
     public static string Common_Cancel => Get(nameof(Common_Cancel));
-    public static string Common_Close => Get(nameof(Common_Close));
-    public static string Common_Retry => Get(nameof(Common_Retry));
     public static string Common_Open => Get(nameof(Common_Open));
     public static string Common_Import => Get(nameof(Common_Import));
     public static string Common_Export => Get(nameof(Common_Export));
@@ -73,8 +70,6 @@ public static class Strings
     public static string Settings_OpenGitHubFailedMessage => Get(nameof(Settings_OpenGitHubFailedMessage));
 
     public static string Stats_TodayHeader => Get(nameof(Stats_TodayHeader));
-    public static string Stats_PeakKpsLabel => Get(nameof(Stats_PeakKpsLabel));
-    public static string Stats_PeakCpsLabel => Get(nameof(Stats_PeakCpsLabel));
     public static string Stats_KeyPresses => Get(nameof(Stats_KeyPresses));
     public static string Stats_MouseClicks => Get(nameof(Stats_MouseClicks));
     public static string Stats_MouseClickDetail => Get(nameof(Stats_MouseClickDetail));
@@ -149,19 +144,8 @@ public static class Strings
 
     public static string Calibration_WindowTitle => Get(nameof(Calibration_WindowTitle));
     public static string Calibration_HeaderTitle => Get(nameof(Calibration_HeaderTitle));
-    public static string Calibration_Instruction => Get(nameof(Calibration_Instruction));
-    public static string Calibration_StartTitle => Get(nameof(Calibration_StartTitle));
-    public static string Calibration_StartMessage => Get(nameof(Calibration_StartMessage));
     public static string Calibration_Start => Get(nameof(Calibration_Start));
-    public static string Calibration_FinishTitle => Get(nameof(Calibration_FinishTitle));
-    public static string Calibration_FinishMessage => Get(nameof(Calibration_FinishMessage));
     public static string Calibration_Finish => Get(nameof(Calibration_Finish));
-    public static string Calibration_SuccessTitle => Get(nameof(Calibration_SuccessTitle));
-    public static string Calibration_SuccessMessageFormat => Get(nameof(Calibration_SuccessMessageFormat));
-    public static string Calibration_FailureTitle => Get(nameof(Calibration_FailureTitle));
-    public static string Calibration_FailureMessage => Get(nameof(Calibration_FailureMessage));
-    public static string Calibration_StatusWaiting => Get(nameof(Calibration_StatusWaiting));
-    public static string Calibration_StatusMovingFormat => Get(nameof(Calibration_StatusMovingFormat));
 
     public static string Calibration_InstructionEnter => Get(nameof(Calibration_InstructionEnter));
     public static string Calibration_LengthLabel => Get(nameof(Calibration_LengthLabel));
