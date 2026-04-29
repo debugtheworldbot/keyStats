@@ -13,11 +13,28 @@ public partial class NotificationSettingsWindow : Window
     public NotificationSettingsWindow()
     {
         InitializeComponent();
+        ApplyEveryFormatLabels();
         LoadSettings();
         _isLoading = false;
         Loaded += OnLoaded;
         Closed += OnClosed;
         ThemeManager.Instance.ThemeChanged += OnThemeChanged;
+    }
+
+    private void ApplyEveryFormatLabels()
+    {
+        // Split the localized "Every {0} times" sentence around {0} so the TextBox
+        // can sit between the two halves without forcing translators into a brittle
+        // prefix+suffix pair (different word orders break that pattern).
+        var format = KeyStats.Properties.Strings.NotifSettings_EveryFormat;
+        var idx = format.IndexOf("{0}", System.StringComparison.Ordinal);
+        var prefix = idx >= 0 ? format.Substring(0, idx) : format;
+        var suffix = idx >= 0 ? format.Substring(idx + 3) : string.Empty;
+
+        KeyEveryPrefixText.Text = prefix;
+        KeyEverySuffixText.Text = suffix;
+        ClickEveryPrefixText.Text = prefix;
+        ClickEverySuffixText.Text = suffix;
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)

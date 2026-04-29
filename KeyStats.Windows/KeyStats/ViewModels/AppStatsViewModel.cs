@@ -144,11 +144,11 @@ public class AppStatsViewModel : ViewModelBase
         ScrollHeader = BuildHeader(KeyStats.Properties.Strings.AppStats_ColumnScroll, SortMetric.Scroll);
     }
 
+    private const string SortIndicator = "↓"; // ↓ — direction-only glyph, not localized
+
     private string BuildHeader(string baseText, SortMetric metric)
     {
-        return _sortMetric == metric
-            ? $"{baseText} {KeyStats.Properties.Strings.AppStats_SortIndicator}"
-            : baseText;
+        return _sortMetric == metric ? $"{baseText} {SortIndicator}" : baseText;
     }
 
     private void RefreshData()

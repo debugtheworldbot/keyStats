@@ -29,14 +29,14 @@
                 <TextBlock Text="{x:Static p:Strings.NotifSettings_KeyCardTitle}" FontSize="13" FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="{x:Static p:Strings.NotifSettings_EveryPrefix}" FontSize="12"
+                    <TextBlock x:Name="KeyEveryPrefixText" FontSize="12"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                VerticalAlignment="Center"/>
                     <TextBox x:Name="KeyPressThresholdBox" Width="80" TextAlignment="Center"
                              FontSize="12" Padding="4,4" VerticalContentAlignment="Center"
                              PreviewTextInput="NumericOnly_PreviewTextInput"
                              TextChanged="OnThresholdTextChanged"/>
-                    <TextBlock Text="{x:Static p:Strings.NotifSettings_TimesSuffix}" FontSize="12"
+                    <TextBlock x:Name="KeyEverySuffixText" FontSize="12"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                VerticalAlignment="Center"/>
                 </StackPanel>
@@ -49,14 +49,14 @@
                 <TextBlock Text="{x:Static p:Strings.NotifSettings_ClickCardTitle}" FontSize="13" FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="{x:Static p:Strings.NotifSettings_EveryPrefix}" FontSize="12"
+                    <TextBlock x:Name="ClickEveryPrefixText" FontSize="12"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                VerticalAlignment="Center"/>
                     <TextBox x:Name="ClickThresholdBox" Width="80" TextAlignment="Center"
                              FontSize="12" Padding="4,4" VerticalContentAlignment="Center"
                              PreviewTextInput="NumericOnly_PreviewTextInput"
                              TextChanged="OnThresholdTextChanged"/>
-                    <TextBlock Text="{x:Static p:Strings.NotifSettings_TimesSuffix}" FontSize="12"
+                    <TextBlock x:Name="ClickEverySuffixText" FontSize="12"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                VerticalAlignment="Center"/>
                 </StackPanel>

@@ -149,7 +149,6 @@
   <data name="AppStats_ColumnKeys" xml:space="preserve"><value>Keys</value></data>
   <data name="AppStats_ColumnClicks" xml:space="preserve"><value>Clicks</value></data>
   <data name="AppStats_ColumnScroll" xml:space="preserve"><value>Scroll</value></data>
-  <data name="AppStats_SortIndicator" xml:space="preserve"><value>↓</value></data>
   <data name="AppStats_SummaryFormat" xml:space="preserve"><value>Total: {0} keys | {1} clicks | {2} scroll</value></data>
   <data name="AppStats_Empty" xml:space="preserve"><value>No app data yet</value></data>
   <data name="AppStats_UnknownApp" xml:space="preserve"><value>Unknown app</value></data>
@@ -211,8 +210,7 @@
   <data name="NotifSettings_Enable" xml:space="preserve"><value>Enable notifications</value></data>
   <data name="NotifSettings_KeyCardTitle" xml:space="preserve"><value>Key Press Notifications</value></data>
   <data name="NotifSettings_ClickCardTitle" xml:space="preserve"><value>Mouse Click Notifications</value></data>
-  <data name="NotifSettings_EveryPrefix" xml:space="preserve"><value>Every </value></data>
-  <data name="NotifSettings_TimesSuffix" xml:space="preserve"><value> times</value></data>
+  <data name="NotifSettings_EveryFormat" xml:space="preserve"><value>Every {0} times</value></data>
   <data name="NotifSettings_Hint" xml:space="preserve"><value>Example: set to 1000 to be notified at 1000, 2000, 3000…</value></data>
 
   <!-- ImportModeDialog -->

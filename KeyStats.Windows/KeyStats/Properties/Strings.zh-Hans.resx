@@ -149,7 +149,6 @@
   <data name="AppStats_ColumnKeys" xml:space="preserve"><value>键盘</value></data>
   <data name="AppStats_ColumnClicks" xml:space="preserve"><value>点击</value></data>
   <data name="AppStats_ColumnScroll" xml:space="preserve"><value>滚轮</value></data>
-  <data name="AppStats_SortIndicator" xml:space="preserve"><value>↓</value></data>
   <data name="AppStats_SummaryFormat" xml:space="preserve"><value>总计: {0} 键盘 | {1} 点击 | {2} 滚动</value></data>
   <data name="AppStats_Empty" xml:space="preserve"><value>暂无应用数据</value></data>
   <data name="AppStats_UnknownApp" xml:space="preserve"><value>未知应用</value></data>
@@ -211,8 +210,7 @@
   <data name="NotifSettings_Enable" xml:space="preserve"><value>启用通知</value></data>
   <data name="NotifSettings_KeyCardTitle" xml:space="preserve"><value>按键次数通知</value></data>
   <data name="NotifSettings_ClickCardTitle" xml:space="preserve"><value>鼠标点击通知</value></data>
-  <data name="NotifSettings_EveryPrefix" xml:space="preserve"><value>每 </value></data>
-  <data name="NotifSettings_TimesSuffix" xml:space="preserve"><value> 次通知一次</value></data>
+  <data name="NotifSettings_EveryFormat" xml:space="preserve"><value>每 {0} 次通知一次</value></data>
   <data name="NotifSettings_Hint" xml:space="preserve"><value>例如：设为 1000，则在 1000、2000、3000… 次时通知。</value></data>
 
   <!-- ImportModeDialog -->

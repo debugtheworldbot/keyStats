@@ -136,6 +136,11 @@ public partial class SettingsWindow : Window
 
         if (result == MessageBoxResult.OK)
         {
+            App.CurrentApp?.TrackClick("settings_language_change", new System.Collections.Generic.Dictionary<string, object?>
+            {
+                ["from"] = oldPref,
+                ["to"] = newPref,
+            });
             StatsManager.Instance.Settings.LanguagePreference = newPref!;
             // SaveSettings() is debounced (2s) — RestartApp would spawn the new
             // process before the disk write happens, so it would read the old
@@ -145,6 +150,7 @@ public partial class SettingsWindow : Window
         }
         else
         {
+            App.CurrentApp?.TrackClick("settings_language_change_cancelled");
             // User cancelled — revert ComboBox to the previously persisted value.
             _isInitializingLanguage = true;
             LanguageComboBox.SelectedItem = LanguageComboBox.Items
@@ -164,9 +170,11 @@ public partial class SettingsWindow : Window
                 Process.Start(exePath);
             }
         }
-        catch
+        catch (System.Exception ex)
         {
-            // If relaunch fails, the user will simply have to start the app manually.
+            // If relaunch fails, the user will have to start the app manually.
+            // Log so the failure is recoverable from a bug report.
+            System.Console.WriteLine($"RestartApp: relaunch failed: {ex}");
         }
         Application.Current.Shutdown();
     }

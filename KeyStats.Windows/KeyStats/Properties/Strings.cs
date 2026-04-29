@@ -109,7 +109,6 @@ public static class Strings
     public static string AppStats_ColumnKeys => Get(nameof(AppStats_ColumnKeys));
     public static string AppStats_ColumnClicks => Get(nameof(AppStats_ColumnClicks));
     public static string AppStats_ColumnScroll => Get(nameof(AppStats_ColumnScroll));
-    public static string AppStats_SortIndicator => Get(nameof(AppStats_SortIndicator));
     public static string AppStats_SummaryFormat => Get(nameof(AppStats_SummaryFormat));
     public static string AppStats_Empty => Get(nameof(AppStats_Empty));
     public static string AppStats_UnknownApp => Get(nameof(AppStats_UnknownApp));
@@ -170,8 +169,7 @@ public static class Strings
     public static string NotifSettings_Enable => Get(nameof(NotifSettings_Enable));
     public static string NotifSettings_KeyCardTitle => Get(nameof(NotifSettings_KeyCardTitle));
     public static string NotifSettings_ClickCardTitle => Get(nameof(NotifSettings_ClickCardTitle));
-    public static string NotifSettings_EveryPrefix => Get(nameof(NotifSettings_EveryPrefix));
-    public static string NotifSettings_TimesSuffix => Get(nameof(NotifSettings_TimesSuffix));
+    public static string NotifSettings_EveryFormat => Get(nameof(NotifSettings_EveryFormat));
     public static string NotifSettings_Hint => Get(nameof(NotifSettings_Hint));
 
     public static string ImportDialog_HeaderTitle => Get(nameof(ImportDialog_HeaderTitle));
