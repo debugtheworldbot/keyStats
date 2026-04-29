@@ -91,4 +91,16 @@
   <data name="Settings_Language_System" xml:space="preserve"><value>System</value></data>
   <data name="Language_RestartPromptTitle" xml:space="preserve"><value>Restart Required</value></data>
   <data name="Language_RestartPromptMessage" xml:space="preserve"><value>KeyStats needs to restart to apply the new language. Restart now?</value></data>
+
+  <data name="Settings_WindowTitle" xml:space="preserve"><value>Settings - KeyStats</value></data>
+  <data name="Settings_HeaderTitle" xml:space="preserve"><value>Settings</value></data>
+  <data name="Settings_HeaderSubtitle" xml:space="preserve"><value>Manage import/export and notification settings here</value></data>
+  <data name="Settings_GitHubTooltip" xml:space="preserve"><value>Open GitHub repository</value></data>
+  <data name="Settings_DataImportExport" xml:space="preserve"><value>Data Import / Export</value></data>
+  <data name="Settings_DataImportExportDesc" xml:space="preserve"><value>Import or export statistics from JSON</value></data>
+  <data name="Settings_Notifications" xml:space="preserve"><value>Notifications</value></data>
+  <data name="Settings_NotificationsDesc" xml:space="preserve"><value>Configure key/click threshold notifications</value></data>
+  <data name="Settings_DistanceCalibration" xml:space="preserve"><value>Distance Calibration</value></data>
+  <data name="Settings_DistanceCalibrationDesc" xml:space="preserve"><value>Calibrate the mouse movement coefficient</value></data>
+  <data name="Settings_VersionFormat" xml:space="preserve"><value>Current version {0}</value></data>
 </root>

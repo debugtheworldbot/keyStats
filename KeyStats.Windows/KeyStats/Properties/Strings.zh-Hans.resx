@@ -91,4 +91,16 @@
   <data name="Settings_Language_System" xml:space="preserve"><value>跟随系统</value></data>
   <data name="Language_RestartPromptTitle" xml:space="preserve"><value>需要重启</value></data>
   <data name="Language_RestartPromptMessage" xml:space="preserve"><value>需要重启 KeyStats 才能切换语言。是否立即重启？</value></data>
+
+  <data name="Settings_WindowTitle" xml:space="preserve"><value>设置 - KeyStats</value></data>
+  <data name="Settings_HeaderTitle" xml:space="preserve"><value>设置</value></data>
+  <data name="Settings_HeaderSubtitle" xml:space="preserve"><value>在这里管理导入导出与通知设置</value></data>
+  <data name="Settings_GitHubTooltip" xml:space="preserve"><value>打开 GitHub 仓库</value></data>
+  <data name="Settings_DataImportExport" xml:space="preserve"><value>数据导入 / 导出</value></data>
+  <data name="Settings_DataImportExportDesc" xml:space="preserve"><value>从 JSON 导入或导出统计数据</value></data>
+  <data name="Settings_Notifications" xml:space="preserve"><value>通知设置</value></data>
+  <data name="Settings_NotificationsDesc" xml:space="preserve"><value>设置按键/点击阈值通知</value></data>
+  <data name="Settings_DistanceCalibration" xml:space="preserve"><value>距离校准</value></data>
+  <data name="Settings_DistanceCalibrationDesc" xml:space="preserve"><value>校准鼠标移动距离系数</value></data>
+  <data name="Settings_VersionFormat" xml:space="preserve"><value>当前版本 {0}</value></data>
 </root>

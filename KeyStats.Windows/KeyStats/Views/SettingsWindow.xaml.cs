@@ -15,7 +15,7 @@ public partial class SettingsWindow : Window
     public SettingsWindow()
     {
         InitializeComponent();
-        VersionTextBlock.Text = $"\u5f53\u524d\u7248\u672c {GetDisplayVersion()}";
+        VersionTextBlock.Text = string.Format(KeyStats.Properties.Strings.Settings_VersionFormat, GetDisplayVersion());
         Loaded += OnLoaded;
         Closed += OnClosed;
         ThemeManager.Instance.ThemeChanged += OnThemeChanged;

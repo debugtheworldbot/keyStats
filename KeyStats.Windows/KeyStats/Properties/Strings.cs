@@ -51,4 +51,16 @@ public static class Strings
     public static string Settings_Language_System => Get(nameof(Settings_Language_System));
     public static string Language_RestartPromptTitle => Get(nameof(Language_RestartPromptTitle));
     public static string Language_RestartPromptMessage => Get(nameof(Language_RestartPromptMessage));
+
+    public static string Settings_WindowTitle => Get(nameof(Settings_WindowTitle));
+    public static string Settings_HeaderTitle => Get(nameof(Settings_HeaderTitle));
+    public static string Settings_HeaderSubtitle => Get(nameof(Settings_HeaderSubtitle));
+    public static string Settings_GitHubTooltip => Get(nameof(Settings_GitHubTooltip));
+    public static string Settings_DataImportExport => Get(nameof(Settings_DataImportExport));
+    public static string Settings_DataImportExportDesc => Get(nameof(Settings_DataImportExportDesc));
+    public static string Settings_Notifications => Get(nameof(Settings_Notifications));
+    public static string Settings_NotificationsDesc => Get(nameof(Settings_NotificationsDesc));
+    public static string Settings_DistanceCalibration => Get(nameof(Settings_DistanceCalibration));
+    public static string Settings_DistanceCalibrationDesc => Get(nameof(Settings_DistanceCalibrationDesc));
+    public static string Settings_VersionFormat => Get(nameof(Settings_VersionFormat));
 }
