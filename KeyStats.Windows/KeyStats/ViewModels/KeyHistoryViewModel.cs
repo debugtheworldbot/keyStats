@@ -40,7 +40,7 @@ public class KeyHistoryViewModel : ViewModelBase
     private string _summaryText = string.Empty;
     private bool _hasData;
     private bool _isEmpty = true;
-    private string _emptyText = "暂无历史按键数据";
+    private string _emptyText = KeyStats.Properties.Strings.KeyHistory_Empty;
 
     public ObservableCollection<KeyHistoryChartItem> PieChartItems { get; } = new();
     public ObservableCollection<KeyHistoryChartItem> BarChartItems { get; } = new();
@@ -128,7 +128,10 @@ public class KeyHistoryViewModel : ViewModelBase
 
         IsEmpty = false;
         HasData = true;
-        SummaryText = $"总按键: {manager.FormatNumber(total)} · 按键种类: {manager.FormatNumber(distinct)}";
+        SummaryText = string.Format(
+            KeyStats.Properties.Strings.KeyHistory_SummaryFormat,
+            manager.FormatNumber(total),
+            manager.FormatNumber(distinct));
 
         var topForBar = allItems.Take(20).ToList();
         var maxCount = Math.Max(1, topForBar.Select(x => x.Count).DefaultIfEmpty(0).Max());

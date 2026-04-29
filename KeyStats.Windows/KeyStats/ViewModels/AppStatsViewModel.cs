@@ -43,10 +43,10 @@ public class AppStatsViewModel : ViewModelBase
     private string _summaryText = "";
     private bool _hasData;
     private bool _isEmpty = true;
-    private string _emptyText = "暂无应用数据";
-    private string _keysHeader = "键盘";
-    private string _clicksHeader = "点击";
-    private string _scrollHeader = "滚轮";
+    private string _emptyText = KeyStats.Properties.Strings.AppStats_Empty;
+    private string _keysHeader = KeyStats.Properties.Strings.AppStats_ColumnKeys;
+    private string _clicksHeader = KeyStats.Properties.Strings.AppStats_ColumnClicks;
+    private string _scrollHeader = KeyStats.Properties.Strings.AppStats_ColumnScroll;
 
     public ObservableCollection<AppStatsRowItem> AppStatsItems { get; } = new();
 
@@ -139,14 +139,16 @@ public class AppStatsViewModel : ViewModelBase
 
     private void RefreshHeaders()
     {
-        KeysHeader = BuildHeader("键盘", SortMetric.Keys);
-        ClicksHeader = BuildHeader("点击", SortMetric.Clicks);
-        ScrollHeader = BuildHeader("滚轮", SortMetric.Scroll);
+        KeysHeader = BuildHeader(KeyStats.Properties.Strings.AppStats_ColumnKeys, SortMetric.Keys);
+        ClicksHeader = BuildHeader(KeyStats.Properties.Strings.AppStats_ColumnClicks, SortMetric.Clicks);
+        ScrollHeader = BuildHeader(KeyStats.Properties.Strings.AppStats_ColumnScroll, SortMetric.Scroll);
     }
 
     private string BuildHeader(string baseText, SortMetric metric)
     {
-        return _sortMetric == metric ? $"{baseText} ↓" : baseText;
+        return _sortMetric == metric
+            ? $"{baseText} {KeyStats.Properties.Strings.AppStats_SortIndicator}"
+            : baseText;
     }
 
     private void RefreshData()
@@ -211,9 +213,11 @@ public class AppStatsViewModel : ViewModelBase
 
         SummaryText = items.Count == 0
             ? ""
-            : $"总计: {manager.FormatHistoryValue(StatsManager.HistoryMetric.KeyPresses, totalKeys)} 键盘 | " +
-              $"{manager.FormatHistoryValue(StatsManager.HistoryMetric.Clicks, totalClicks)} 点击 | " +
-              $"{manager.FormatHistoryValue(StatsManager.HistoryMetric.ScrollDistance, totalScroll)} 滚动";
+            : string.Format(
+                KeyStats.Properties.Strings.AppStats_SummaryFormat,
+                manager.FormatHistoryValue(StatsManager.HistoryMetric.KeyPresses, totalKeys),
+                manager.FormatHistoryValue(StatsManager.HistoryMetric.Clicks, totalClicks),
+                manager.FormatHistoryValue(StatsManager.HistoryMetric.ScrollDistance, totalScroll));
 
         IsEmpty = AppStatsItems.Count == 0;
         HasData = !IsEmpty;
@@ -229,7 +233,7 @@ public class AppStatsViewModel : ViewModelBase
         {
             return stats.AppName;
         }
-        return "未知应用";
+        return KeyStats.Properties.Strings.AppStats_UnknownApp;
     }
 
     private double SortValue(AppStats stats)

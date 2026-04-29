@@ -103,6 +103,16 @@ public static class Strings
     public static string AppStats_Range30Days => Get(nameof(AppStats_Range30Days));
     public static string AppStats_RangeAll => Get(nameof(AppStats_RangeAll));
     public static string AppStats_ColumnApp => Get(nameof(AppStats_ColumnApp));
+    public static string AppStats_ColumnKeys => Get(nameof(AppStats_ColumnKeys));
+    public static string AppStats_ColumnClicks => Get(nameof(AppStats_ColumnClicks));
+    public static string AppStats_ColumnScroll => Get(nameof(AppStats_ColumnScroll));
+    public static string AppStats_SortIndicator => Get(nameof(AppStats_SortIndicator));
+    public static string AppStats_SummaryFormat => Get(nameof(AppStats_SummaryFormat));
+    public static string AppStats_Empty => Get(nameof(AppStats_Empty));
+    public static string AppStats_UnknownApp => Get(nameof(AppStats_UnknownApp));
+    public static string History_TotalFormat => Get(nameof(History_TotalFormat));
+    public static string KeyHistory_Empty => Get(nameof(KeyHistory_Empty));
+    public static string KeyHistory_SummaryFormat => Get(nameof(KeyHistory_SummaryFormat));
 
     public static string Heatmap_WindowTitle => Get(nameof(Heatmap_WindowTitle));
     public static string Heatmap_HeaderTitle => Get(nameof(Heatmap_HeaderTitle));

@@ -143,6 +143,16 @@
   <data name="AppStats_Range30Days" xml:space="preserve"><value>过去30天</value></data>
   <data name="AppStats_RangeAll" xml:space="preserve"><value>全部</value></data>
   <data name="AppStats_ColumnApp" xml:space="preserve"><value>应用</value></data>
+  <data name="AppStats_ColumnKeys" xml:space="preserve"><value>键盘</value></data>
+  <data name="AppStats_ColumnClicks" xml:space="preserve"><value>点击</value></data>
+  <data name="AppStats_ColumnScroll" xml:space="preserve"><value>滚轮</value></data>
+  <data name="AppStats_SortIndicator" xml:space="preserve"><value>↓</value></data>
+  <data name="AppStats_SummaryFormat" xml:space="preserve"><value>总计: {0} 键盘 | {1} 点击 | {2} 滚动</value></data>
+  <data name="AppStats_Empty" xml:space="preserve"><value>暂无应用数据</value></data>
+  <data name="AppStats_UnknownApp" xml:space="preserve"><value>未知应用</value></data>
+  <data name="History_TotalFormat" xml:space="preserve"><value>总计: {0}</value></data>
+  <data name="KeyHistory_Empty" xml:space="preserve"><value>暂无历史按键数据</value></data>
+  <data name="KeyHistory_SummaryFormat" xml:space="preserve"><value>总按键: {0} · 按键种类: {1}</value></data>
 
   <data name="Heatmap_WindowTitle" xml:space="preserve"><value>键盘热力图</value></data>
   <data name="Heatmap_HeaderTitle" xml:space="preserve"><value>键盘热力图</value></data>
