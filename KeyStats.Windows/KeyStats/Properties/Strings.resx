@@ -119,6 +119,7 @@
   <data name="Stats_MouseDistance" xml:space="preserve"><value>Mouse Distance</value></data>
   <data name="Stats_ScrollDistance" xml:space="preserve"><value>Scroll Distance</value></data>
   <data name="Stats_KeyBreakdown" xml:space="preserve"><value>Key Distribution</value></data>
+  <data name="KeyBreakdown_Empty" xml:space="preserve"><value>No key data yet</value></data>
   <data name="Stats_KeyboardHeatmap" xml:space="preserve"><value>Keyboard Heatmap</value></data>
   <data name="Stats_KeyHistory" xml:space="preserve"><value>Key History</value></data>
   <data name="Stats_ActiveApps" xml:space="preserve"><value>Active Apps</value></data>
@@ -153,6 +154,9 @@
   <data name="History_TotalFormat" xml:space="preserve"><value>Total: {0}</value></data>
   <data name="KeyHistory_Empty" xml:space="preserve"><value>No key history data yet</value></data>
   <data name="KeyHistory_SummaryFormat" xml:space="preserve"><value>Total keys: {0} · Distinct keys: {1}</value></data>
+  <data name="PieChart_Empty" xml:space="preserve"><value>No data</value></data>
+  <data name="PieChart_CountFormat" xml:space="preserve"><value>Count: {0}</value></data>
+  <data name="PieChart_PercentFormat" xml:space="preserve"><value>Share: {0}</value></data>
 
   <data name="Heatmap_WindowTitle" xml:space="preserve"><value>Keyboard Heatmap</value></data>
   <data name="Heatmap_HeaderTitle" xml:space="preserve"><value>Keyboard Heatmap</value></data>

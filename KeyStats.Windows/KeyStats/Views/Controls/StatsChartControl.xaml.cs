@@ -53,15 +53,15 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
     private SolidColorBrush _textBrush = new(SystemColors.GrayTextColor);
     private SolidColorBrush _highlightBrush = new(Color.FromRgb(255, 100, 50));
 
-    // 存储数据点位置信息，用于鼠标悬停检测
+    // Stores data point positions for mouse hover hit-testing
     private List<PointData> _dataPoints = new();
 
-    // 悬停标签（使用 Border 包裹以遮挡静态标签）
+    // Hover labels (wrapped in Border to occlude the static axis labels)
     private Border? _hoverYContainer;
     private Border? _hoverXContainer;
     private SolidColorBrush _hoverBgBrush = new(Color.FromArgb(230, 248, 248, 248));
-    
-    // 绘图区域参数（用于 hover 检测）
+
+    // Plot area parameters (used for hover hit-testing)
     private double _plotLeft;
     private double _plotTop;
     private double _plotWidth;
@@ -73,7 +73,7 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
         UpdateBrushesFromTheme();
         SizeChanged += OnSizeChanged;
 
-        // 添加鼠标移动事件处理
+        // Wire up mouse move handlers for hover detection
         ChartCanvas.MouseMove += OnCanvasMouseMove;
         ChartCanvas.MouseLeave += OnCanvasMouseLeave;
 
@@ -121,13 +121,13 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
     {
         if (d is StatsChartControl control)
         {
-            // 取消订阅旧集合的变化事件
+            // Unsubscribe from the old collection's change events
             if (e.OldValue is INotifyCollectionChanged oldCollection)
             {
                 oldCollection.CollectionChanged -= control.OnChartDataCollectionChanged;
             }
 
-            // 订阅新集合的变化事件
+            // Subscribe to the new collection's change events
             if (e.NewValue is INotifyCollectionChanged newCollection)
             {
                 newCollection.CollectionChanged += control.OnChartDataCollectionChanged;
@@ -139,7 +139,7 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
 
     private void OnChartDataCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        // 当集合内容变化时，重新绘制图表
+        // Redraw the chart when the underlying collection changes
         DrawChart();
     }
 
@@ -340,8 +340,8 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
             var point = new Point(x, y);
             points.Add(point);
             pointList.Add(point);
-            
-            // 存储数据点信息
+
+            // Record the data point for later hover hit-testing
             _dataPoints.Add(new PointData
             {
                 DataPoint = data[i],
@@ -397,8 +397,8 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
             Canvas.SetLeft(bar, x);
             Canvas.SetTop(bar, y);
             ChartCanvas.Children.Add(bar);
-            
-            // 存储数据点信息（柱状图的中心位置）
+
+            // Record the data point at the bar center for hover hit-testing
             var centerX = x + barWidth / 2;
             var centerY = y;
             _dataPoints.Add(new PointData
@@ -422,7 +422,7 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
 
     private string FormatValue(double value)
     {
-        // 根据当前选择的指标类型使用不同的格式化方法
+        // Pick the formatter that matches the currently selected metric
         var metric = SelectedMetricIndex switch
         {
             0 => StatsManager.HistoryMetric.Clicks,
@@ -438,16 +438,16 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
     private void OnCanvasMouseMove(object sender, System.Windows.Input.MouseEventArgs e)
     {
         var position = e.GetPosition(ChartCanvas);
-        
-        // 只在实际绘图区域内检测
+
+        // Only hit-test inside the actual plot area
         if (position.X < _plotLeft || position.X > _plotLeft + _plotWidth ||
             position.Y < _plotTop || position.Y > _plotTop + _plotHeight)
         {
             HideHoverLabels();
             return;
         }
-        
-        // 只按 X 轴距离查找最近的数据点（鼠标在绘图区域内任意高度都能触发）
+
+        // Find the nearest data point by X distance only (any Y inside the plot area triggers hover)
         PointData? closestPoint = null;
         double minDistanceX = double.MaxValue;
 
@@ -483,13 +483,13 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
     {
         var plotBottom = _plotTop + _plotHeight;
 
-        // 移除旧的标签
+        // Remove the previous hover labels
         if (_hoverYContainer != null)
             ChartCanvas.Children.Remove(_hoverYContainer);
         if (_hoverXContainer != null)
             ChartCanvas.Children.Remove(_hoverXContainer);
 
-        // 创建 Y 轴标签（显示数值），带背景遮挡静态标签
+        // Build the Y-axis hover label (value) with a background that covers the static label
         var yLabel = CreateLabel(FormatValue(pointData.DataPoint.Value), _highlightBrush, 10);
         yLabel.FontWeight = FontWeights.Bold;
         _hoverYContainer = new Border
@@ -504,7 +504,7 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
         Canvas.SetTop(_hoverYContainer, pointData.Position.Y - _hoverYContainer.DesiredSize.Height / 2);
         ChartCanvas.Children.Add(_hoverYContainer);
 
-        // 创建 X 轴标签（显示日期），带背景遮挡静态标签
+        // Build the X-axis hover label (date) with a background that covers the static label
         var xLabel = CreateLabel(pointData.DataPoint.Date.ToString("M/d"), _highlightBrush, 10);
         xLabel.FontWeight = FontWeights.Bold;
         _hoverXContainer = new Border

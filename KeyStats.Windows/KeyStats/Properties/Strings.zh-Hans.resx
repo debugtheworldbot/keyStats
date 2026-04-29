@@ -119,6 +119,7 @@
   <data name="Stats_MouseDistance" xml:space="preserve"><value>鼠标移动</value></data>
   <data name="Stats_ScrollDistance" xml:space="preserve"><value>滚轮滚动</value></data>
   <data name="Stats_KeyBreakdown" xml:space="preserve"><value>按键分布</value></data>
+  <data name="KeyBreakdown_Empty" xml:space="preserve"><value>暂无按键记录</value></data>
   <data name="Stats_KeyboardHeatmap" xml:space="preserve"><value>键盘热力图</value></data>
   <data name="Stats_KeyHistory" xml:space="preserve"><value>历史按键统计</value></data>
   <data name="Stats_ActiveApps" xml:space="preserve"><value>活跃应用</value></data>
@@ -153,6 +154,9 @@
   <data name="History_TotalFormat" xml:space="preserve"><value>总计: {0}</value></data>
   <data name="KeyHistory_Empty" xml:space="preserve"><value>暂无历史按键数据</value></data>
   <data name="KeyHistory_SummaryFormat" xml:space="preserve"><value>总按键: {0} · 按键种类: {1}</value></data>
+  <data name="PieChart_Empty" xml:space="preserve"><value>暂无数据</value></data>
+  <data name="PieChart_CountFormat" xml:space="preserve"><value>次数: {0}</value></data>
+  <data name="PieChart_PercentFormat" xml:space="preserve"><value>比例: {0}</value></data>
 
   <data name="Heatmap_WindowTitle" xml:space="preserve"><value>键盘热力图</value></data>
   <data name="Heatmap_HeaderTitle" xml:space="preserve"><value>键盘热力图</value></data>

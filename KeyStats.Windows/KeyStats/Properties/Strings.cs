@@ -79,6 +79,7 @@ public static class Strings
     public static string Stats_MouseDistance => Get(nameof(Stats_MouseDistance));
     public static string Stats_ScrollDistance => Get(nameof(Stats_ScrollDistance));
     public static string Stats_KeyBreakdown => Get(nameof(Stats_KeyBreakdown));
+    public static string KeyBreakdown_Empty => Get(nameof(KeyBreakdown_Empty));
     public static string Stats_KeyboardHeatmap => Get(nameof(Stats_KeyboardHeatmap));
     public static string Stats_KeyHistory => Get(nameof(Stats_KeyHistory));
     public static string Stats_ActiveApps => Get(nameof(Stats_ActiveApps));
@@ -113,6 +114,9 @@ public static class Strings
     public static string History_TotalFormat => Get(nameof(History_TotalFormat));
     public static string KeyHistory_Empty => Get(nameof(KeyHistory_Empty));
     public static string KeyHistory_SummaryFormat => Get(nameof(KeyHistory_SummaryFormat));
+    public static string PieChart_Empty => Get(nameof(PieChart_Empty));
+    public static string PieChart_CountFormat => Get(nameof(PieChart_CountFormat));
+    public static string PieChart_PercentFormat => Get(nameof(PieChart_PercentFormat));
 
     public static string Heatmap_WindowTitle => Get(nameof(Heatmap_WindowTitle));
     public static string Heatmap_HeaderTitle => Get(nameof(Heatmap_HeaderTitle));

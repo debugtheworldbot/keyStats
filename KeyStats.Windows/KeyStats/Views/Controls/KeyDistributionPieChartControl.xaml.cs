@@ -112,8 +112,8 @@ public partial class KeyDistributionPieChartControl : UserControl
     private void ShowCenterContent(KeyHistoryChartItem item)
     {
         CenterKeyText.Text = item.Key;
-        CenterCountText.Text = $"次数: {item.CountText}";
-        CenterPercentText.Text = $"比例: {item.PercentageText}";
+        CenterCountText.Text = string.Format(KeyStats.Properties.Strings.PieChart_CountFormat, item.CountText);
+        CenterPercentText.Text = string.Format(KeyStats.Properties.Strings.PieChart_PercentFormat, item.PercentageText);
     }
 
     private void ResetCenterContent()
@@ -177,13 +177,13 @@ public partial class KeyDistributionPieChartControl : UserControl
 
     private void DrawEmptyState()
     {
-        CenterKeyText.Text = "暂无数据";
+        CenterKeyText.Text = KeyStats.Properties.Strings.PieChart_Empty;
         CenterCountText.Text = string.Empty;
         CenterPercentText.Text = string.Empty;
 
         var text = new TextBlock
         {
-            Text = "暂无数据",
+            Text = KeyStats.Properties.Strings.PieChart_Empty,
             FontSize = 12,
             Foreground = Application.Current?.Resources["TextSecondaryBrush"] as Brush ?? Brushes.Gray
         };
