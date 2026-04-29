@@ -124,8 +124,30 @@ final class HelperXPCClient {
     /// 让 helper 主动调一次 `AXIsProcessTrustedWithOptions(prompt: true)`，把自己注册进
     /// 系统设置的辅助功能列表。completion 回调发生在 XPC 队列，调用方自行切主队列。
     func promptAccessibility(completion: @escaping (Bool) -> Void) {
-        withProxy({ proxy in proxy.promptAccessibility(reply: completion) },
-                  fallback: { completion(false) })
+        lock.lock()
+        let hasConnection = connection != nil
+        lock.unlock()
+
+        let sendPrompt: () -> Void = { [weak self] in
+            guard let self = self else {
+                completion(false)
+                return
+            }
+            self.sendPromptAccessibility(completion: completion)
+        }
+
+        guard !hasConnection else {
+            sendPrompt()
+            return
+        }
+
+        connect { state in
+            guard case .connected = state else {
+                completion(false)
+                return
+            }
+            sendPrompt()
+        }
     }
 
     func disconnect() {
@@ -138,6 +160,29 @@ final class HelperXPCClient {
     }
 
     // MARK: - Private
+
+    private func sendPromptAccessibility(completion: @escaping (Bool) -> Void) {
+        lock.lock()
+        let c = connection
+        lock.unlock()
+
+        guard let c = c else {
+            completion(false)
+            return
+        }
+
+        let proxy = c.remoteObjectProxyWithErrorHandler { [weak self] err in
+            self?.transition(to: .disconnected(reason: "\(err)"))
+            completion(false)
+        } as? KeyStatsHelperProtocol
+
+        guard let proxy = proxy else {
+            completion(false)
+            return
+        }
+
+        proxy.promptAccessibility(reply: completion)
+    }
 
     private func withProxy<T>(_ fn: (KeyStatsHelperProtocol) -> T,
                               fallback: () -> T) -> T {

@@ -57,7 +57,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Helper 启动
 
     private func bootstrapHelperPipeline() {
-        Task { @MainActor in HelperMigrationPresenter.shared.showIfNeeded() }
         HelperXPCClient.shared.setEventSink(RemoteEventProcessor.shared)
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             do {
@@ -67,7 +66,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 NSLog("[AppDelegate] HelperSupervisor.ensureInstalled failed: \(error)")
             }
             DispatchQueue.main.async {
-                self?.connectHelperAndStart()
+                Task { @MainActor in
+                    HelperMigrationPresenter.shared.showIfNeeded()
+                    self?.connectHelperAndStart()
+                }
             }
         }
     }
@@ -122,10 +124,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             "source": analyticsSource
         ])
         // 先让 helper 调一次 AXIsProcessTrustedWithOptions，把自己写进系统设置的
-        // 辅助功能列表；然后跳转到那个 pane 方便用户授权。
-        HelperXPCClient.shared.promptAccessibility { _ in }
-        openAccessibilitySettingsPane()
-        startPermissionPolling()
+        // 辅助功能列表；再跳转到那个 pane 方便用户授权。
+        HelperXPCClient.shared.promptAccessibility { [weak self] granted in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                if granted {
+                    self.handleAccessibilityPermissionGranted()
+                    return
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                    self?.openAccessibilitySettingsPane()
+                    self?.startPermissionPolling()
+                }
+            }
+        }
     }
 
     private func openAccessibilitySettingsPane() {
