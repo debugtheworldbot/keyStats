@@ -143,4 +143,16 @@
   <data name="AppStats_Range30Days" xml:space="preserve"><value>Last 30 days</value></data>
   <data name="AppStats_RangeAll" xml:space="preserve"><value>All</value></data>
   <data name="AppStats_ColumnApp" xml:space="preserve"><value>App</value></data>
+
+  <data name="Heatmap_WindowTitle" xml:space="preserve"><value>Keyboard Heatmap</value></data>
+  <data name="Heatmap_HeaderTitle" xml:space="preserve"><value>Keyboard Heatmap</value></data>
+  <data name="Heatmap_HeaderSubtitle" xml:space="preserve"><value>Full virtual keyboard view with daily key heat</value></data>
+  <data name="Heatmap_PrevDay" xml:space="preserve"><value>Previous day</value></data>
+  <data name="Heatmap_NextDay" xml:space="preserve"><value>Next day</value></data>
+  <data name="Heatmap_BackToToday" xml:space="preserve"><value>Today</value></data>
+  <data name="Heatmap_NoData" xml:space="preserve"><value>No keyboard activity for this day</value></data>
+  <data name="Heatmap_SummaryFormat" xml:space="preserve"><value>{0} key presses · {1} active keys</value></data>
+  <data name="Heatmap_DatePickerTooltip" xml:space="preserve"><value>Select date</value></data>
+  <data name="Heatmap_DateFormatShort" xml:space="preserve"><value>{0}/{1}</value></data>
+  <data name="Heatmap_DateFormatLong" xml:space="preserve"><value>{0}/{1}/{2}</value></data>
 </root>

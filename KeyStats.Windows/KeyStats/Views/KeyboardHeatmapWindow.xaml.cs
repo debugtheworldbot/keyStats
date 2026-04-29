@@ -93,14 +93,14 @@ public partial class KeyboardHeatmapWindow : Window
 
     private void ApplyLocalizedText()
     {
-        Title = "键盘热力图";
-        TitleText.Text = "键盘热力图";
-        SubtitleText.Text = "按日期查看键盘热区，仅展示聚合计数，不记录输入内容";
-        PrevDayButton.Content = "前一天";
-        NextDayButton.Content = "后一天";
-        BackToTodayButton.Content = "回到今天";
-        EmptyBadgeText.Text = "当天暂无键盘数据";
-        DatePickerButton.ToolTip = "选择日期";
+        Title = KeyStats.Properties.Strings.Heatmap_WindowTitle;
+        TitleText.Text = KeyStats.Properties.Strings.Heatmap_HeaderTitle;
+        SubtitleText.Text = KeyStats.Properties.Strings.Heatmap_HeaderSubtitle;
+        PrevDayButton.Content = KeyStats.Properties.Strings.Heatmap_PrevDay;
+        NextDayButton.Content = KeyStats.Properties.Strings.Heatmap_NextDay;
+        BackToTodayButton.Content = KeyStats.Properties.Strings.Heatmap_BackToToday;
+        EmptyBadgeText.Text = KeyStats.Properties.Strings.Heatmap_NoData;
+        DatePickerButton.ToolTip = KeyStats.Properties.Strings.Heatmap_DatePickerTooltip;
     }
 
     private void UpdateAppearance()
@@ -137,7 +137,7 @@ public partial class KeyboardHeatmapWindow : Window
         var activeKeys = visibleCounts.Values.Count(value => value > 0);
         var totalFormatted = dayData.TotalKeyPresses.ToString("N0", CultureInfo.CurrentCulture);
         var activeFormatted = activeKeys.ToString("N0", CultureInfo.CurrentCulture);
-        SummaryText.Text = string.Format(CultureInfo.CurrentCulture, SummaryTemplate(), totalFormatted, activeFormatted);
+        SummaryText.Text = string.Format(CultureInfo.CurrentCulture, KeyStats.Properties.Strings.Heatmap_SummaryFormat, totalFormatted, activeFormatted);
         DateText.Text = DisplayDateString(_selectedDate);
 
         var hasActivity = dayData.TotalKeyPresses > 0;
@@ -148,19 +148,14 @@ public partial class KeyboardHeatmapWindow : Window
         UpdateDatePickerState();
     }
 
-    private string SummaryTemplate()
-    {
-        return "总按键: {0} · 活跃按键: {1}";
-    }
-
     private string DisplayDateString(DateTime date)
     {
         if (date.Year == DateTime.Today.Year)
         {
-            return $"{date.Month}月{date.Day}日";
+            return string.Format(CultureInfo.CurrentCulture, KeyStats.Properties.Strings.Heatmap_DateFormatShort, date.Month, date.Day);
         }
 
-        return $"{date.Year}年{date.Month}月{date.Day}日";
+        return string.Format(CultureInfo.CurrentCulture, KeyStats.Properties.Strings.Heatmap_DateFormatLong, date.Year, date.Month, date.Day);
     }
 
     private DateTime ClampDate(DateTime date)

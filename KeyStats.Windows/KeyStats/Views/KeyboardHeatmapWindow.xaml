@@ -2,7 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:KeyStats.Views.Controls"
-        Title="键盘热力图"
+        xmlns:p="clr-namespace:KeyStats.Properties"
+        Title="{x:Static p:Strings.Heatmap_WindowTitle}"
         Width="860"
         Height="460"
         MinWidth="860"
@@ -140,12 +141,12 @@
 
         <StackPanel Grid.Row="0" Margin="0,0,0,10">
             <TextBlock x:Name="TitleText"
-                       Text="键盘热力图"
+                       Text="{x:Static p:Strings.Heatmap_HeaderTitle}"
                        FontSize="24"
                        FontWeight="Bold"
                        Foreground="{DynamicResource TextPrimaryBrush}"/>
             <TextBlock x:Name="SubtitleText"
-                       Text="按日期查看键盘热区，仅展示聚合计数，不记录输入内容"
+                       Text="{x:Static p:Strings.Heatmap_HeaderSubtitle}"
                        Margin="0,4,0,0"
                        FontSize="12"
                        Foreground="{DynamicResource TextSecondaryBrush}"/>
@@ -161,13 +162,13 @@
 
             <StackPanel Grid.Column="0" Orientation="Horizontal">
                 <Button x:Name="PrevDayButton"
-                        Content="前一天"
+                        Content="{x:Static p:Strings.Heatmap_PrevDay}"
                         Style="{DynamicResource GhostButton}"
                         Padding="12,5"
                         Margin="0,0,8,0"
                         Click="ShowPreviousDay_Click"/>
                 <Button x:Name="NextDayButton"
-                        Content="后一天"
+                        Content="{x:Static p:Strings.Heatmap_NextDay}"
                         Style="{DynamicResource GhostButton}"
                         Padding="12,5"
                         Click="ShowNextDay_Click"/>
@@ -198,7 +199,7 @@
 
             <Button x:Name="BackToTodayButton"
                     Grid.Column="2"
-                    Content="回到今天"
+                    Content="{x:Static p:Strings.Heatmap_BackToToday}"
                     Style="{DynamicResource GhostButton}"
                     Padding="12,5"
                     Click="BackToToday_Click"
@@ -309,7 +310,7 @@
                                        VerticalAlignment="Center"
                                        Foreground="{DynamicResource TextPrimaryBrush}"/>
                             <TextBlock x:Name="EmptyBadgeText"
-                                       Text="当天暂无键盘数据"
+                                       Text="{x:Static p:Strings.Heatmap_NoData}"
                                        Margin="8,0,0,0"
                                        FontSize="15"
                                        FontWeight="SemiBold"

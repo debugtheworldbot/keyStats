@@ -143,4 +143,16 @@
   <data name="AppStats_Range30Days" xml:space="preserve"><value>过去30天</value></data>
   <data name="AppStats_RangeAll" xml:space="preserve"><value>全部</value></data>
   <data name="AppStats_ColumnApp" xml:space="preserve"><value>应用</value></data>
+
+  <data name="Heatmap_WindowTitle" xml:space="preserve"><value>键盘热力图</value></data>
+  <data name="Heatmap_HeaderTitle" xml:space="preserve"><value>键盘热力图</value></data>
+  <data name="Heatmap_HeaderSubtitle" xml:space="preserve"><value>完整虚拟键盘视图，按天展示按键热度。</value></data>
+  <data name="Heatmap_PrevDay" xml:space="preserve"><value>上一天</value></data>
+  <data name="Heatmap_NextDay" xml:space="preserve"><value>下一天</value></data>
+  <data name="Heatmap_BackToToday" xml:space="preserve"><value>回到今天</value></data>
+  <data name="Heatmap_NoData" xml:space="preserve"><value>当天暂无键盘活动</value></data>
+  <data name="Heatmap_SummaryFormat" xml:space="preserve"><value>总计 {0} 次按键 · {1} 个活跃键</value></data>
+  <data name="Heatmap_DatePickerTooltip" xml:space="preserve"><value>选择日期</value></data>
+  <data name="Heatmap_DateFormatShort" xml:space="preserve"><value>{0}月{1}日</value></data>
+  <data name="Heatmap_DateFormatLong" xml:space="preserve"><value>{0}年{1}月{2}日</value></data>
 </root>
