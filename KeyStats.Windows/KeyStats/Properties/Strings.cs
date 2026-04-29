@@ -115,4 +115,14 @@ public static class Strings
     public static string Heatmap_DatePickerTooltip => Get(nameof(Heatmap_DatePickerTooltip));
     public static string Heatmap_DateFormatShort => Get(nameof(Heatmap_DateFormatShort));
     public static string Heatmap_DateFormatLong => Get(nameof(Heatmap_DateFormatLong));
+
+    public static string KeyHistory_WindowTitle => Get(nameof(KeyHistory_WindowTitle));
+    public static string KeyHistory_HeaderTitle => Get(nameof(KeyHistory_HeaderTitle));
+    public static string KeyHistory_HeaderSubtitle => Get(nameof(KeyHistory_HeaderSubtitle));
+    public static string KeyHistory_PieChartTitle => Get(nameof(KeyHistory_PieChartTitle));
+    public static string KeyHistory_BarChartTitle => Get(nameof(KeyHistory_BarChartTitle));
+    public static string History_Range_Today => Get(nameof(History_Range_Today));
+    public static string History_Range_Last7Days => Get(nameof(History_Range_Last7Days));
+    public static string History_Range_Last30Days => Get(nameof(History_Range_Last30Days));
+    public static string History_Range_All => Get(nameof(History_Range_All));
 }

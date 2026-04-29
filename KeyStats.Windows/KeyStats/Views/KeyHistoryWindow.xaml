@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:KeyStats.Views.Controls"
         xmlns:viewmodels="clr-namespace:KeyStats.ViewModels"
-        Title="历史按键统计"
+        xmlns:p="clr-namespace:KeyStats.Properties"
+        Title="{x:Static p:Strings.KeyHistory_WindowTitle}"
         Width="860"
         Height="620"
         MinWidth="760"
@@ -25,11 +26,11 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Margin="0,0,0,10">
-            <TextBlock Text="历史按键统计"
+            <TextBlock Text="{x:Static p:Strings.KeyHistory_HeaderTitle}"
                        FontSize="20"
                        FontWeight="SemiBold"
                        Foreground="{DynamicResource TextPrimaryBrush}"/>
-            <TextBlock Text="按键数量聚合统计，仅展示计数，不记录输入内容"
+            <TextBlock Text="{x:Static p:Strings.KeyHistory_HeaderSubtitle}"
                        Margin="0,4,0,0"
                        FontSize="12"
                        Foreground="{DynamicResource TextSecondaryBrush}"/>
@@ -37,16 +38,16 @@
 
         <Border Grid.Row="1" Background="{DynamicResource SubtleFillBrush}" CornerRadius="6" Padding="3" Margin="0,0,0,10">
             <StackPanel Orientation="Horizontal">
-                <RadioButton Content="今天" GroupName="KeyHistoryRange"
+                <RadioButton Content="{x:Static p:Strings.History_Range_Today}" GroupName="KeyHistoryRange"
                              Style="{DynamicResource SegmentedButton}" FontSize="11" Padding="10,4"
                              IsChecked="{Binding SelectedRangeIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=0}"/>
-                <RadioButton Content="过去7天" GroupName="KeyHistoryRange"
+                <RadioButton Content="{x:Static p:Strings.History_Range_Last7Days}" GroupName="KeyHistoryRange"
                              Style="{DynamicResource SegmentedButton}" FontSize="11" Padding="10,4"
                              IsChecked="{Binding SelectedRangeIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=1}"/>
-                <RadioButton Content="过去30天" GroupName="KeyHistoryRange"
+                <RadioButton Content="{x:Static p:Strings.History_Range_Last30Days}" GroupName="KeyHistoryRange"
                              Style="{DynamicResource SegmentedButton}" FontSize="11" Padding="10,4"
                              IsChecked="{Binding SelectedRangeIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=2}"/>
-                <RadioButton Content="全部" GroupName="KeyHistoryRange"
+                <RadioButton Content="{x:Static p:Strings.History_Range_All}" GroupName="KeyHistoryRange"
                              Style="{DynamicResource SegmentedButton}" FontSize="11" Padding="10,4"
                              IsChecked="{Binding SelectedRangeIndex, Converter={StaticResource IntToBoolConverter}, ConverterParameter=3}"/>
             </StackPanel>
@@ -82,7 +83,7 @@
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0"
-                                   Text="按键占比（饼图）"
+                                   Text="{x:Static p:Strings.KeyHistory_PieChartTitle}"
                                    FontSize="12"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
@@ -137,7 +138,7 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         <TextBlock Grid.Row="0"
-                                   Text="按键次数（柱状图）"
+                                   Text="{x:Static p:Strings.KeyHistory_BarChartTitle}"
                                    FontSize="12"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimaryBrush}"

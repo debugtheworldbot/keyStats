@@ -155,4 +155,14 @@
   <data name="Heatmap_DatePickerTooltip" xml:space="preserve"><value>选择日期</value></data>
   <data name="Heatmap_DateFormatShort" xml:space="preserve"><value>{0}月{1}日</value></data>
   <data name="Heatmap_DateFormatLong" xml:space="preserve"><value>{0}年{1}月{2}日</value></data>
+
+  <data name="KeyHistory_WindowTitle" xml:space="preserve"><value>历史按键统计</value></data>
+  <data name="KeyHistory_HeaderTitle" xml:space="preserve"><value>历史按键统计</value></data>
+  <data name="KeyHistory_HeaderSubtitle" xml:space="preserve"><value>按键数量聚合统计，仅展示计数，不记录输入内容</value></data>
+  <data name="KeyHistory_PieChartTitle" xml:space="preserve"><value>按键占比（饼图）</value></data>
+  <data name="KeyHistory_BarChartTitle" xml:space="preserve"><value>按键次数（柱状图）</value></data>
+  <data name="History_Range_Today" xml:space="preserve"><value>今天</value></data>
+  <data name="History_Range_Last7Days" xml:space="preserve"><value>过去7天</value></data>
+  <data name="History_Range_Last30Days" xml:space="preserve"><value>过去30天</value></data>
+  <data name="History_Range_All" xml:space="preserve"><value>全部</value></data>
 </root>

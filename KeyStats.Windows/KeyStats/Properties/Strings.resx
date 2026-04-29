@@ -155,4 +155,14 @@
   <data name="Heatmap_DatePickerTooltip" xml:space="preserve"><value>Select date</value></data>
   <data name="Heatmap_DateFormatShort" xml:space="preserve"><value>{0}/{1}</value></data>
   <data name="Heatmap_DateFormatLong" xml:space="preserve"><value>{0}/{1}/{2}</value></data>
+
+  <data name="KeyHistory_WindowTitle" xml:space="preserve"><value>Key History</value></data>
+  <data name="KeyHistory_HeaderTitle" xml:space="preserve"><value>Key History</value></data>
+  <data name="KeyHistory_HeaderSubtitle" xml:space="preserve"><value>Aggregated key counts only — no input content is recorded</value></data>
+  <data name="KeyHistory_PieChartTitle" xml:space="preserve"><value>Key share (pie)</value></data>
+  <data name="KeyHistory_BarChartTitle" xml:space="preserve"><value>Key counts (bar)</value></data>
+  <data name="History_Range_Today" xml:space="preserve"><value>Today</value></data>
+  <data name="History_Range_Last7Days" xml:space="preserve"><value>Last 7 days</value></data>
+  <data name="History_Range_Last30Days" xml:space="preserve"><value>Last 30 days</value></data>
+  <data name="History_Range_All" xml:space="preserve"><value>All</value></data>
 </root>
