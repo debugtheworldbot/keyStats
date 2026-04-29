@@ -62,4 +62,27 @@
   <data name="Error_AppAlreadyRunning" xml:space="preserve"><value>KeyStats is already running.</value></data>
   <data name="Error_StartupFailedFormat" xml:space="preserve"><value>Startup error: {0}</value></data>
   <data name="Error_AppErrorTitle" xml:space="preserve"><value>KeyStats Error</value></data>
+
+  <data name="Tray_OpenMainWindow" xml:space="preserve"><value>Open Main Window</value></data>
+  <data name="Tray_Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Tray_StartAtLogin" xml:space="preserve"><value>Start at Login</value></data>
+  <data name="Tray_KeyHistory" xml:space="preserve"><value>Key History</value></data>
+  <data name="Tray_Quit" xml:space="preserve"><value>Quit</value></data>
+
+  <data name="Toast_ExportSuccess_Title" xml:space="preserve"><value>Export Successful</value></data>
+  <data name="Toast_ExportSuccess_BodyFormat" xml:space="preserve"><value>Data saved to {0}</value></data>
+  <data name="Toast_ExportFailed_Title" xml:space="preserve"><value>Export Failed</value></data>
+  <data name="Toast_ExportFailed_BodyFormat" xml:space="preserve"><value>Could not export data: {0}</value></data>
+  <data name="Toast_ImportSuccess_Title" xml:space="preserve"><value>Import Successful</value></data>
+  <data name="Toast_ImportSuccess_BodyFormat" xml:space="preserve"><value>Statistics imported via {0}: {1}</value></data>
+  <data name="Toast_ImportFailed_Title" xml:space="preserve"><value>Import Failed</value></data>
+  <data name="Toast_ImportFailed_BodyFormat" xml:space="preserve"><value>Could not import data: {0}</value></data>
+  <data name="ImportMode_Overwrite" xml:space="preserve"><value>Overwrite</value></data>
+  <data name="ImportMode_Merge" xml:space="preserve"><value>Merge</value></data>
+
+  <data name="Shortcut_Description" xml:space="preserve"><value>KeyStats</value></data>
+
+  <data name="Dialog_ExportTitle" xml:space="preserve"><value>Export Data</value></data>
+  <data name="Dialog_ImportTitle" xml:space="preserve"><value>Import Data</value></data>
+  <data name="Dialog_JsonFilter" xml:space="preserve"><value>JSON Files (*.json)|*.json|All Files (*.*)|*.*</value></data>
 </root>

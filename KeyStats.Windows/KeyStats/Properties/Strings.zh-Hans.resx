@@ -62,4 +62,27 @@
   <data name="Error_AppAlreadyRunning" xml:space="preserve"><value>按键统计已在运行中。</value></data>
   <data name="Error_StartupFailedFormat" xml:space="preserve"><value>启动错误：{0}</value></data>
   <data name="Error_AppErrorTitle" xml:space="preserve"><value>按键统计错误</value></data>
+
+  <data name="Tray_OpenMainWindow" xml:space="preserve"><value>打开主界面</value></data>
+  <data name="Tray_Settings" xml:space="preserve"><value>设置</value></data>
+  <data name="Tray_StartAtLogin" xml:space="preserve"><value>开机启动</value></data>
+  <data name="Tray_KeyHistory" xml:space="preserve"><value>历史按键统计</value></data>
+  <data name="Tray_Quit" xml:space="preserve"><value>退出</value></data>
+
+  <data name="Toast_ExportSuccess_Title" xml:space="preserve"><value>导出成功</value></data>
+  <data name="Toast_ExportSuccess_BodyFormat" xml:space="preserve"><value>数据已保存到 {0}</value></data>
+  <data name="Toast_ExportFailed_Title" xml:space="preserve"><value>导出失败</value></data>
+  <data name="Toast_ExportFailed_BodyFormat" xml:space="preserve"><value>无法导出数据：{0}</value></data>
+  <data name="Toast_ImportSuccess_Title" xml:space="preserve"><value>导入成功</value></data>
+  <data name="Toast_ImportSuccess_BodyFormat" xml:space="preserve"><value>已{0}导入统计数据：{1}</value></data>
+  <data name="Toast_ImportFailed_Title" xml:space="preserve"><value>导入失败</value></data>
+  <data name="Toast_ImportFailed_BodyFormat" xml:space="preserve"><value>无法导入数据：{0}</value></data>
+  <data name="ImportMode_Overwrite" xml:space="preserve"><value>覆盖</value></data>
+  <data name="ImportMode_Merge" xml:space="preserve"><value>合并</value></data>
+
+  <data name="Shortcut_Description" xml:space="preserve"><value>按键统计</value></data>
+
+  <data name="Dialog_ExportTitle" xml:space="preserve"><value>导出数据</value></data>
+  <data name="Dialog_ImportTitle" xml:space="preserve"><value>导入数据</value></data>
+  <data name="Dialog_JsonFilter" xml:space="preserve"><value>JSON 文件 (*.json)|*.json|所有文件 (*.*)|*.*</value></data>
 </root>

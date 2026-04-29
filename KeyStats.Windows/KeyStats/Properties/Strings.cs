@@ -22,4 +22,27 @@ public static class Strings
     public static string Error_AppAlreadyRunning => Get(nameof(Error_AppAlreadyRunning));
     public static string Error_StartupFailedFormat => Get(nameof(Error_StartupFailedFormat));
     public static string Error_AppErrorTitle => Get(nameof(Error_AppErrorTitle));
+
+    public static string Tray_OpenMainWindow => Get(nameof(Tray_OpenMainWindow));
+    public static string Tray_Settings => Get(nameof(Tray_Settings));
+    public static string Tray_StartAtLogin => Get(nameof(Tray_StartAtLogin));
+    public static string Tray_KeyHistory => Get(nameof(Tray_KeyHistory));
+    public static string Tray_Quit => Get(nameof(Tray_Quit));
+
+    public static string Toast_ExportSuccess_Title => Get(nameof(Toast_ExportSuccess_Title));
+    public static string Toast_ExportSuccess_BodyFormat => Get(nameof(Toast_ExportSuccess_BodyFormat));
+    public static string Toast_ExportFailed_Title => Get(nameof(Toast_ExportFailed_Title));
+    public static string Toast_ExportFailed_BodyFormat => Get(nameof(Toast_ExportFailed_BodyFormat));
+    public static string Toast_ImportSuccess_Title => Get(nameof(Toast_ImportSuccess_Title));
+    public static string Toast_ImportSuccess_BodyFormat => Get(nameof(Toast_ImportSuccess_BodyFormat));
+    public static string Toast_ImportFailed_Title => Get(nameof(Toast_ImportFailed_Title));
+    public static string Toast_ImportFailed_BodyFormat => Get(nameof(Toast_ImportFailed_BodyFormat));
+    public static string ImportMode_Overwrite => Get(nameof(ImportMode_Overwrite));
+    public static string ImportMode_Merge => Get(nameof(ImportMode_Merge));
+
+    public static string Shortcut_Description => Get(nameof(Shortcut_Description));
+
+    public static string Dialog_ExportTitle => Get(nameof(Dialog_ExportTitle));
+    public static string Dialog_ImportTitle => Get(nameof(Dialog_ImportTitle));
+    public static string Dialog_JsonFilter => Get(nameof(Dialog_JsonFilter));
 }
