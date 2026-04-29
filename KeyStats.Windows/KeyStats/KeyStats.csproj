@@ -43,5 +43,13 @@
     <EmbeddedResource Include="Resources\Icons\tray-icon.png" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Strings.resx">
+      <ManifestResourceName>KeyStats.Properties.Strings</ManifestResourceName>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Properties\Strings.zh-Hans.resx">
+      <ManifestResourceName>KeyStats.Properties.Strings.zh-Hans</ManifestResourceName>
+    </EmbeddedResource>
+  </ItemGroup>
 
 </Project>
