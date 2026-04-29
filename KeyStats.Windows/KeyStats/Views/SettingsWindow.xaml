@@ -1,6 +1,7 @@
 ﻿<Window x:Class="KeyStats.Views.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:p="clr-namespace:KeyStats.Properties"
         Title="设置 - KeyStats"
         Width="420" SizeToContent="Height"
         WindowStartupLocation="CenterScreen"
@@ -95,6 +96,32 @@
                 </StackPanel>
                 <Button Grid.Column="1" Content="打开" Style="{DynamicResource GhostButton}"
                         MinWidth="70" Click="MouseCalibration_Click"/>
+            </Grid>
+        </Border>
+
+        <Border Style="{DynamicResource CardBorder}" Margin="0,0,0,4" Padding="14,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="{x:Static p:Strings.Settings_Language}"
+                               FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="{x:Static p:Strings.Settings_LanguageDescription}"
+                               FontSize="12"
+                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,4,0,0"/>
+                </StackPanel>
+                <ComboBox Grid.Column="1"
+                          x:Name="LanguageComboBox"
+                          MinWidth="140"
+                          SelectionChanged="LanguageComboBox_SelectionChanged"
+                          Loaded="LanguageComboBox_Loaded">
+                    <ComboBoxItem Content="{x:Static p:Strings.Settings_Language_System}" Tag="system"/>
+                    <ComboBoxItem Content="中文" Tag="zh-Hans"/>
+                    <ComboBoxItem Content="English" Tag="en"/>
+                </ComboBox>
             </Grid>
         </Border>
 

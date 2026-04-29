@@ -85,4 +85,10 @@
   <data name="Dialog_ExportTitle" xml:space="preserve"><value>Export Data</value></data>
   <data name="Dialog_ImportTitle" xml:space="preserve"><value>Import Data</value></data>
   <data name="Dialog_JsonFilter" xml:space="preserve"><value>JSON Files (*.json)|*.json|All Files (*.*)|*.*</value></data>
+
+  <data name="Settings_Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Settings_LanguageDescription" xml:space="preserve"><value>Display language for the app interface</value></data>
+  <data name="Settings_Language_System" xml:space="preserve"><value>System</value></data>
+  <data name="Language_RestartPromptTitle" xml:space="preserve"><value>Restart Required</value></data>
+  <data name="Language_RestartPromptMessage" xml:space="preserve"><value>KeyStats needs to restart to apply the new language. Restart now?</value></data>
 </root>

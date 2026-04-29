@@ -1,7 +1,10 @@
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Windows;
+using System.Windows.Controls;
 using KeyStats.Helpers;
+using KeyStats.Services;
 
 namespace KeyStats.Views;
 
@@ -101,5 +104,67 @@ public partial class SettingsWindow : Window
         {
             MessageBox.Show(this, "无法打开 GitHub 页面。", "KeyStats", MessageBoxButton.OK, MessageBoxImage.Information);
         }
+    }
+
+    private bool _isInitializingLanguage = true;
+
+    private void LanguageComboBox_Loaded(object sender, RoutedEventArgs e)
+    {
+        var current = StatsManager.Instance.Settings.LanguagePreference ?? "system";
+        LanguageComboBox.SelectedItem = LanguageComboBox.Items
+            .Cast<ComboBoxItem>()
+            .FirstOrDefault(i => (string)i.Tag == current)
+            ?? LanguageComboBox.Items[0];
+        _isInitializingLanguage = false;
+    }
+
+    private void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isInitializingLanguage) return;
+
+        var newPref = (string?)((ComboBoxItem?)LanguageComboBox.SelectedItem)?.Tag;
+        if (string.IsNullOrEmpty(newPref)) return;
+
+        var oldPref = StatsManager.Instance.Settings.LanguagePreference ?? "system";
+        if (newPref == oldPref) return;
+
+        var result = MessageBox.Show(
+            KeyStats.Properties.Strings.Language_RestartPromptMessage,
+            KeyStats.Properties.Strings.Language_RestartPromptTitle,
+            MessageBoxButton.OKCancel,
+            MessageBoxImage.Information);
+
+        if (result == MessageBoxResult.OK)
+        {
+            StatsManager.Instance.Settings.LanguagePreference = newPref;
+            StatsManager.Instance.SaveSettings();
+            RestartApp();
+        }
+        else
+        {
+            // User cancelled — revert ComboBox to the previously persisted value.
+            _isInitializingLanguage = true;
+            LanguageComboBox.SelectedItem = LanguageComboBox.Items
+                .Cast<ComboBoxItem>()
+                .FirstOrDefault(i => (string)i.Tag == oldPref);
+            _isInitializingLanguage = false;
+        }
+    }
+
+    private static void RestartApp()
+    {
+        try
+        {
+            var exePath = Process.GetCurrentProcess().MainModule?.FileName;
+            if (!string.IsNullOrEmpty(exePath))
+            {
+                Process.Start(exePath);
+            }
+        }
+        catch
+        {
+            // If relaunch fails, the user will simply have to start the app manually.
+        }
+        Application.Current.Shutdown();
     }
 }

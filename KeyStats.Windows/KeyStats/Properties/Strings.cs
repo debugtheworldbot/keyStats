@@ -45,4 +45,10 @@ public static class Strings
     public static string Dialog_ExportTitle => Get(nameof(Dialog_ExportTitle));
     public static string Dialog_ImportTitle => Get(nameof(Dialog_ImportTitle));
     public static string Dialog_JsonFilter => Get(nameof(Dialog_JsonFilter));
+
+    public static string Settings_Language => Get(nameof(Settings_Language));
+    public static string Settings_LanguageDescription => Get(nameof(Settings_LanguageDescription));
+    public static string Settings_Language_System => Get(nameof(Settings_Language_System));
+    public static string Language_RestartPromptTitle => Get(nameof(Language_RestartPromptTitle));
+    public static string Language_RestartPromptMessage => Get(nameof(Language_RestartPromptMessage));
 }

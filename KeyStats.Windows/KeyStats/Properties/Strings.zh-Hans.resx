@@ -85,4 +85,10 @@
   <data name="Dialog_ExportTitle" xml:space="preserve"><value>导出数据</value></data>
   <data name="Dialog_ImportTitle" xml:space="preserve"><value>导入数据</value></data>
   <data name="Dialog_JsonFilter" xml:space="preserve"><value>JSON 文件 (*.json)|*.json|所有文件 (*.*)|*.*</value></data>
+
+  <data name="Settings_Language" xml:space="preserve"><value>语言</value></data>
+  <data name="Settings_LanguageDescription" xml:space="preserve"><value>应用界面显示语言</value></data>
+  <data name="Settings_Language_System" xml:space="preserve"><value>跟随系统</value></data>
+  <data name="Language_RestartPromptTitle" xml:space="preserve"><value>需要重启</value></data>
+  <data name="Language_RestartPromptMessage" xml:space="preserve"><value>需要重启 KeyStats 才能切换语言。是否立即重启？</value></data>
 </root>
