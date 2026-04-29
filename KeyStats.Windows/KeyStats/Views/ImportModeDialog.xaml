@@ -1,6 +1,7 @@
 <Window x:Class="KeyStats.Views.ImportModeDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:p="clr-namespace:KeyStats.Properties"
         Title=""
         Width="420" SizeToContent="Height"
         WindowStartupLocation="CenterScreen"
@@ -38,14 +39,14 @@
                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
 
-                <TextBlock Text="选择导入方式"
+                <TextBlock Text="{x:Static p:Strings.ImportDialog_HeaderTitle}"
                            FontSize="18" FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimaryBrush}"/>
             </StackPanel>
 
             <!-- Description -->
             <TextBlock Grid.Row="1"
-                       Text="请选择如何处理导入的数据："
+                       Text="{x:Static p:Strings.ImportDialog_Description}"
                        FontSize="14"
                        Foreground="{DynamicResource TextSecondaryBrush}"
                        Margin="24,12,24,0"/>
@@ -87,9 +88,9 @@
                         </Style>
                     </Button.Style>
                     <StackPanel>
-                        <TextBlock Text="覆盖" FontSize="14" FontWeight="SemiBold"
+                        <TextBlock Text="{x:Static p:Strings.ImportMode_Overwrite}" FontSize="14" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimaryBrush}"/>
-                        <TextBlock Text="删除现有数据，使用导入的数据替换"
+                        <TextBlock Text="{x:Static p:Strings.ImportDialog_OverwriteDesc}"
                                    FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
                                    Margin="0,4,0,0"/>
                     </StackPanel>
@@ -130,9 +131,9 @@
                         </Style>
                     </Button.Style>
                     <StackPanel>
-                        <TextBlock Text="合并" FontSize="14" FontWeight="SemiBold"
+                        <TextBlock Text="{x:Static p:Strings.ImportMode_Merge}" FontSize="14" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimaryBrush}"/>
-                        <TextBlock Text="保留现有数据，将导入的数据累加合并"
+                        <TextBlock Text="{x:Static p:Strings.ImportDialog_MergeDesc}"
                                    FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
                                    Margin="0,4,0,0"/>
                     </StackPanel>
@@ -140,7 +141,7 @@
             </StackPanel>
 
             <!-- Cancel Button -->
-            <Button x:Name="CancelButton" Content="取消"
+            <Button x:Name="CancelButton" Content="{x:Static p:Strings.Common_Cancel}"
                     Grid.Row="3" Click="CancelButton_Click"
                     HorizontalAlignment="Right"
                     Style="{StaticResource GhostButton}"

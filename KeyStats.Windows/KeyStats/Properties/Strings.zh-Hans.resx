@@ -200,4 +200,27 @@
   <data name="Calibration_ScaleLabelEmpty" xml:space="preserve"><value>换算系数: --</value></data>
   <data name="Calibration_ScaleLabelFormat" xml:space="preserve"><value>换算系数: {0:E4} m/px</value></data>
   <data name="Calibration_TipFooter" xml:space="preserve"><value>提示：如需更准确，请关闭系统鼠标加速并保持匀速移动。</value></data>
+
+  <!-- NotificationSettingsWindow -->
+  <data name="NotifSettings_WindowTitle" xml:space="preserve"><value>通知设置 - KeyStats</value></data>
+  <data name="NotifSettings_HeaderTitle" xml:space="preserve"><value>通知设置</value></data>
+  <data name="NotifSettings_HeaderSubtitle" xml:space="preserve"><value>当按键或点击次数每达到设定值时发送通知</value></data>
+  <data name="NotifSettings_Enable" xml:space="preserve"><value>启用通知</value></data>
+  <data name="NotifSettings_KeyCardTitle" xml:space="preserve"><value>按键次数通知</value></data>
+  <data name="NotifSettings_ClickCardTitle" xml:space="preserve"><value>鼠标点击通知</value></data>
+  <data name="NotifSettings_EveryPrefix" xml:space="preserve"><value>每 </value></data>
+  <data name="NotifSettings_TimesSuffix" xml:space="preserve"><value> 次通知一次</value></data>
+  <data name="NotifSettings_Hint" xml:space="preserve"><value>例如：设为 1000，则在 1000、2000、3000… 次时通知。</value></data>
+
+  <!-- ImportModeDialog -->
+  <data name="ImportDialog_HeaderTitle" xml:space="preserve"><value>选择导入方式</value></data>
+  <data name="ImportDialog_Description" xml:space="preserve"><value>请选择如何处理导入的数据：</value></data>
+  <data name="ImportDialog_OverwriteDesc" xml:space="preserve"><value>删除现有数据，使用导入的数据替换</value></data>
+  <data name="ImportDialog_MergeDesc" xml:space="preserve"><value>保留现有数据，将导入的数据累加合并</value></data>
+
+  <!-- ConfirmDialog -->
+  <data name="Confirm_DefaultHeaderTitle" xml:space="preserve"><value>确认操作</value></data>
+  <data name="Confirm_DefaultMessage" xml:space="preserve"><value>确定要执行此操作吗？</value></data>
+  <data name="Confirm_DefaultTitle" xml:space="preserve"><value>确认</value></data>
+  <data name="Confirm_DefaultConfirm" xml:space="preserve"><value>确定</value></data>
 </root>

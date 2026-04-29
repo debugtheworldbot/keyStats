@@ -1,6 +1,7 @@
 <Window x:Class="KeyStats.Views.ConfirmDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:p="clr-namespace:KeyStats.Properties"
         Title=""
         Width="400" SizeToContent="Height"
         WindowStartupLocation="CenterScreen"
@@ -38,7 +39,7 @@
                 </Border>
 
                 <!-- Title -->
-                <TextBlock x:Name="TitleText" Text="确认操作"
+                <TextBlock x:Name="TitleText" Text="{x:Static p:Strings.Confirm_DefaultHeaderTitle}"
                            FontSize="18" FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            TextWrapping="Wrap"/>
@@ -46,7 +47,7 @@
 
             <!-- Message -->
             <TextBlock x:Name="MessageText" Grid.Row="1"
-                       Text="确定要执行此操作吗？"
+                       Text="{x:Static p:Strings.Confirm_DefaultMessage}"
                        FontSize="14" LineHeight="22"
                        Foreground="{DynamicResource TextSecondaryBrush}"
                        TextWrapping="Wrap"
@@ -56,14 +57,14 @@
             <StackPanel Grid.Row="2" Orientation="Horizontal"
                         HorizontalAlignment="Right" Margin="24,24,24,24">
                 <!-- Cancel Button -->
-                <Button x:Name="CancelButton" Content="取消"
+                <Button x:Name="CancelButton" Content="{x:Static p:Strings.Common_Cancel}"
                         Click="CancelButton_Click"
                         Style="{StaticResource GhostButton}"
                         MinWidth="88" Height="32"
                         Margin="0,0,8,0"/>
 
                 <!-- Confirm Button -->
-                <Button x:Name="ConfirmButton" Content="确定"
+                <Button x:Name="ConfirmButton" Content="{x:Static p:Strings.Confirm_DefaultConfirm}"
                         Click="ConfirmButton_Click"
                         MinWidth="88" Height="32">
                     <Button.Style>

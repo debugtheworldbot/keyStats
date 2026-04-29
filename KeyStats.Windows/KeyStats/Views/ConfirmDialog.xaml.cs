@@ -65,17 +65,17 @@ namespace KeyStats.Views
 
         public static bool Show(
             string message,
-            string title = "确认",
-            string confirmText = "确定",
-            string cancelText = "取消",
+            string? title = null,
+            string? confirmText = null,
+            string? cancelText = null,
             DialogIcon icon = DialogIcon.Warning,
             Window? owner = null)
         {
             var dialog = new ConfirmDialog();
-            dialog.TitleText.Text = title;
+            dialog.TitleText.Text = title ?? KeyStats.Properties.Strings.Confirm_DefaultTitle;
             dialog.MessageText.Text = message;
-            dialog.ConfirmButton.Content = confirmText;
-            dialog.CancelButton.Content = cancelText;
+            dialog.ConfirmButton.Content = confirmText ?? KeyStats.Properties.Strings.Confirm_DefaultConfirm;
+            dialog.CancelButton.Content = cancelText ?? KeyStats.Properties.Strings.Common_Cancel;
             dialog.SetIcon(icon);
 
             if (owner != null)

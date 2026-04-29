@@ -1,7 +1,8 @@
 <Window x:Class="KeyStats.Views.NotificationSettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="通知设置 - KeyStats"
+        xmlns:p="clr-namespace:KeyStats.Properties"
+        Title="{x:Static p:Strings.NotifSettings_WindowTitle}"
         Width="340" SizeToContent="Height"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
@@ -10,14 +11,14 @@
 
     <StackPanel Margin="24,20">
         <!-- Header -->
-        <TextBlock Text="通知设置" FontSize="16" FontWeight="SemiBold"
+        <TextBlock Text="{x:Static p:Strings.NotifSettings_HeaderTitle}" FontSize="16" FontWeight="SemiBold"
                    Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"/>
-        <TextBlock Text="当按键或点击次数每达到设定值时发送通知"
+        <TextBlock Text="{x:Static p:Strings.NotifSettings_HeaderSubtitle}"
                    Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"
                    TextWrapping="Wrap" Margin="0,0,0,20"/>
 
         <!-- Enable toggle -->
-        <CheckBox x:Name="EnableCheckBox" Content="启用通知"
+        <CheckBox x:Name="EnableCheckBox" Content="{x:Static p:Strings.NotifSettings_Enable}"
                   FontSize="13" Margin="0,0,0,20"
                   Foreground="{DynamicResource TextPrimaryBrush}"
                   Checked="OnSettingChanged" Unchecked="OnSettingChanged"/>
@@ -25,17 +26,17 @@
         <!-- Key press threshold -->
         <Border Style="{DynamicResource CardBorder}" Margin="0,0,0,8" Padding="14,12">
             <StackPanel>
-                <TextBlock Text="按键次数通知" FontSize="13" FontWeight="SemiBold"
+                <TextBlock Text="{x:Static p:Strings.NotifSettings_KeyCardTitle}" FontSize="13" FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="每 " FontSize="12"
+                    <TextBlock Text="{x:Static p:Strings.NotifSettings_EveryPrefix}" FontSize="12"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                VerticalAlignment="Center"/>
                     <TextBox x:Name="KeyPressThresholdBox" Width="80" TextAlignment="Center"
                              FontSize="12" Padding="4,4" VerticalContentAlignment="Center"
                              PreviewTextInput="NumericOnly_PreviewTextInput"
                              TextChanged="OnThresholdTextChanged"/>
-                    <TextBlock Text=" 次通知一次" FontSize="12"
+                    <TextBlock Text="{x:Static p:Strings.NotifSettings_TimesSuffix}" FontSize="12"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                VerticalAlignment="Center"/>
                 </StackPanel>
@@ -45,17 +46,17 @@
         <!-- Click threshold -->
         <Border Style="{DynamicResource CardBorder}" Margin="0,0,0,8" Padding="14,12">
             <StackPanel>
-                <TextBlock Text="鼠标点击通知" FontSize="13" FontWeight="SemiBold"
+                <TextBlock Text="{x:Static p:Strings.NotifSettings_ClickCardTitle}" FontSize="13" FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="每 " FontSize="12"
+                    <TextBlock Text="{x:Static p:Strings.NotifSettings_EveryPrefix}" FontSize="12"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                VerticalAlignment="Center"/>
                     <TextBox x:Name="ClickThresholdBox" Width="80" TextAlignment="Center"
                              FontSize="12" Padding="4,4" VerticalContentAlignment="Center"
                              PreviewTextInput="NumericOnly_PreviewTextInput"
                              TextChanged="OnThresholdTextChanged"/>
-                    <TextBlock Text=" 次通知一次" FontSize="12"
+                    <TextBlock Text="{x:Static p:Strings.NotifSettings_TimesSuffix}" FontSize="12"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                VerticalAlignment="Center"/>
                 </StackPanel>
@@ -63,7 +64,7 @@
         </Border>
 
         <!-- Hint -->
-        <TextBlock Text="例如：设为 1000，则在 1000、2000、3000… 次时通知。"
+        <TextBlock Text="{x:Static p:Strings.NotifSettings_Hint}"
                    Foreground="{DynamicResource TextTertiaryBrush}" FontSize="11"
                    TextWrapping="Wrap" Margin="0,8,0,0"/>
     </StackPanel>

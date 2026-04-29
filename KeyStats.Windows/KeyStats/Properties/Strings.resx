@@ -200,4 +200,27 @@
   <data name="Calibration_ScaleLabelEmpty" xml:space="preserve"><value>Scale factor: --</value></data>
   <data name="Calibration_ScaleLabelFormat" xml:space="preserve"><value>Scale factor: {0:E4} m/px</value></data>
   <data name="Calibration_TipFooter" xml:space="preserve"><value>Tip: for better accuracy, disable system mouse acceleration and move at a steady speed.</value></data>
+
+  <!-- NotificationSettingsWindow -->
+  <data name="NotifSettings_WindowTitle" xml:space="preserve"><value>Notification Settings - KeyStats</value></data>
+  <data name="NotifSettings_HeaderTitle" xml:space="preserve"><value>Notification Settings</value></data>
+  <data name="NotifSettings_HeaderSubtitle" xml:space="preserve"><value>Get notified each time the key or click count reaches the configured threshold</value></data>
+  <data name="NotifSettings_Enable" xml:space="preserve"><value>Enable notifications</value></data>
+  <data name="NotifSettings_KeyCardTitle" xml:space="preserve"><value>Key Press Notifications</value></data>
+  <data name="NotifSettings_ClickCardTitle" xml:space="preserve"><value>Mouse Click Notifications</value></data>
+  <data name="NotifSettings_EveryPrefix" xml:space="preserve"><value>Every </value></data>
+  <data name="NotifSettings_TimesSuffix" xml:space="preserve"><value> times</value></data>
+  <data name="NotifSettings_Hint" xml:space="preserve"><value>Example: set to 1000 to be notified at 1000, 2000, 3000…</value></data>
+
+  <!-- ImportModeDialog -->
+  <data name="ImportDialog_HeaderTitle" xml:space="preserve"><value>Choose Import Mode</value></data>
+  <data name="ImportDialog_Description" xml:space="preserve"><value>Choose how to handle the imported data:</value></data>
+  <data name="ImportDialog_OverwriteDesc" xml:space="preserve"><value>Delete existing data and replace it with the imported data</value></data>
+  <data name="ImportDialog_MergeDesc" xml:space="preserve"><value>Keep existing data and accumulate the imported data into it</value></data>
+
+  <!-- ConfirmDialog -->
+  <data name="Confirm_DefaultHeaderTitle" xml:space="preserve"><value>Confirm Action</value></data>
+  <data name="Confirm_DefaultMessage" xml:space="preserve"><value>Are you sure you want to perform this action?</value></data>
+  <data name="Confirm_DefaultTitle" xml:space="preserve"><value>Confirm</value></data>
+  <data name="Confirm_DefaultConfirm" xml:space="preserve"><value>OK</value></data>
 </root>
