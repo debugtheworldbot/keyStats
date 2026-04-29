@@ -64,12 +64,30 @@ public partial class App : System.Windows.Application
         {
             Console.WriteLine("KeyStats starting...");
 
-            // Ensure single instance
-            var mutex = new System.Threading.Mutex(true, "KeyStats_SingleInstance", out bool createdNew);
+            // Apply language preference BEFORE any UI loads.
+            // StatsManager.Instance triggers settings.json load on first access.
+            var preliminarySettings = StatsManager.Instance.Settings;
+            LocalizationManager.ApplyAtStartup(preliminarySettings.LanguagePreference);
+
+            // Ensure single instance — retry up to 3 attempts (500ms apart) so a
+            // language-switch relaunch doesn't lose the race against the old
+            // process's OnExit cleanup.
+            System.Threading.Mutex? mutex = null;
+            bool createdNew = false;
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                mutex = new System.Threading.Mutex(true, "KeyStats_SingleInstance", out createdNew);
+                if (createdNew) break;
+                mutex.Dispose();
+                mutex = null;
+                System.Threading.Thread.Sleep(500);
+            }
+
             if (!createdNew)
             {
-                mutex.Dispose();
-                MessageBox.Show("按键统计已在运行中。", "按键统计", MessageBoxButton.OK, MessageBoxImage.Information);
+                // English fallback — keep simple and reliable for this edge case.
+                MessageBox.Show("KeyStats is already running.", "KeyStats",
+                                MessageBoxButton.OK, MessageBoxImage.Information);
                 Shutdown();
                 return;
             }
@@ -108,7 +126,9 @@ public partial class App : System.Windows.Application
         catch (Exception ex)
         {
             Console.WriteLine($"Error during startup: {ex}");
-            MessageBox.Show($"启动错误: {ex.Message}", "按键统计错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(string.Format(KeyStats.Properties.Strings.Error_StartupFailedFormat, ex.Message),
+                            KeyStats.Properties.Strings.Error_AppErrorTitle,
+                            MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown();
         }
     }
