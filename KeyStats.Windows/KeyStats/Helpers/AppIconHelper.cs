@@ -21,8 +21,8 @@ public static class AppIconHelper
     private const int MaxShortcutScanCount = 3000;
     private const int SteamAppInfoIconSearchWindow = 16000;
     private static readonly TimeSpan FailedIconCacheDuration = TimeSpan.FromSeconds(10);
-    private static readonly Regex SteamExecutableRegex = new(@"[A-Za-z0-9_. \\/-]+\.exe", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    private static readonly Regex SteamIconHashRegex = new(@"\b[a-f0-9]{40}\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex SteamExecutableRegex = new(@"[A-Za-z0-9_. \\/-]+\.exe", RegexOptions.IgnoreCase);
+    private static readonly Regex SteamIconHashRegex = new(@"\b[a-f0-9]{40}\b", RegexOptions.IgnoreCase);
     private static readonly Dictionary<string, IconCacheEntry> _iconCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly object _lock = new object();
     private static readonly object _indexLock = new object();
