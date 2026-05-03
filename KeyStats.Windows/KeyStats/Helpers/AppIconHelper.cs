@@ -6,6 +6,8 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -17,7 +19,10 @@ namespace KeyStats.Helpers;
 public static class AppIconHelper
 {
     private const int MaxShortcutScanCount = 3000;
+    private const int SteamAppInfoIconSearchWindow = 16000;
     private static readonly TimeSpan FailedIconCacheDuration = TimeSpan.FromSeconds(10);
+    private static readonly Regex SteamExecutableRegex = new(@"[A-Za-z0-9_. \\/-]+\.exe", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    private static readonly Regex SteamIconHashRegex = new(@"\b[a-f0-9]{40}\b", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Dictionary<string, IconCacheEntry> _iconCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly object _lock = new object();
     private static readonly object _indexLock = new object();
@@ -419,6 +424,8 @@ public static class AppIconHelper
 
         foreach (var steamRoot in steamRoots)
         {
+            IndexSteamAppInfoIcons(index, steamRoot!);
+
             foreach (var libraryRoot in GetSteamLibraryFolders(steamRoot!).Prepend(steamRoot).Distinct(StringComparer.OrdinalIgnoreCase))
             {
                 var normalizedLibraryRoot = NormalizeDirectoryPath(libraryRoot);
@@ -443,19 +450,122 @@ public static class AppIconHelper
                             continue;
                         }
 
-                        if (!index.TryGetValue(exeName, out var paths))
-                        {
-                            paths = new List<string>();
-                            index[exeName] = paths;
-                        }
-
-                        paths.Add(exePath);
+                        AddIndexedPath(index, exeName, exePath);
                     }
                 }
             }
         }
 
         return index;
+    }
+
+    private static void IndexSteamAppInfoIcons(Dictionary<string, List<string>> index, string steamRoot)
+    {
+        string appInfoPath;
+        string iconDirectory;
+        try
+        {
+            appInfoPath = Path.Combine(steamRoot, "appcache", "appinfo.vdf");
+            iconDirectory = Path.Combine(steamRoot, "steam", "games");
+        }
+        catch
+        {
+            return;
+        }
+
+        if (!File.Exists(appInfoPath) || !Directory.Exists(iconDirectory))
+        {
+            return;
+        }
+
+        Dictionary<string, string> iconPaths;
+        try
+        {
+            iconPaths = Directory.EnumerateFiles(iconDirectory, "*.ico", SearchOption.TopDirectoryOnly)
+                .Select(path => new { Hash = Path.GetFileNameWithoutExtension(path), Path = path })
+                .Where(item => item.Hash.Length == 40)
+                .GroupBy(item => item.Hash, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.First().Path, StringComparer.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return;
+        }
+
+        if (iconPaths.Count == 0)
+        {
+            return;
+        }
+
+        string appInfoText;
+        try
+        {
+            appInfoText = Encoding.UTF8.GetString(File.ReadAllBytes(appInfoPath));
+        }
+        catch
+        {
+            return;
+        }
+
+        foreach (Match executableMatch in SteamExecutableRegex.Matches(appInfoText))
+        {
+            var executableName = NormalizeSteamExecutableName(executableMatch.Value);
+            if (string.IsNullOrWhiteSpace(executableName))
+            {
+                continue;
+            }
+
+            var iconPath = FindNearestSteamIconPath(appInfoText, executableMatch.Index, iconPaths);
+            if (iconPath == null)
+            {
+                continue;
+            }
+
+            AddIndexedPath(index, executableName!, iconPath);
+        }
+    }
+
+    private static string? NormalizeSteamExecutableName(string executableValue)
+    {
+        var normalized = executableValue.Trim().Replace('/', '\\');
+        var fileName = Path.GetFileName(normalized);
+        return string.IsNullOrWhiteSpace(fileName) ? null : fileName;
+    }
+
+    private static string? FindNearestSteamIconPath(string appInfoText, int executableIndex, Dictionary<string, string> iconPaths)
+    {
+        var startIndex = Math.Max(0, executableIndex - SteamAppInfoIconSearchWindow);
+        var length = executableIndex - startIndex;
+        if (length <= 0)
+        {
+            return null;
+        }
+
+        var precedingText = appInfoText.Substring(startIndex, length);
+        var matches = SteamIconHashRegex.Matches(precedingText);
+        for (var index = matches.Count - 1; index >= 0; index--)
+        {
+            if (iconPaths.TryGetValue(matches[index].Value, out var iconPath))
+            {
+                return iconPath;
+            }
+        }
+
+        return null;
+    }
+
+    private static void AddIndexedPath(Dictionary<string, List<string>> index, string executableName, string path)
+    {
+        if (!index.TryGetValue(executableName, out var paths))
+        {
+            paths = new List<string>();
+            index[executableName] = paths;
+        }
+
+        if (!paths.Contains(path, StringComparer.OrdinalIgnoreCase))
+        {
+            paths.Add(path);
+        }
     }
 
     private static IEnumerable<string> GetSteamAppManifestPaths(string libraryRoot)
