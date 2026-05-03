@@ -17,7 +17,6 @@ namespace KeyStats.Helpers;
 public static class AppIconHelper
 {
     private const int MaxShortcutScanCount = 3000;
-    private const int MaxSteamSearchDirectories = 2000;
     private static readonly TimeSpan FailedIconCacheDuration = TimeSpan.FromSeconds(10);
     private static readonly Dictionary<string, IconCacheEntry> _iconCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly object _lock = new object();
@@ -428,36 +427,132 @@ public static class AppIconHelper
                     continue;
                 }
 
-                string commonPath;
-                try
+                foreach (var manifestPath in GetSteamAppManifestPaths(normalizedLibraryRoot))
                 {
-                    commonPath = Path.Combine(normalizedLibraryRoot, "steamapps", "common");
-                }
-                catch
-                {
-                    continue;
-                }
-
-                foreach (var exePath in FindExecutablesUnder(commonPath, MaxSteamSearchDirectories))
-                {
-                    var exeName = Path.GetFileName(exePath);
-                    if (string.IsNullOrWhiteSpace(exeName))
+                    var app = TryReadSteamAppManifest(normalizedLibraryRoot, manifestPath);
+                    if (app == null)
                     {
                         continue;
                     }
 
-                    if (!index.TryGetValue(exeName, out var paths))
+                    foreach (var exePath in FindExecutablesNearRoot(app.InstallPath))
                     {
-                        paths = new List<string>();
-                        index[exeName] = paths;
-                    }
+                        var exeName = Path.GetFileName(exePath);
+                        if (string.IsNullOrWhiteSpace(exeName))
+                        {
+                            continue;
+                        }
 
-                    paths.Add(exePath);
+                        if (!index.TryGetValue(exeName, out var paths))
+                        {
+                            paths = new List<string>();
+                            index[exeName] = paths;
+                        }
+
+                        paths.Add(exePath);
+                    }
                 }
             }
         }
 
         return index;
+    }
+
+    private static IEnumerable<string> GetSteamAppManifestPaths(string libraryRoot)
+    {
+        string steamAppsPath;
+        try
+        {
+            steamAppsPath = Path.Combine(libraryRoot, "steamapps");
+        }
+        catch
+        {
+            yield break;
+        }
+
+        if (!Directory.Exists(steamAppsPath))
+        {
+            yield break;
+        }
+
+        IEnumerable<string> manifests;
+        try
+        {
+            manifests = Directory.EnumerateFiles(steamAppsPath, "appmanifest_*.acf", SearchOption.TopDirectoryOnly).ToList();
+        }
+        catch
+        {
+            yield break;
+        }
+
+        foreach (var manifest in manifests)
+        {
+            yield return manifest;
+        }
+    }
+
+    private static SteamAppEntry? TryReadSteamAppManifest(string libraryRoot, string manifestPath)
+    {
+        Dictionary<string, string> manifestValues;
+        try
+        {
+            manifestValues = File.ReadLines(manifestPath)
+                .Select(TryParseKeyValueLine)
+                .Where(pair => pair.HasValue)
+                .ToDictionary(
+                    pair => pair!.Value.Key,
+                    pair => pair!.Value.Value,
+                    StringComparer.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return null;
+        }
+
+        if (!manifestValues.TryGetValue("installdir", out var installDir) ||
+            string.IsNullOrWhiteSpace(installDir))
+        {
+            return null;
+        }
+
+        string installPath;
+        try
+        {
+            installPath = Path.Combine(libraryRoot, "steamapps", "common", installDir);
+        }
+        catch
+        {
+            return null;
+        }
+
+        var normalizedInstallPath = NormalizeDirectoryPath(installPath);
+        if (normalizedInstallPath == null || !Directory.Exists(normalizedInstallPath))
+        {
+            return null;
+        }
+
+        return new SteamAppEntry(normalizedInstallPath);
+    }
+
+    private static KeyValuePair<string, string>? TryParseKeyValueLine(string line)
+    {
+        var trimmed = line.Trim();
+        if (!trimmed.StartsWith("\"", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        var parts = trimmed.Split(new[] { '"' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(part => part.Trim())
+            .Where(part => !string.IsNullOrWhiteSpace(part))
+            .ToList();
+
+        if (parts.Count < 2)
+        {
+            return null;
+        }
+
+        return new KeyValuePair<string, string>(parts[0], parts[1].Replace(@"\\", @"\"));
     }
 
     private static IEnumerable<string> GetSteamRoots()
@@ -535,51 +630,52 @@ public static class AppIconHelper
         }
     }
 
-    private static IEnumerable<string> FindExecutablesUnder(string root, int maxDirectories)
+    private static IEnumerable<string> FindExecutablesNearRoot(string root)
     {
         if (!Directory.Exists(root))
         {
             yield break;
         }
 
-        var visitedDirectories = 0;
-        var pending = new Queue<string>();
-        pending.Enqueue(root);
-
-        while (pending.Count > 0 && visitedDirectories < maxDirectories)
+        foreach (var exePath in EnumerateExecutables(root))
         {
-            var current = pending.Dequeue();
-            visitedDirectories++;
+            yield return exePath;
+        }
 
-            IEnumerable<string> files;
-            try
-            {
-                files = Directory.EnumerateFiles(current, "*.exe", SearchOption.TopDirectoryOnly);
-            }
-            catch
-            {
-                files = Enumerable.Empty<string>();
-            }
+        IEnumerable<string> firstLevelDirectories;
+        try
+        {
+            firstLevelDirectories = Directory.EnumerateDirectories(root).ToList();
+        }
+        catch
+        {
+            yield break;
+        }
 
-            foreach (var file in files)
+        foreach (var directory in firstLevelDirectories)
+        {
+            foreach (var exePath in EnumerateExecutables(directory))
             {
-                yield return file;
+                yield return exePath;
             }
+        }
+    }
 
-            IEnumerable<string> directories;
-            try
-            {
-                directories = Directory.EnumerateDirectories(current);
-            }
-            catch
-            {
-                continue;
-            }
+    private static IEnumerable<string> EnumerateExecutables(string root)
+    {
+        IEnumerable<string> files;
+        try
+        {
+            files = Directory.EnumerateFiles(root, "*.exe", SearchOption.TopDirectoryOnly).ToList();
+        }
+        catch
+        {
+            yield break;
+        }
 
-            foreach (var directory in directories)
-            {
-                pending.Enqueue(directory);
-            }
+        foreach (var file in files)
+        {
+            yield return file;
         }
     }
 
@@ -749,5 +845,15 @@ public static class AppIconHelper
         public string? TargetName { get; }
         public string? IconPath { get; }
         public string? TargetPath { get; }
+    }
+
+    private sealed class SteamAppEntry
+    {
+        public SteamAppEntry(string installPath)
+        {
+            InstallPath = installPath;
+        }
+
+        public string InstallPath { get; }
     }
 }
