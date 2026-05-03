@@ -5,6 +5,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -17,9 +18,14 @@ public static class AppIconHelper
 {
     private const int MaxShortcutScanCount = 3000;
     private const int MaxSteamSearchDirectories = 2000;
-    private static readonly TimeSpan FailedIconCacheDuration = TimeSpan.FromMinutes(2);
+    private static readonly TimeSpan FailedIconCacheDuration = TimeSpan.FromSeconds(10);
     private static readonly Dictionary<string, IconCacheEntry> _iconCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly object _lock = new object();
+    private static readonly object _indexLock = new object();
+    private static bool _shortcutIndexBuildStarted;
+    private static bool _steamIndexBuildStarted;
+    private static List<ShortcutIconEntry>? _shortcutIndex;
+    private static Dictionary<string, List<string>>? _steamExecutableIndex;
 
     /// <summary>
     /// Gets the icon for an application by its process name.
@@ -91,8 +97,8 @@ public static class AppIconHelper
         foreach (var path in GetRunningProcessPaths(processName)
                      .Concat(GetAppPathsRegistryEntries(processName))
                      .Concat(GetKnownInstallPaths(processName))
-                     .Concat(GetShortcutIconPaths(processName, displayName))
-                     .Concat(GetSteamLibraryPaths(processName)))
+                     .Concat(GetIndexedShortcutIconPaths(processName, displayName))
+                     .Concat(GetIndexedSteamLibraryPaths(processName)))
         {
             var normalizedPath = NormalizeIconPath(path);
             if (string.IsNullOrWhiteSpace(normalizedPath) || !File.Exists(normalizedPath))
@@ -199,31 +205,88 @@ public static class AppIconHelper
         }
     }
 
-    private static IEnumerable<string> GetShortcutIconPaths(string processName, string? displayName)
+    private static IEnumerable<string> GetIndexedShortcutIconPaths(string processName, string? displayName)
+    {
+        EnsureShortcutIndexBuildStarted();
+
+        List<ShortcutIconEntry>? shortcutIndex;
+        lock (_indexLock)
+        {
+            shortcutIndex = _shortcutIndex;
+        }
+
+        if (shortcutIndex == null)
+        {
+            yield break;
+        }
+
+        foreach (var shortcut in shortcutIndex)
+        {
+            if (!IsLikelyMatch(shortcut.ShortcutName, processName, displayName) &&
+                !IsLikelyMatch(shortcut.TargetName, processName, displayName))
+            {
+                continue;
+            }
+
+            if (!string.IsNullOrWhiteSpace(shortcut.IconPath))
+            {
+                yield return shortcut.IconPath!;
+            }
+
+            if (!string.IsNullOrWhiteSpace(shortcut.TargetPath))
+            {
+                yield return shortcut.TargetPath!;
+            }
+        }
+    }
+
+    private static void EnsureShortcutIndexBuildStarted()
+    {
+        lock (_indexLock)
+        {
+            if (_shortcutIndexBuildStarted)
+            {
+                return;
+            }
+
+            _shortcutIndexBuildStarted = true;
+        }
+
+        ThreadPool.QueueUserWorkItem(_ =>
+        {
+            List<ShortcutIconEntry> shortcutIndex;
+            try
+            {
+                shortcutIndex = BuildShortcutIndex().ToList();
+            }
+            catch
+            {
+                shortcutIndex = new List<ShortcutIconEntry>();
+            }
+
+            lock (_indexLock)
+            {
+                _shortcutIndex = shortcutIndex;
+            }
+        });
+    }
+
+    private static IEnumerable<ShortcutIconEntry> BuildShortcutIndex()
     {
         foreach (var shortcutPath in EnumerateShortcutPaths())
         {
             var shortcutName = Path.GetFileNameWithoutExtension(shortcutPath);
-            if (!IsLikelyMatch(shortcutName, processName, displayName))
-            {
-                var targetName = Path.GetFileNameWithoutExtension(ResolveShortcutTargetPath(shortcutPath));
-                if (!IsLikelyMatch(targetName, processName, displayName))
-                {
-                    continue;
-                }
-            }
-
-            var iconPath = ResolveShortcutIconPath(shortcutPath);
-            if (!string.IsNullOrWhiteSpace(iconPath))
-            {
-                yield return iconPath!;
-            }
-
             var targetPath = ResolveShortcutTargetPath(shortcutPath);
-            if (!string.IsNullOrWhiteSpace(targetPath))
+            var iconPath = ResolveShortcutIconPath(shortcutPath);
+            var targetName = Path.GetFileNameWithoutExtension(targetPath);
+
+            if (string.IsNullOrWhiteSpace(shortcutName) &&
+                string.IsNullOrWhiteSpace(targetName))
             {
-                yield return targetPath!;
+                continue;
             }
+
+            yield return new ShortcutIconEntry(shortcutName, targetName, iconPath, targetPath);
         }
     }
 
@@ -293,8 +356,62 @@ public static class AppIconHelper
         }
     }
 
-    private static IEnumerable<string> GetSteamLibraryPaths(string processName)
+    private static IEnumerable<string> GetIndexedSteamLibraryPaths(string processName)
     {
+        EnsureSteamIndexBuildStarted();
+
+        Dictionary<string, List<string>>? steamExecutableIndex;
+        lock (_indexLock)
+        {
+            steamExecutableIndex = _steamExecutableIndex;
+        }
+
+        if (steamExecutableIndex == null ||
+            !steamExecutableIndex.TryGetValue($"{processName}.exe", out var paths))
+        {
+            yield break;
+        }
+
+        foreach (var path in paths)
+        {
+            yield return path;
+        }
+    }
+
+    private static void EnsureSteamIndexBuildStarted()
+    {
+        lock (_indexLock)
+        {
+            if (_steamIndexBuildStarted)
+            {
+                return;
+            }
+
+            _steamIndexBuildStarted = true;
+        }
+
+        ThreadPool.QueueUserWorkItem(_ =>
+        {
+            Dictionary<string, List<string>> steamIndex;
+            try
+            {
+                steamIndex = BuildSteamExecutableIndex();
+            }
+            catch
+            {
+                steamIndex = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            }
+
+            lock (_indexLock)
+            {
+                _steamExecutableIndex = steamIndex;
+            }
+        });
+    }
+
+    private static Dictionary<string, List<string>> BuildSteamExecutableIndex()
+    {
+        var index = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         var steamRoots = GetSteamRoots()
             .Select(NormalizeDirectoryPath)
             .Where(path => path != null && Directory.Exists(path))
@@ -321,12 +438,26 @@ public static class AppIconHelper
                     continue;
                 }
 
-                foreach (var exePath in FindExecutableUnder(commonPath, $"{processName}.exe", MaxSteamSearchDirectories))
+                foreach (var exePath in FindExecutablesUnder(commonPath, MaxSteamSearchDirectories))
                 {
-                    yield return exePath;
+                    var exeName = Path.GetFileName(exePath);
+                    if (string.IsNullOrWhiteSpace(exeName))
+                    {
+                        continue;
+                    }
+
+                    if (!index.TryGetValue(exeName, out var paths))
+                    {
+                        paths = new List<string>();
+                        index[exeName] = paths;
+                    }
+
+                    paths.Add(exePath);
                 }
             }
         }
+
+        return index;
     }
 
     private static IEnumerable<string> GetSteamRoots()
@@ -404,7 +535,7 @@ public static class AppIconHelper
         }
     }
 
-    private static IEnumerable<string> FindExecutableUnder(string root, string exeName, int maxDirectories)
+    private static IEnumerable<string> FindExecutablesUnder(string root, int maxDirectories)
     {
         if (!Directory.Exists(root))
         {
@@ -423,7 +554,7 @@ public static class AppIconHelper
             IEnumerable<string> files;
             try
             {
-                files = Directory.EnumerateFiles(current, exeName, SearchOption.TopDirectoryOnly);
+                files = Directory.EnumerateFiles(current, "*.exe", SearchOption.TopDirectoryOnly);
             }
             catch
             {
@@ -602,5 +733,21 @@ public static class AppIconHelper
         public ImageSource? Icon { get; }
         public DateTime CachedAt { get; }
         public bool IsFresh => Icon != null || DateTime.UtcNow - CachedAt < FailedIconCacheDuration;
+    }
+
+    private sealed class ShortcutIconEntry
+    {
+        public ShortcutIconEntry(string? shortcutName, string? targetName, string? iconPath, string? targetPath)
+        {
+            ShortcutName = shortcutName;
+            TargetName = targetName;
+            IconPath = iconPath;
+            TargetPath = targetPath;
+        }
+
+        public string? ShortcutName { get; }
+        public string? TargetName { get; }
+        public string? IconPath { get; }
+        public string? TargetPath { get; }
     }
 }
