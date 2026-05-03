@@ -194,7 +194,7 @@ public class AppStatsViewModel : ViewModelBase
             {
                 AppName = app.AppName,
                 DisplayName = DisplayName(app),
-                Icon = AppIconHelper.GetAppIcon(app.AppName),
+                Icon = AppIconHelper.GetAppIcon(app.AppName, app.DisplayName),
                 KeysText = manager.FormatHistoryValue(StatsManager.HistoryMetric.KeyPresses, app.KeyPresses),
                 ClicksText = manager.FormatHistoryValue(StatsManager.HistoryMetric.Clicks, app.TotalClicks),
                 ScrollText = manager.FormatHistoryValue(StatsManager.HistoryMetric.ScrollDistance, app.ScrollDistance),

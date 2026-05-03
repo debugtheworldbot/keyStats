@@ -313,7 +313,7 @@ public class StatsPopupViewModel : ViewModelBase
                 Name = app.DisplayName,
                 KeyPresses = manager.FormatNumber(app.KeyPresses),
                 Clicks = manager.FormatNumber(app.TotalClicks),
-                Icon = AppIconHelper.GetAppIcon(app.AppName)
+                Icon = AppIconHelper.GetAppIcon(app.AppName, app.DisplayName)
             });
         }
     }
