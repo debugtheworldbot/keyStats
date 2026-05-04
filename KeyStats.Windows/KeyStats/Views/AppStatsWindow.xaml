@@ -156,11 +156,13 @@
                                                     </Border.Width>
                                                     <TextBlock Text="{Binding KeysText}" FontSize="10" Foreground="White"
                                                                HorizontalAlignment="Right" Margin="0,0,4,0"
+                                                               VerticalAlignment="Center"
                                                                Visibility="{Binding KeysLabelInside, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                                 </Border>
                                                 <TextBlock Text="{Binding KeysText}" FontSize="10"
                                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                                            HorizontalAlignment="Right" Margin="0,0,4,0"
+                                                           VerticalAlignment="Center"
                                                            Visibility="{Binding KeysLabelOutside, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                             </Grid>
                                         </Border>
@@ -181,11 +183,13 @@
                                                     </Border.Width>
                                                     <TextBlock Text="{Binding ClicksText}" FontSize="10" Foreground="White"
                                                                HorizontalAlignment="Right" Margin="0,0,4,0"
+                                                               VerticalAlignment="Center"
                                                                Visibility="{Binding ClicksLabelInside, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                                 </Border>
                                                 <TextBlock Text="{Binding ClicksText}" FontSize="10"
                                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                                            HorizontalAlignment="Right" Margin="0,0,4,0"
+                                                           VerticalAlignment="Center"
                                                            Visibility="{Binding ClicksLabelOutside, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                             </Grid>
                                         </Border>
@@ -206,11 +210,13 @@
                                                     </Border.Width>
                                                     <TextBlock Text="{Binding ScrollText}" FontSize="10" Foreground="White"
                                                                HorizontalAlignment="Right" Margin="0,0,4,0"
+                                                               VerticalAlignment="Center"
                                                                Visibility="{Binding ScrollLabelInside, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                                 </Border>
                                                 <TextBlock Text="{Binding ScrollText}" FontSize="10"
                                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                                            HorizontalAlignment="Right" Margin="0,0,4,0"
+                                                           VerticalAlignment="Center"
                                                            Visibility="{Binding ScrollLabelOutside, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                             </Grid>
                                         </Border>
