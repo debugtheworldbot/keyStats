@@ -79,9 +79,9 @@ public static class AppIconHelper
     {
         try
         {
-            foreach (var iconPath in GetIconCandidatePaths(processName, displayName))
+            foreach (var iconCandidate in GetIconCandidatePaths(processName, displayName))
             {
-                var icon = ExtractIconFromFile(iconPath);
+                var icon = ExtractIconFromFile(iconCandidate.Path, iconCandidate.IconIndex);
                 if (icon != null)
                 {
                     return icon;
@@ -96,7 +96,7 @@ public static class AppIconHelper
         return null;
     }
 
-    private static IEnumerable<string> GetIconCandidatePaths(string processName, string? displayName)
+    private static IEnumerable<IconCandidate> GetIconCandidatePaths(string processName, string? displayName)
     {
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -106,15 +106,15 @@ public static class AppIconHelper
                      .Concat(GetIndexedShortcutIconPaths(processName, displayName))
                      .Concat(GetIndexedSteamLibraryPaths(processName)))
         {
-            var normalizedPath = NormalizeIconPath(path);
-            if (string.IsNullOrWhiteSpace(normalizedPath) || !File.Exists(normalizedPath))
+            var candidate = NormalizeIconCandidate(path);
+            if (candidate == null || !File.Exists(candidate.Path))
             {
                 continue;
             }
 
-            if (seen.Add(normalizedPath!))
+            if (seen.Add(candidate.CacheKey))
             {
-                yield return normalizedPath!;
+                yield return candidate;
             }
         }
     }
@@ -942,13 +942,27 @@ public static class AppIconHelper
         }
 
         var path = Environment.ExpandEnvironmentVariables(rawPath!.Trim().Trim('"'));
-        var commaIndex = path.LastIndexOf(',');
-        if (commaIndex > 1 && int.TryParse(path.Substring(commaIndex + 1).Trim(), out _))
+        return string.IsNullOrWhiteSpace(path) ? null : path;
+    }
+
+    private static IconCandidate? NormalizeIconCandidate(string? rawPath)
+    {
+        var path = NormalizeIconPath(rawPath);
+        if (string.IsNullOrWhiteSpace(path))
         {
-            path = path.Substring(0, commaIndex).Trim().Trim('"');
+            return null;
         }
 
-        return string.IsNullOrWhiteSpace(path) ? null : path;
+        var normalizedPath = path!;
+        int? iconIndex = null;
+        var commaIndex = normalizedPath.LastIndexOf(',');
+        if (commaIndex > 1 && int.TryParse(normalizedPath.Substring(commaIndex + 1).Trim(), out var parsedIconIndex))
+        {
+            iconIndex = parsedIconIndex;
+            normalizedPath = normalizedPath.Substring(0, commaIndex).Trim().Trim('"');
+        }
+
+        return string.IsNullOrWhiteSpace(normalizedPath) ? null : new IconCandidate(normalizedPath, iconIndex);
     }
 
     private static string? NormalizeDirectoryPath(string? rawPath)
@@ -993,8 +1007,17 @@ public static class AppIconHelper
                normalizedExpected.IndexOf(normalizedCandidate, StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
-    private static ImageSource? ExtractIconFromFile(string filePath)
+    private static ImageSource? ExtractIconFromFile(string filePath, int? iconIndex = null)
     {
+        if (iconIndex.HasValue)
+        {
+            var indexedIcon = ExtractIconFromFileByIndex(filePath, iconIndex.Value);
+            if (indexedIcon != null)
+            {
+                return indexedIcon;
+            }
+        }
+
         try
         {
             using var icon = Icon.ExtractAssociatedIcon(filePath);
@@ -1026,8 +1049,61 @@ public static class AppIconHelper
         }
     }
 
+    private static ImageSource? ExtractIconFromFileByIndex(string filePath, int iconIndex)
+    {
+        var largeIcons = new[] { IntPtr.Zero };
+        var smallIcons = new[] { IntPtr.Zero };
+
+        try
+        {
+            var extractedCount = ExtractIconEx(filePath, iconIndex, largeIcons, smallIcons, 1);
+            if (extractedCount == 0)
+            {
+                return null;
+            }
+
+            var iconHandle = largeIcons[0] != IntPtr.Zero ? largeIcons[0] : smallIcons[0];
+            if (iconHandle == IntPtr.Zero)
+            {
+                return null;
+            }
+
+            var imageSource = Imaging.CreateBitmapSourceFromHIcon(
+                iconHandle,
+                Int32Rect.Empty,
+                BitmapSizeOptions.FromEmptyOptions());
+
+            imageSource.Freeze();
+            return imageSource;
+        }
+        catch
+        {
+            return null;
+        }
+        finally
+        {
+            if (largeIcons[0] != IntPtr.Zero)
+            {
+                NativeInterop.DestroyIcon(largeIcons[0]);
+            }
+
+            if (smallIcons[0] != IntPtr.Zero && smallIcons[0] != largeIcons[0])
+            {
+                NativeInterop.DestroyIcon(smallIcons[0]);
+            }
+        }
+    }
+
     [System.Runtime.InteropServices.DllImport("gdi32.dll")]
     private static extern bool DeleteObject(IntPtr hObject);
+
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    private static extern uint ExtractIconEx(
+        string szFileName,
+        int nIconIndex,
+        IntPtr[] phiconLarge,
+        IntPtr[] phiconSmall,
+        uint nIcons);
 
     private sealed class IconCacheEntry
     {
@@ -1056,6 +1132,19 @@ public static class AppIconHelper
         public string? TargetName { get; }
         public string? IconPath { get; }
         public string? TargetPath { get; }
+    }
+
+    private sealed class IconCandidate
+    {
+        public IconCandidate(string path, int? iconIndex)
+        {
+            Path = path;
+            IconIndex = iconIndex;
+        }
+
+        public string Path { get; }
+        public int? IconIndex { get; }
+        public string CacheKey => IconIndex.HasValue ? $"{Path},{IconIndex.Value}" : Path;
     }
 
     private sealed class SteamAppEntry
