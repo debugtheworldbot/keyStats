@@ -189,12 +189,13 @@ public class AppStatsViewModel : ViewModelBase
             var keysRatio = app.KeyPresses / (double)maxKeys;
             var clicksRatio = app.TotalClicks / (double)maxClicks;
             var scrollRatio = app.ScrollDistance / maxScroll;
+            var displayName = DisplayName(app);
 
             AppStatsItems.Add(new AppStatsRowItem
             {
                 AppName = app.AppName,
-                DisplayName = DisplayName(app),
-                Icon = AppIconHelper.GetAppIcon(app.AppName, app.DisplayName),
+                DisplayName = displayName,
+                Icon = AppIconHelper.GetAppIcon(app.AppName, displayName),
                 KeysText = manager.FormatHistoryValue(StatsManager.HistoryMetric.KeyPresses, app.KeyPresses),
                 ClicksText = manager.FormatHistoryValue(StatsManager.HistoryMetric.Clicks, app.TotalClicks),
                 ScrollText = manager.FormatHistoryValue(StatsManager.HistoryMetric.ScrollDistance, app.ScrollDistance),

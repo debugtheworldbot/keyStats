@@ -7,7 +7,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -19,15 +18,18 @@ namespace KeyStats.Helpers;
 public static class AppIconHelper
 {
     private const int MaxShortcutScanCount = 3000;
+    private const int MaxSteamAppInfoBytes = 16 * 1024 * 1024;
     private const int SteamAppInfoIconSearchWindow = 16000;
+    private const int MaxSteamExecutableTokenBytes = 260;
     private static readonly TimeSpan FailedIconCacheDuration = TimeSpan.FromSeconds(10);
-    private static readonly Regex SteamExecutableRegex = new(@"[A-Za-z0-9_. \\/-]+\.exe", RegexOptions.IgnoreCase);
-    private static readonly Regex SteamIconHashRegex = new(@"\b[a-f0-9]{40}\b", RegexOptions.IgnoreCase);
+    private static readonly TimeSpan IndexRetryDelay = TimeSpan.FromSeconds(30);
     private static readonly Dictionary<string, IconCacheEntry> _iconCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly object _lock = new object();
     private static readonly object _indexLock = new object();
-    private static bool _shortcutIndexBuildStarted;
-    private static bool _steamIndexBuildStarted;
+    private static bool _shortcutIndexBuildInProgress;
+    private static bool _steamIndexBuildInProgress;
+    private static DateTime _shortcutIndexLastAttemptUtc = DateTime.MinValue;
+    private static DateTime _steamIndexLastAttemptUtc = DateTime.MinValue;
     private static List<ShortcutIconEntry>? _shortcutIndex;
     private static Dictionary<string, List<string>>? _steamExecutableIndex;
 
@@ -248,31 +250,44 @@ public static class AppIconHelper
     {
         lock (_indexLock)
         {
-            if (_shortcutIndexBuildStarted)
+            if (_shortcutIndex != null ||
+                _shortcutIndexBuildInProgress ||
+                DateTime.UtcNow - _shortcutIndexLastAttemptUtc < IndexRetryDelay)
             {
                 return;
             }
 
-            _shortcutIndexBuildStarted = true;
+            _shortcutIndexBuildInProgress = true;
+            _shortcutIndexLastAttemptUtc = DateTime.UtcNow;
         }
 
-        ThreadPool.QueueUserWorkItem(_ =>
+        var thread = new Thread(() =>
         {
-            List<ShortcutIconEntry> shortcutIndex;
             try
             {
-                shortcutIndex = BuildShortcutIndex().ToList();
+                var shortcutIndex = BuildShortcutIndex().ToList();
+                lock (_indexLock)
+                {
+                    _shortcutIndex = shortcutIndex;
+                    _shortcutIndexBuildInProgress = false;
+                }
             }
             catch
             {
-                shortcutIndex = new List<ShortcutIconEntry>();
+                lock (_indexLock)
+                {
+                    _shortcutIndex = null;
+                    _shortcutIndexBuildInProgress = false;
+                }
             }
+        })
+        {
+            IsBackground = true,
+            Name = "KeyStats Shortcut Icon Index"
+        };
 
-            lock (_indexLock)
-            {
-                _shortcutIndex = shortcutIndex;
-            }
-        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
     }
 
     private static IEnumerable<ShortcutIconEntry> BuildShortcutIndex()
@@ -386,29 +401,35 @@ public static class AppIconHelper
     {
         lock (_indexLock)
         {
-            if (_steamIndexBuildStarted)
+            if (_steamExecutableIndex != null ||
+                _steamIndexBuildInProgress ||
+                DateTime.UtcNow - _steamIndexLastAttemptUtc < IndexRetryDelay)
             {
                 return;
             }
 
-            _steamIndexBuildStarted = true;
+            _steamIndexBuildInProgress = true;
+            _steamIndexLastAttemptUtc = DateTime.UtcNow;
         }
 
         ThreadPool.QueueUserWorkItem(_ =>
         {
-            Dictionary<string, List<string>> steamIndex;
             try
             {
-                steamIndex = BuildSteamExecutableIndex();
+                var steamIndex = BuildSteamExecutableIndex();
+                lock (_indexLock)
+                {
+                    _steamExecutableIndex = steamIndex;
+                    _steamIndexBuildInProgress = false;
+                }
             }
             catch
             {
-                steamIndex = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-            }
-
-            lock (_indexLock)
-            {
-                _steamExecutableIndex = steamIndex;
+                lock (_indexLock)
+                {
+                    _steamExecutableIndex = null;
+                    _steamIndexBuildInProgress = false;
+                }
             }
         });
     }
@@ -497,17 +518,23 @@ public static class AppIconHelper
             return;
         }
 
-        string appInfoText;
+        var appInfoFile = new FileInfo(appInfoPath);
+        if (appInfoFile.Length > MaxSteamAppInfoBytes)
+        {
+            return;
+        }
+
+        byte[] appInfoBytes;
         try
         {
-            appInfoText = Encoding.UTF8.GetString(File.ReadAllBytes(appInfoPath));
+            appInfoBytes = File.ReadAllBytes(appInfoPath);
         }
         catch
         {
             return;
         }
 
-        foreach (Match executableMatch in SteamExecutableRegex.Matches(appInfoText))
+        foreach (var executableMatch in FindSteamExecutableMatches(appInfoBytes))
         {
             var executableName = NormalizeSteamExecutableName(executableMatch.Value);
             if (string.IsNullOrWhiteSpace(executableName))
@@ -515,13 +542,41 @@ public static class AppIconHelper
                 continue;
             }
 
-            var iconPath = FindNearestSteamIconPath(appInfoText, executableMatch.Index, iconPaths);
+            var iconPath = FindNearestSteamIconPath(appInfoBytes, executableMatch.Index, iconPaths);
             if (iconPath == null)
             {
                 continue;
             }
 
             AddIndexedPath(index, executableName!, iconPath);
+        }
+    }
+
+    private static IEnumerable<SteamExecutableMatch> FindSteamExecutableMatches(byte[] appInfoBytes)
+    {
+        for (var index = 0; index <= appInfoBytes.Length - 4; index++)
+        {
+            if (!IsAsciiDotExeAt(appInfoBytes, index))
+            {
+                continue;
+            }
+
+            var startIndex = index;
+            var minStartIndex = Math.Max(0, index - MaxSteamExecutableTokenBytes + 1);
+            while (startIndex > minStartIndex && IsSteamExecutablePathByte(appInfoBytes[startIndex - 1]))
+            {
+                startIndex--;
+            }
+
+            var length = index + 4 - startIndex;
+            if (length <= 4)
+            {
+                continue;
+            }
+
+            yield return new SteamExecutableMatch(
+                index,
+                Encoding.ASCII.GetString(appInfoBytes, startIndex, length));
         }
     }
 
@@ -532,26 +587,72 @@ public static class AppIconHelper
         return string.IsNullOrWhiteSpace(fileName) ? null : fileName;
     }
 
-    private static string? FindNearestSteamIconPath(string appInfoText, int executableIndex, Dictionary<string, string> iconPaths)
+    private static string? FindNearestSteamIconPath(byte[] appInfoBytes, int executableIndex, Dictionary<string, string> iconPaths)
     {
         var startIndex = Math.Max(0, executableIndex - SteamAppInfoIconSearchWindow);
-        var length = executableIndex - startIndex;
-        if (length <= 0)
+        for (var index = executableIndex - 40; index >= startIndex; index--)
         {
-            return null;
-        }
+            if (!IsSteamIconHashAt(appInfoBytes, index))
+            {
+                continue;
+            }
 
-        var precedingText = appInfoText.Substring(startIndex, length);
-        var matches = SteamIconHashRegex.Matches(precedingText);
-        for (var index = matches.Count - 1; index >= 0; index--)
-        {
-            if (iconPaths.TryGetValue(matches[index].Value, out var iconPath))
+            var hash = Encoding.ASCII.GetString(appInfoBytes, index, 40);
+            if (iconPaths.TryGetValue(hash, out var iconPath))
             {
                 return iconPath;
             }
         }
 
         return null;
+    }
+
+    private static bool IsAsciiDotExeAt(byte[] bytes, int index)
+    {
+        return bytes[index] == (byte)'.' &&
+               IsAsciiLower(bytes[index + 1], 'e') &&
+               IsAsciiLower(bytes[index + 2], 'x') &&
+               IsAsciiLower(bytes[index + 3], 'e');
+    }
+
+    private static bool IsAsciiLower(byte value, char expected)
+    {
+        return char.ToLowerInvariant((char)value) == expected;
+    }
+
+    private static bool IsSteamExecutablePathByte(byte value)
+    {
+        return value == (byte)' ' ||
+               value == (byte)'_' ||
+               value == (byte)'.' ||
+               value == (byte)'-' ||
+               value == (byte)'\\' ||
+               value == (byte)'/' ||
+               (value >= (byte)'0' && value <= (byte)'9') ||
+               (value >= (byte)'A' && value <= (byte)'Z') ||
+               (value >= (byte)'a' && value <= (byte)'z');
+    }
+
+    private static bool IsSteamIconHashAt(byte[] bytes, int index)
+    {
+        if (index < 0 || index + 40 > bytes.Length)
+        {
+            return false;
+        }
+
+        for (var offset = 0; offset < 40; offset++)
+        {
+            var value = bytes[index + offset];
+            var isHex = (value >= (byte)'0' && value <= (byte)'9') ||
+                        (value >= (byte)'a' && value <= (byte)'f') ||
+                        (value >= (byte)'A' && value <= (byte)'F');
+            if (!isHex)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static void AddIndexedPath(Dictionary<string, List<string>> index, string executableName, string path)
@@ -965,5 +1066,17 @@ public static class AppIconHelper
         }
 
         public string InstallPath { get; }
+    }
+
+    private readonly struct SteamExecutableMatch
+    {
+        public SteamExecutableMatch(int index, string value)
+        {
+            Index = index;
+            Value = value;
+        }
+
+        public int Index { get; }
+        public string Value { get; }
     }
 }
