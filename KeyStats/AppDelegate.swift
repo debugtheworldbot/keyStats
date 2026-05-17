@@ -15,6 +15,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private let analyticsFirstOpenUTCKey = "analyticsFirstOpenUTC"
     private let analyticsInstallTrackedKey = "analyticsInstallTracked"
     private let helperAccessibilityGrantedKey = "helperAccessibilityGranted"
+    private let helperAccessibilityRecoverySuppressedKey = "helperAccessibilityRecoverySuppressed"
+    private let startupAccessibilityRecoveryDelays: [TimeInterval] = [1.0, 2.0, 4.0, 8.0, 12.0]
     private var wasPreviouslyInstalledAtLaunch = false
     private var didRestartHelperAfterStartupPermissionMiss = false
     private var shouldShowAccessibilityPromptOnLaunch: Bool {
@@ -119,31 +121,68 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func handleStartupAccessibilityDenied() {
-        let hadPreviousGrant = UserDefaults.standard.bool(forKey: helperAccessibilityGrantedKey) || wasPreviouslyInstalledAtLaunch
+        let defaults = UserDefaults.standard
+        let hadPreviousGrant = defaults.bool(forKey: helperAccessibilityGrantedKey)
+        let canUseInstallFallback = wasPreviouslyInstalledAtLaunch && !defaults.bool(forKey: helperAccessibilityRecoverySuppressedKey)
+        // These launch-recovery flags are read and written on the main queue.
         if hadPreviousGrant && !didRestartHelperAfterStartupPermissionMiss {
             didRestartHelperAfterStartupPermissionMiss = true
-            NSLog("[AppDelegate] helper reported accessibility=false after previous grant; restarting LaunchAgent before prompting")
-            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-                HelperXPCClient.shared.disconnect()
-                do {
-                    try HelperSupervisor.shared.restartLaunchAgent()
-                    NSLog("[AppDelegate] helper LaunchAgent restarted after transient permission miss")
-                } catch {
-                    NSLog("[AppDelegate] helper LaunchAgent restart failed after transient permission miss: \(error)")
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-                    self?.connectHelperAndStart()
-                }
-            }
+            recoverStartupAccessibilityState(delays: startupAccessibilityRecoveryDelays)
+            return
+        }
+        if canUseInstallFallback && !didRestartHelperAfterStartupPermissionMiss {
+            didRestartHelperAfterStartupPermissionMiss = true
+            recoverStartupAccessibilityState(delays: startupAccessibilityRecoveryDelays)
             return
         }
 
+        defaults.set(false, forKey: helperAccessibilityGrantedKey)
+        defaults.set(true, forKey: helperAccessibilityRecoverySuppressedKey)
         if shouldShowAccessibilityPromptOnLaunch {
             showPermissionAlert()
         } else {
             print("开发模式启动：helper 未获辅助功能授权，跳过启动提示")
         }
         startPermissionPolling()
+    }
+
+    private func recoverStartupAccessibilityState(delays: [TimeInterval]) {
+        guard let delay = delays.first else {
+            restartHelperAfterStartupPermissionMiss()
+            return
+        }
+
+        let remainingDelays = Array(delays.dropFirst())
+        NSLog("[AppDelegate] helper reported accessibility=false; rechecking in \(delay)s before prompting")
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            guard let self = self else { return }
+            HelperXPCClient.shared.refreshState { [weak self] state in
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    if case .connected(_, let granted) = state, granted {
+                        self.handleAccessibilityPermissionGranted()
+                    } else {
+                        self.recoverStartupAccessibilityState(delays: remainingDelays)
+                    }
+                }
+            }
+        }
+    }
+
+    private func restartHelperAfterStartupPermissionMiss() {
+        NSLog("[AppDelegate] helper still reports accessibility=false after delayed rechecks; restarting LaunchAgent before prompting")
+        HelperXPCClient.shared.disconnect()
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            do {
+                try HelperSupervisor.shared.restartLaunchAgent()
+                NSLog("[AppDelegate] helper LaunchAgent restarted after transient permission miss")
+            } catch {
+                NSLog("[AppDelegate] helper LaunchAgent restart failed after transient permission miss: \(error)")
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                self?.connectHelperAndStart()
+            }
+        }
     }
 
     func requestAccessibilityPermission(analyticsSource: String) {
@@ -203,6 +242,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         permissionCheckTimer = nil
         didRestartHelperAfterStartupPermissionMiss = false
         UserDefaults.standard.set(true, forKey: helperAccessibilityGrantedKey)
+        UserDefaults.standard.set(false, forKey: helperAccessibilityRecoverySuppressedKey)
         HelperXPCClient.shared.startMonitoring { ok, code in
             NSLog("[AppDelegate] helper startMonitoring after grant ok=\(ok) code=\(code)")
         }

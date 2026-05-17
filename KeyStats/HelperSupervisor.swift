@@ -53,14 +53,7 @@ final class HelperSupervisor {
     }
 
     func restartLaunchAgent() throws {
-        _ = runLaunchctl(["bootout", "gui/\(getuid())/\(HelperLocations.launchAgentLabel)"])
-        let res = runLaunchctl(["bootstrap", "gui/\(getuid())", HelperLocations.launchAgentPlistURL.path])
-        if res.status != 0 {
-            if isLaunchAgentLoaded() {
-                return
-            }
-            throw SupervisorError.launchctlFailed(res.status, res.stderr)
-        }
+        try bootstrapLaunchAgent(restartExisting: true)
     }
 
     // MARK: - LaunchAgent
