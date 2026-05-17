@@ -14,6 +14,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private let launchAtLoginPromptedKey = "launchAtLoginPrompted"
     private let analyticsFirstOpenUTCKey = "analyticsFirstOpenUTC"
     private let analyticsInstallTrackedKey = "analyticsInstallTracked"
+    private let helperAccessibilityGrantedKey = "helperAccessibilityGranted"
+    private var wasPreviouslyInstalledAtLaunch = false
+    private var didRestartHelperAfterStartupPermissionMiss = false
     private var shouldShowAccessibilityPromptOnLaunch: Bool {
         #if DEBUG
         return false
@@ -26,6 +29,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // 必须在 trackInstallIfNeeded()/MenuBarController 任何 UserDefaults 写入之前采集，
         // 否则 fresh install 与升级用户在后续阶段已无差别。仅作为是否触发迁移提示的判据。
         let wasPreviouslyInstalled = UserDefaults.standard.bool(forKey: analyticsInstallTrackedKey)
+        wasPreviouslyInstalledAtLaunch = wasPreviouslyInstalled
 
         // 初始化 PostHog
         let config = PostHogConfig(apiKey: "phc_TYyyKIfGgL1CXZx7t9dY7igE3yNwNpjj9aqItSpNVLx", host: "https://us.i.posthog.com")
@@ -86,17 +90,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 switch state {
                 case .connected(_, let granted):
                     if granted {
+                        self.didRestartHelperAfterStartupPermissionMiss = false
+                        UserDefaults.standard.set(true, forKey: self.helperAccessibilityGrantedKey)
                         HelperXPCClient.shared.startMonitoring { ok, code in
                             NSLog("[AppDelegate] helper startMonitoring ok=\(ok) code=\(code)")
                         }
                         self.promptLaunchAtLoginIfNeeded()
                     } else {
-                        if self.shouldShowAccessibilityPromptOnLaunch {
-                            self.showPermissionAlert()
-                        } else {
-                            print("开发模式启动：helper 未获辅助功能授权，跳过启动提示")
-                        }
-                        self.startPermissionPolling()
+                        self.handleStartupAccessibilityDenied()
                     }
                 case .disconnected(let reason):
                     NSLog("[AppDelegate] helper disconnected: \(reason); retry in 5s")
@@ -115,6 +116,34 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return granted
         }
         return false
+    }
+
+    private func handleStartupAccessibilityDenied() {
+        let hadPreviousGrant = UserDefaults.standard.bool(forKey: helperAccessibilityGrantedKey) || wasPreviouslyInstalledAtLaunch
+        if hadPreviousGrant && !didRestartHelperAfterStartupPermissionMiss {
+            didRestartHelperAfterStartupPermissionMiss = true
+            NSLog("[AppDelegate] helper reported accessibility=false after previous grant; restarting LaunchAgent before prompting")
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                HelperXPCClient.shared.disconnect()
+                do {
+                    try HelperSupervisor.shared.restartLaunchAgent()
+                    NSLog("[AppDelegate] helper LaunchAgent restarted after transient permission miss")
+                } catch {
+                    NSLog("[AppDelegate] helper LaunchAgent restart failed after transient permission miss: \(error)")
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                    self?.connectHelperAndStart()
+                }
+            }
+            return
+        }
+
+        if shouldShowAccessibilityPromptOnLaunch {
+            showPermissionAlert()
+        } else {
+            print("开发模式启动：helper 未获辅助功能授权，跳过启动提示")
+        }
+        startPermissionPolling()
     }
 
     func requestAccessibilityPermission(analyticsSource: String) {
@@ -172,6 +201,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func handleAccessibilityPermissionGranted() {
         permissionCheckTimer?.invalidate()
         permissionCheckTimer = nil
+        didRestartHelperAfterStartupPermissionMiss = false
+        UserDefaults.standard.set(true, forKey: helperAccessibilityGrantedKey)
         HelperXPCClient.shared.startMonitoring { ok, code in
             NSLog("[AppDelegate] helper startMonitoring after grant ok=\(ok) code=\(code)")
         }
