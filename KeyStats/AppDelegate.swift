@@ -16,9 +16,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private let analyticsInstallTrackedKey = "analyticsInstallTracked"
     private let helperAccessibilityGrantedKey = "helperAccessibilityGranted"
     private let helperAccessibilityRecoverySuppressedKey = "helperAccessibilityRecoverySuppressed"
-    private let startupAccessibilityRecoveryDelays: [TimeInterval] = [1.0, 2.0, 4.0, 8.0, 12.0]
+    private let startupAccessibilityRecoveryDelays: [TimeInterval] = [1.0, 2.0, 4.0, 6.0]
     private var wasPreviouslyInstalledAtLaunch = false
-    private var didRestartHelperAfterStartupPermissionMiss = false
+    private var didAttemptStartupAccessibilityRecovery = false
     private var shouldShowAccessibilityPromptOnLaunch: Bool {
         #if DEBUG
         return false
@@ -92,12 +92,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 switch state {
                 case .connected(_, let granted):
                     if granted {
-                        self.didRestartHelperAfterStartupPermissionMiss = false
-                        UserDefaults.standard.set(true, forKey: self.helperAccessibilityGrantedKey)
-                        HelperXPCClient.shared.startMonitoring { ok, code in
-                            NSLog("[AppDelegate] helper startMonitoring ok=\(ok) code=\(code)")
-                        }
-                        self.promptLaunchAtLoginIfNeeded()
+                        self.handleAccessibilityPermissionGranted()
                     } else {
                         self.handleStartupAccessibilityDenied()
                     }
@@ -125,13 +120,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let hadPreviousGrant = defaults.bool(forKey: helperAccessibilityGrantedKey)
         let canUseInstallFallback = wasPreviouslyInstalledAtLaunch && !defaults.bool(forKey: helperAccessibilityRecoverySuppressedKey)
         // These launch-recovery flags are read and written on the main queue.
-        if hadPreviousGrant && !didRestartHelperAfterStartupPermissionMiss {
-            didRestartHelperAfterStartupPermissionMiss = true
-            recoverStartupAccessibilityState(delays: startupAccessibilityRecoveryDelays)
-            return
-        }
-        if canUseInstallFallback && !didRestartHelperAfterStartupPermissionMiss {
-            didRestartHelperAfterStartupPermissionMiss = true
+        if (hadPreviousGrant || canUseInstallFallback) && !didAttemptStartupAccessibilityRecovery {
+            didAttemptStartupAccessibilityRecovery = true
             recoverStartupAccessibilityState(delays: startupAccessibilityRecoveryDelays)
             return
         }
@@ -159,10 +149,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             HelperXPCClient.shared.refreshState { [weak self] state in
                 DispatchQueue.main.async {
                     guard let self = self else { return }
-                    if case .connected(_, let granted) = state, granted {
+                    switch state {
+                    case .connected(_, true):
                         self.handleAccessibilityPermissionGranted()
-                    } else {
+                    case .connected(_, false):
                         self.recoverStartupAccessibilityState(delays: remainingDelays)
+                    default:
+                        self.restartHelperAfterStartupPermissionMiss()
                     }
                 }
             }
@@ -240,7 +233,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func handleAccessibilityPermissionGranted() {
         permissionCheckTimer?.invalidate()
         permissionCheckTimer = nil
-        didRestartHelperAfterStartupPermissionMiss = false
+        didAttemptStartupAccessibilityRecovery = false
         UserDefaults.standard.set(true, forKey: helperAccessibilityGrantedKey)
         UserDefaults.standard.set(false, forKey: helperAccessibilityRecoverySuppressedKey)
         HelperXPCClient.shared.startMonitoring { ok, code in
