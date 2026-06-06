@@ -37,7 +37,6 @@ public class KeyboardHeatmapControl : FrameworkElement
     }
 
     private const double LayoutInset = 8;
-    private const double MaximumKeyboardScale = 58;
 
     private static readonly HashSet<string> NumberKeyIds = new(Enumerable.Range(0, 10).Select(i => i.ToString(CultureInfo.InvariantCulture)));
     private static readonly IReadOnlyList<KeySpec> Layout = BuildLayout();
@@ -131,7 +130,7 @@ public class KeyboardHeatmapControl : FrameworkElement
 
         var scaleX = available.Width / LayoutBounds.Width;
         var scaleY = available.Height / LayoutBounds.Height;
-        var scale = Math.Min(Math.Min(scaleX, scaleY), MaximumKeyboardScale);
+        var scale = Math.Min(scaleX, scaleY);
         var width = LayoutBounds.Width * scale;
         var height = LayoutBounds.Height * scale;
         var origin = new Point(

@@ -8,8 +8,7 @@
         Height="460"
         MinWidth="860"
         MinHeight="460"
-        MaxWidth="860"
-        MaxHeight="460"
+        ResizeMode="CanResize"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource WindowSurfaceBrush}"
         ShowInTaskbar="True">
