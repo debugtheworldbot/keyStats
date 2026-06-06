@@ -87,6 +87,11 @@ public static class KeyNameMapper
             return "NumEnter";
         }
 
+        if (GetNumLockOffNumpadKeyName(vkCode, scanCode, flags) is string numpadKeyName)
+        {
+            return numpadKeyName;
+        }
+
         if (VirtualKeyNames.TryGetValue(vkCode, out var name))
         {
             return name;
@@ -121,11 +126,18 @@ public static class KeyNameMapper
         }
 
         // Try to get the key name using Windows API
-        var mappedScanCode = NativeInterop.MapVirtualKey((uint)vkCode, NativeInterop.MAPVK_VK_TO_VSC);
-        if (mappedScanCode > 0)
+        var effectiveScanCode = scanCode != 0
+            ? scanCode
+            : NativeInterop.MapVirtualKey((uint)vkCode, NativeInterop.MAPVK_VK_TO_VSC);
+        if (effectiveScanCode > 0)
         {
             var keyNameBuffer = new char[32];
-            var lParam = (int)(mappedScanCode << 16);
+            var lParam = (int)((effectiveScanCode & 0xFF) << 16);
+            if ((flags & ExtendedKeyFlag) != 0)
+            {
+                lParam |= 1 << 24;
+            }
+
             var result = NativeInterop.GetKeyNameText(lParam, keyNameBuffer, keyNameBuffer.Length);
             if (result > 0)
             {
@@ -134,6 +146,30 @@ public static class KeyNameMapper
         }
 
         return $"Key{vkCode}";
+    }
+
+    private static string? GetNumLockOffNumpadKeyName(int vkCode, uint scanCode, uint flags)
+    {
+        if ((flags & ExtendedKeyFlag) != 0)
+        {
+            return null;
+        }
+
+        return (vkCode, scanCode) switch
+        {
+            (0x2D, 0x52u) => "Num0",
+            (0x23, 0x4Fu) => "Num1",
+            (0x28, 0x50u) => "Num2",
+            (0x22, 0x51u) => "Num3",
+            (0x25, 0x4Bu) => "Num4",
+            (0x0C, 0x4Cu) => "Num5",
+            (0x27, 0x4Du) => "Num6",
+            (0x24, 0x47u) => "Num7",
+            (0x26, 0x48u) => "Num8",
+            (0x21, 0x49u) => "Num9",
+            (0x2E, 0x53u) => "Num.",
+            _ => null
+        };
     }
 
     private static List<string> GetModifierNames(int vkCode)
