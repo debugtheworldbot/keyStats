@@ -221,7 +221,7 @@
                    PopupAnimation="Fade"
                    Closed="DatePickerPopup_Closed">
                 <Border Margin="0,6,0,0"
-                        Background="{DynamicResource CardBrush}"
+                        Background="{DynamicResource SurfaceBrush}"
                         BorderBrush="{DynamicResource DividerBrush}"
                         BorderThickness="1"
                         CornerRadius="10">
