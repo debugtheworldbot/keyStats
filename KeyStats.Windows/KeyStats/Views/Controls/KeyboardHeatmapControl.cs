@@ -516,6 +516,10 @@ public class KeyboardHeatmapControl : FrameworkElement
         var yNavTop = y1;
         var yNavBottom = y1 + 1.0 + navRowGap;
 
+        items.Add(new KeySpec("PrintScreen", "prt\nsc", new Rect(navStartX, yFunction, navKeyWidth, 1.0)));
+        items.Add(new KeySpec("ScrollLock", "scroll\nlock", new Rect(navStartX + navStepX, yFunction, navKeyWidth, 1.0)));
+        items.Add(new KeySpec("Pause", "pause", new Rect(navStartX + navStepX * 2, yFunction, navKeyWidth, 1.0)));
+
         items.Add(new KeySpec("Insert", "ins", new Rect(navStartX, yNavTop, navKeyWidth, 1.0)));
         items.Add(new KeySpec("Home", "home", new Rect(navStartX + navStepX, yNavTop, navKeyWidth, 1.0)));
         items.Add(new KeySpec("PageUp", "pg up", new Rect(navStartX + navStepX * 2, yNavTop, navKeyWidth, 1.0)));
@@ -532,6 +536,35 @@ public class KeyboardHeatmapControl : FrameworkElement
         items.Add(new KeySpec("Left", "left", new Rect(arrowStartX, yArrowBottom, arrowWidth, 1.0)));
         items.Add(new KeySpec("Down", "down", new Rect(arrowStartX + arrowStep, yArrowBottom, arrowWidth, 1.0)));
         items.Add(new KeySpec("Right", "right", new Rect(arrowStartX + arrowStep * 2, yArrowBottom, arrowWidth, 1.0)));
+
+        var numpadGap = 0.55;
+        var numStartX = navStartX + navStepX * 3 + numpadGap;
+        var numKeyWidth = 1.0;
+        var numStep = numKeyWidth + keyGap;
+        var tallKeyHeight = 2.0 + rowGap;
+        var wideKeyWidth = 2.0 + keyGap;
+
+        items.Add(new KeySpec("NumLock", "num\nlock", new Rect(numStartX, y1, numKeyWidth, 1.0)));
+        items.Add(new KeySpec("Num/", "/", new Rect(numStartX + numStep, y1, numKeyWidth, 1.0)));
+        items.Add(new KeySpec("Num*", "*", new Rect(numStartX + numStep * 2, y1, numKeyWidth, 1.0)));
+        items.Add(new KeySpec("Num-", "-", new Rect(numStartX + numStep * 3, y1, numKeyWidth, 1.0)));
+
+        items.Add(new KeySpec("Num7", "7", new Rect(numStartX, y2, numKeyWidth, 1.0)));
+        items.Add(new KeySpec("Num8", "8", new Rect(numStartX + numStep, y2, numKeyWidth, 1.0)));
+        items.Add(new KeySpec("Num9", "9", new Rect(numStartX + numStep * 2, y2, numKeyWidth, 1.0)));
+        items.Add(new KeySpec("Num+", "+", new Rect(numStartX + numStep * 3, y2, numKeyWidth, tallKeyHeight)));
+
+        items.Add(new KeySpec("Num4", "4", new Rect(numStartX, y3, numKeyWidth, 1.0)));
+        items.Add(new KeySpec("Num5", "5", new Rect(numStartX + numStep, y3, numKeyWidth, 1.0)));
+        items.Add(new KeySpec("Num6", "6", new Rect(numStartX + numStep * 2, y3, numKeyWidth, 1.0)));
+
+        items.Add(new KeySpec("Num1", "1", new Rect(numStartX, y4, numKeyWidth, 1.0)));
+        items.Add(new KeySpec("Num2", "2", new Rect(numStartX + numStep, y4, numKeyWidth, 1.0)));
+        items.Add(new KeySpec("Num3", "3", new Rect(numStartX + numStep * 2, y4, numKeyWidth, 1.0)));
+        items.Add(new KeySpec("NumEnter", "enter", new Rect(numStartX + numStep * 3, y4, numKeyWidth, tallKeyHeight)));
+
+        items.Add(new KeySpec("Num0", "0", new Rect(numStartX, y5, wideKeyWidth, 1.0)));
+        items.Add(new KeySpec("Num.", ".", new Rect(numStartX + numStep * 2, y5, numKeyWidth, 1.0)));
 
         return items;
     }

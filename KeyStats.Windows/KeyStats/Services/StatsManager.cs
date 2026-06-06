@@ -1304,6 +1304,17 @@ public class StatsManager : IDisposable
             }
 
             var rawKey = kvp.Key ?? string.Empty;
+            if (NormalizeKeyboardHeatmapKey(rawKey) is string exactKey)
+            {
+                aggregated[exactKey] = SafeAdd(aggregated.TryGetValue(exactKey, out var current) ? current : 0, count);
+                continue;
+            }
+
+            if (rawKey.IndexOf("Num+", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                aggregated["Num+"] = SafeAdd(aggregated.TryGetValue("Num+", out var current) ? current : 0, count);
+            }
+
             var components = rawKey
                 .Split(new[] { '+' }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(part => part.Trim())
@@ -1353,24 +1364,32 @@ public class StatsManager : IDisposable
             var suffix = upper.Substring(3);
             if (suffix.Length == 1 && char.IsDigit(suffix[0]))
             {
-                return suffix;
+                return "Num" + suffix;
             }
 
             if (suffix == ".")
             {
-                return ".";
+                return "Num.";
             }
             if (suffix == "+")
             {
-                return "=";
+                return "Num+";
             }
             if (suffix == "-")
             {
-                return "-";
+                return "Num-";
             }
             if (suffix == "/")
             {
-                return "/";
+                return "Num/";
+            }
+            if (suffix == "*")
+            {
+                return "Num*";
+            }
+            if (suffix == "ENTER")
+            {
+                return "NumEnter";
             }
         }
 
@@ -1460,6 +1479,8 @@ public class StatsManager : IDisposable
             case "SCROLLLOCK":
             case "SCROLL":
                 return "ScrollLock";
+            case "NUMLOCK":
+                return "NumLock";
             case "PAUSE":
             case "BREAK":
                 return "Pause";
@@ -1480,7 +1501,7 @@ public class StatsManager : IDisposable
             case "DOWNARROW":
                 return "Down";
             default:
-                return trimmed;
+                return null;
         }
     }
 

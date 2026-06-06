@@ -4,7 +4,7 @@
         xmlns:controls="clr-namespace:KeyStats.Views.Controls"
         xmlns:p="clr-namespace:KeyStats.Properties"
         Title="{x:Static p:Strings.Heatmap_WindowTitle}"
-        Width="860"
+        Width="1080"
         Height="460"
         MinWidth="860"
         MinHeight="460"

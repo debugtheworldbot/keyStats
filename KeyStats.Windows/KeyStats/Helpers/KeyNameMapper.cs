@@ -6,6 +6,8 @@ namespace KeyStats.Helpers;
 
 public static class KeyNameMapper
 {
+    private const uint ExtendedKeyFlag = 0x01;
+
     private static readonly Dictionary<int, string> VirtualKeyNames = new()
     {
         // Function keys
@@ -65,9 +67,9 @@ public static class KeyNameMapper
         0x10, 0x11, 0x12, 0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0x5B, 0x5C
     };
 
-    public static string GetKeyName(int vkCode)
+    public static string GetKeyName(int vkCode, uint scanCode = 0, uint flags = 0)
     {
-        var baseName = GetBaseKeyName(vkCode);
+        var baseName = GetBaseKeyName(vkCode, scanCode, flags);
         var modifiers = GetModifierNames(vkCode);
 
         if (modifiers.Count == 0)
@@ -78,8 +80,13 @@ public static class KeyNameMapper
         return string.Join("+", modifiers) + "+" + baseName;
     }
 
-    private static string GetBaseKeyName(int vkCode)
+    private static string GetBaseKeyName(int vkCode, uint scanCode, uint flags)
     {
+        if (vkCode == 0x0D && (flags & ExtendedKeyFlag) != 0)
+        {
+            return "NumEnter";
+        }
+
         if (VirtualKeyNames.TryGetValue(vkCode, out var name))
         {
             return name;
@@ -114,11 +121,11 @@ public static class KeyNameMapper
         }
 
         // Try to get the key name using Windows API
-        var scanCode = NativeInterop.MapVirtualKey((uint)vkCode, NativeInterop.MAPVK_VK_TO_VSC);
-        if (scanCode > 0)
+        var mappedScanCode = NativeInterop.MapVirtualKey((uint)vkCode, NativeInterop.MAPVK_VK_TO_VSC);
+        if (mappedScanCode > 0)
         {
             var keyNameBuffer = new char[32];
-            var lParam = (int)(scanCode << 16);
+            var lParam = (int)(mappedScanCode << 16);
             var result = NativeInterop.GetKeyNameText(lParam, keyNameBuffer, keyNameBuffer.Length);
             if (result > 0)
             {

@@ -269,7 +269,7 @@ public class InputMonitorService : IDisposable
 
                 if (isNewKey)
                 {
-                    var keyName = KeyNameMapper.GetKeyName(vkCode);
+                    var keyName = KeyNameMapper.GetKeyName(vkCode, hookStruct.scanCode, hookStruct.flags);
                     var hWnd = NativeInterop.GetForegroundWindow();
                     NativeInterop.GetWindowThreadProcessId(hWnd, out uint pid);
                     ThreadPool.QueueUserWorkItem(_ =>
