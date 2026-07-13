@@ -5,8 +5,16 @@ final class CloudSyncClient {
     private let decoder: JSONDecoder
     private let encoder: JSONEncoder
 
-    init(session: URLSession = .shared) {
-        self.session = session
+    init(session: URLSession? = nil) {
+        if let session {
+            self.session = session
+        } else {
+            let config = URLSessionConfiguration.default
+            config.timeoutIntervalForRequest = 30
+            config.timeoutIntervalForResource = 120
+            config.waitsForConnectivity = true
+            self.session = URLSession(configuration: config)
+        }
         self.decoder = JSONDecoder()
         self.decoder.dateDecodingStrategy = .iso8601
         self.encoder = JSONEncoder()
@@ -141,7 +149,7 @@ final class CloudSyncClient {
         do {
             (data, response) = try await session.data(for: request)
         } catch {
-            throw CloudSyncError.networkError(error.localizedDescription)
+            throw CloudSyncError.networkError(Self.userFacingNetworkMessage(for: error))
         }
 
         guard let http = response as? HTTPURLResponse else {
@@ -170,5 +178,18 @@ final class CloudSyncClient {
             throw CloudSyncError.serverError(apiError.error)
         }
         throw CloudSyncError.serverError("HTTP \(http.statusCode)")
+    }
+
+    private static func userFacingNetworkMessage(for error: Error) -> String {
+        let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain,
+           nsError.code == NSURLErrorAppTransportSecurityRequiresSecureConnection {
+            return NSLocalizedString("sync.error.httpBlocked", comment: "")
+        }
+        if nsError.domain == NSURLErrorDomain,
+           nsError.code == NSURLErrorSecureConnectionFailed || nsError.code == NSURLErrorServerCertificateUntrusted {
+            return NSLocalizedString("sync.error.tlsFailed", comment: "")
+        }
+        return error.localizedDescription
     }
 }

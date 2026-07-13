@@ -40,6 +40,8 @@
 "sync.error.notAuthenticated" = "请先登录。";
 "sync.error.invalidServerURL" = "服务器地址无效。";
 "sync.error.invalidResponse" = "服务器响应无效。";
+"sync.error.httpBlocked" = "macOS 拦截了明文 HTTP（App Transport Security）。请 Clean Build 后重新运行（⌘R）。";
+"sync.error.tlsFailed" = "无法建立安全连接。若服务器仅支持 HTTP，请使用 http:// 开头的地址（不要用 https://）。";
 
 "deviceStats.title" = "设备";
 "deviceStats.subtitle" = "各注册设备今日统计。仅同步汇总计数，不包含输入内容。";

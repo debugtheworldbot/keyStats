@@ -40,6 +40,8 @@
 "sync.error.notAuthenticated" = "Please log in first.";
 "sync.error.invalidServerURL" = "Invalid server URL.";
 "sync.error.invalidResponse" = "Invalid server response.";
+"sync.error.httpBlocked" = "macOS blocked plain HTTP (App Transport Security). Rebuild and run again (Product → Clean Build Folder, then ⌘R).";
+"sync.error.tlsFailed" = "Could not establish a secure connection. If your server uses HTTP only, use an http:// URL (not https://).";
 
 "deviceStats.title" = "Devices";
 "deviceStats.subtitle" = "Today's stats per registered device. Only aggregate counts are synced — never typed content.";
