@@ -7,12 +7,15 @@ final class AppStatsViewController: NSViewController {
     private var titleLabel: NSTextField!
     private var subtitleLabel: NSTextField!
     private var rangeControl: NSSegmentedControl!
+    private var deviceSourceControl: NSSegmentedControl!
+    private var deviceTabSelections: [StatsDisplaySelection] = []
     private var summaryLabel: NSTextField!
     private var listHeaderView: AppStatsHeaderRowView!
     private var listStack: NSStackView!
     private var emptyStateLabel: NSTextField!
     private var separatorLine: NSView!
     private var appearanceObservation: NSKeyValueObservation?
+    private var cloudSyncObserver: NSObjectProtocol?
     private var sortMetric: SortMetric = .keys
     private var appIconCache: [String: NSImage] = [:]
     private lazy var defaultAppIcon: NSImage = {
@@ -40,6 +43,7 @@ final class AppStatsViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        installCloudSyncObserverIfNeeded()
         refreshData()
         updateAppearance() // 初始化 appearance
         appearanceObservation = NSApp.observe(\.effectiveAppearance, options: [.new]) { [weak self] _, _ in
@@ -56,6 +60,9 @@ final class AppStatsViewController: NSViewController {
     
     deinit {
         appearanceObservation = nil
+        if let cloudSyncObserver {
+            NotificationCenter.default.removeObserver(cloudSyncObserver)
+        }
     }
 
     // MARK: - UI
@@ -133,7 +140,13 @@ final class AppStatsViewController: NSViewController {
         rangeControl.setContentHuggingPriority(.defaultLow, for: .horizontal)
         rangeControl.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        let controlsStack = NSStackView(views: [rangeControl])
+        deviceSourceControl = NSSegmentedControl(labels: [], trackingMode: .selectOne, target: self, action: #selector(deviceSourceChanged))
+        deviceSourceControl.controlSize = .small
+        deviceSourceControl.isHidden = true
+        deviceSourceControl.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        deviceSourceControl.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        let controlsStack = NSStackView(views: [deviceSourceControl, rangeControl])
         controlsStack.orientation = .vertical
         controlsStack.alignment = .leading
         controlsStack.spacing = 8
@@ -194,6 +207,8 @@ final class AppStatsViewController: NSViewController {
     // MARK: - Data
 
     func refreshData() {
+        updateDeviceSourceUI()
+
         let statsManager = StatsManager.shared
         if !statsManager.appStatsEnabled {
             updateEmptyState(text: NSLocalizedString("appStats.disabled", comment: ""))
@@ -201,7 +216,7 @@ final class AppStatsViewController: NSViewController {
         }
 
         let range = selectedRange()
-        var items = statsManager.appStatsSummary(range: range)
+        var items = CloudSyncManager.shared.appStatsSummary(range: range)
         items = items.filter { $0.hasActivity }
         items.sort { lhs, rhs in
             let lhsValue = sortValue(for: lhs)
@@ -388,6 +403,48 @@ final class AppStatsViewController: NSViewController {
     }
 
     // MARK: - Controls
+
+    private func installCloudSyncObserverIfNeeded() {
+        guard cloudSyncObserver == nil else { return }
+        cloudSyncObserver = NotificationCenter.default.addObserver(
+            forName: .cloudSyncStateDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.refreshData()
+        }
+    }
+
+    private func updateDeviceSourceUI() {
+        let available = CloudSyncManager.shared.isCloudDisplayAvailable
+        deviceSourceControl.isHidden = !available
+        guard available else { return }
+
+        let tabs = CloudSyncManager.shared.displayTabs()
+        let labels = tabs.map(\.label)
+        deviceTabSelections = tabs.map(\.selection)
+
+        deviceSourceControl.segmentCount = labels.count
+        for (index, label) in labels.enumerated() {
+            deviceSourceControl.setLabel(label, forSegment: index)
+        }
+
+        let validated = CloudSyncManager.shared.validatedDisplaySelection()
+        if let index = deviceTabSelections.firstIndex(of: validated) {
+            deviceSourceControl.selectedSegment = index
+        } else {
+            deviceSourceControl.selectedSegment = 0
+        }
+    }
+
+    @objc private func deviceSourceChanged() {
+        let index = deviceSourceControl.selectedSegment
+        guard index >= 0, index < deviceTabSelections.count else { return }
+        let selection = deviceTabSelections[index]
+        CloudSyncManager.shared.displaySelection = selection
+        AppDelegate.trackClick("app_stats_device_scope", properties: ["scope": selection.analyticsValue])
+        refreshData()
+    }
 
     @objc private func controlsChanged() {
         refreshData()

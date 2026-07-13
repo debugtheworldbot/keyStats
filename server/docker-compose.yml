@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: keystats
+      POSTGRES_PASSWORD: keystats
+      POSTGRES_DB: keystats
+    ports:
+      - "5432:5432"
+    volumes:
+      - keystats_pg:/var/lib/postgresql/data
+
+volumes:
+  keystats_pg:

@@ -106,6 +106,7 @@ public partial class App : System.Windows.Application
             _appVersion = typeof(App).Assembly.GetName().Version?.ToString() ?? "0.0.0";
             InitializeAnalytics(statsManager);
             InputMonitorService.Instance.StartMonitoring();
+            CloudSyncManager.Instance.BootstrapIfNeeded();
 
             Console.WriteLine("Creating tray icon...");
             _trayIconViewModel = new TrayIconViewModel();
@@ -457,6 +458,17 @@ public partial class App : System.Windows.Application
             _trayIcon = null;
         }
         InputMonitorService.Instance.StopMonitoring();
+        if (CloudSyncManager.Instance.IsSyncEnabled)
+        {
+            try
+            {
+                CloudSyncManager.Instance.SyncNowAsync().GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Cloud sync on exit failed: {ex.Message}");
+            }
+        }
         StatsManager.Instance.Dispose();
         ThemeManager.Instance.Dispose();
         _singleInstanceMutex?.ReleaseMutex();

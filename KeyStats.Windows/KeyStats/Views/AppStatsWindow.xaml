@@ -22,6 +22,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -34,8 +35,65 @@
                        TextWrapping="Wrap" Margin="0,4,0,0"/>
         </StackPanel>
 
+        <!-- Device Tabs -->
+        <ListBox Grid.Row="1" ItemsSource="{Binding DeviceTabs.Tabs}"
+                 SelectedIndex="{Binding DeviceTabs.SelectedIndex, Mode=TwoWay}"
+                 Margin="0,0,0,10"
+                 Padding="3"
+                 Background="{DynamicResource SubtleFillBrush}"
+                 BorderThickness="0"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                 ScrollViewer.VerticalScrollBarVisibility="Disabled">
+            <ListBox.Style>
+                <Style TargetType="ListBox">
+                    <Setter Property="Visibility" Value="Visible"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding DeviceTabs.IsVisible}" Value="False">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ListBox.Style>
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal"/>
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="Padding" Value="0"/>
+                    <Setter Property="Margin" Value="0"/>
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListBoxItem">
+                                <Border x:Name="Bd" Background="Transparent" CornerRadius="4" Padding="10,4" Margin="1,0">
+                                    <ContentPresenter/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardBrush}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SubtleFillBrush}"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Label}" FontSize="11"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
         <!-- Range -->
-        <Border Grid.Row="1" Background="{DynamicResource SubtleFillBrush}" CornerRadius="6" Padding="3" Margin="0,0,0,10">
+        <Border Grid.Row="2" Background="{DynamicResource SubtleFillBrush}" CornerRadius="6" Padding="3" Margin="0,0,0,10">
             <StackPanel Orientation="Horizontal">
                 <RadioButton Content="{x:Static p:Strings.AppStats_RangeToday}" GroupName="AppStatsRange"
                              Style="{DynamicResource SegmentedButton}" FontSize="11" Padding="10,4"
@@ -53,12 +111,12 @@
         </Border>
 
         <!-- Summary -->
-        <TextBlock Grid.Row="2" Text="{Binding SummaryText}" Style="{DynamicResource SecondaryText}"
+        <TextBlock Grid.Row="3" Text="{Binding SummaryText}" Style="{DynamicResource SecondaryText}"
                    Margin="0,0,0,8"
                    Visibility="{Binding HasData, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
         <!-- Column Header -->
-        <Grid Grid.Row="3" Margin="0,0,0,6"
+        <Grid Grid.Row="4" Margin="0,0,0,6"
               Visibility="{Binding HasData, Converter={StaticResource BoolToVisibilityConverter}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -77,7 +135,7 @@
         </Grid>
 
         <!-- List -->
-        <Grid Grid.Row="4">
+        <Grid Grid.Row="5">
             <TextBlock Text="{Binding EmptyText}" FontSize="13"
                        Foreground="{DynamicResource TextSecondaryBrush}"
                        HorizontalAlignment="Center" VerticalAlignment="Center"

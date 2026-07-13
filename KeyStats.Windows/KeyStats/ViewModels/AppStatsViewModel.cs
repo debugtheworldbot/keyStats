@@ -50,6 +50,8 @@ public class AppStatsViewModel : ViewModelBase
 
     public ObservableCollection<AppStatsRowItem> AppStatsItems { get; } = new();
 
+    public DeviceTabsViewModel DeviceTabs { get; } = new();
+
     public ICommand SortCommand { get; }
 
     public int SelectedRangeIndex
@@ -112,11 +114,19 @@ public class AppStatsViewModel : ViewModelBase
         RefreshHeaders();
         RefreshData();
         StatsManager.Instance.StatsUpdateRequested += OnStatsUpdateRequested;
+        CloudSyncManager.Instance.StateChanged += OnCloudSyncStateChanged;
+    }
+
+    private void OnCloudSyncStateChanged()
+    {
+        Application.Current?.Dispatcher.Invoke(RefreshData);
     }
 
     public void Cleanup()
     {
         StatsManager.Instance.StatsUpdateRequested -= OnStatsUpdateRequested;
+        CloudSyncManager.Instance.StateChanged -= OnCloudSyncStateChanged;
+        DeviceTabs.Cleanup();
     }
 
     private void OnStatsUpdateRequested()
@@ -163,7 +173,7 @@ public class AppStatsViewModel : ViewModelBase
             _ => StatsManager.AppStatsRange.Today
         };
 
-        var items = manager.GetAppStatsSummary(range)
+        var items = CloudSyncManager.Instance.AppStatsSummary(range)
             .Where(a => a.HasActivity)
             .ToList();
 

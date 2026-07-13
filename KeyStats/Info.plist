@@ -42,5 +42,13 @@
 	<integer>86400</integer>
 	<key>SUPublicEDKey</key>
 	<string>3GDkFkOpTBszdxr1xvLI2JGGyAkktDepZAKDxS0vmr0=</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+		<!-- Private deployment: allows HTTP to self-hosted sync server. Use HTTPS in production. -->
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 </dict>
 </plist>

@@ -224,4 +224,29 @@
   <data name="Confirm_DefaultMessage" xml:space="preserve"><value>确定要执行此操作吗？</value></data>
   <data name="Confirm_DefaultTitle" xml:space="preserve"><value>确认</value></data>
   <data name="Confirm_DefaultConfirm" xml:space="preserve"><value>确定</value></data>
+
+  <!-- Cloud Sync -->
+  <data name="Settings_CloudSync" xml:space="preserve"><value>云端同步</value></data>
+  <data name="Sync_ServerURL" xml:space="preserve"><value>服务器地址</value></data>
+  <data name="Sync_ServerURLPlaceholder" xml:space="preserve"><value>http://localhost:8080</value></data>
+  <data name="Sync_Username" xml:space="preserve"><value>用户名</value></data>
+  <data name="Sync_Password" xml:space="preserve"><value>密码</value></data>
+  <data name="Sync_Login" xml:space="preserve"><value>登录</value></data>
+  <data name="Sync_Register" xml:space="preserve"><value>注册</value></data>
+  <data name="Sync_Logout" xml:space="preserve"><value>退出登录</value></data>
+  <data name="Sync_Enabled" xml:space="preserve"><value>启用云端同步</value></data>
+  <data name="Sync_SyncNow" xml:space="preserve"><value>立即同步</value></data>
+  <data name="Sync_StatusReady" xml:space="preserve"><value>可以同步。</value></data>
+  <data name="Sync_StatusNotLoggedIn" xml:space="preserve"><value>登录后可跨设备同步统计数据。</value></data>
+  <data name="Sync_StatusSyncing" xml:space="preserve"><value>同步中...</value></data>
+  <data name="Sync_StatusSuccessFormat" xml:space="preserve"><value>上次同步：{0}。</value></data>
+  <data name="Sync_StatusFailedFormat" xml:space="preserve"><value>同步失败：{0}</value></data>
+  <data name="Sync_Error_MissingFields" xml:space="preserve"><value>请填写服务器地址、用户名和密码。</value></data>
+  <data name="Sync_Error_InvalidServerURL" xml:space="preserve"><value>服务器地址无效。</value></data>
+  <data name="Sync_Error_NotAuthenticated" xml:space="preserve"><value>请先登录。</value></data>
+  <data name="Sync_Error_NotConfigured" xml:space="preserve"><value>云端同步尚未配置。</value></data>
+  <data name="Sync_Error_InvalidResponse" xml:space="preserve"><value>服务器响应无效。</value></data>
+  <data name="Sync_Error_CredentialSaveFailed" xml:space="preserve"><value>无法保存凭据。</value></data>
+  <data name="DeviceStats_ScopeLocal" xml:space="preserve"><value>本机</value></data>
+  <data name="DeviceStats_ScopeAllDevices" xml:space="preserve"><value>全部设备</value></data>
 </root>

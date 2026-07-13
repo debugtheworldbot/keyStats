@@ -10,6 +10,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using KeyStats.Helpers;
 using KeyStats.Services;
+using KeyStats.ViewModels;
 using KeyStats.Views.Controls;
 
 namespace KeyStats.Views;
@@ -21,6 +22,9 @@ public partial class KeyboardHeatmapWindow : Window
         Left,
         Right
     }
+
+    private readonly DeviceTabsViewModel _deviceTabs = new();
+    private bool _suppressDeviceTabSelection;
 
     private DateTime _selectedDate = DateTime.Today;
     private DateTime _startDate = DateTime.Today;
@@ -40,7 +44,41 @@ public partial class KeyboardHeatmapWindow : Window
         Activated += OnActivated;
         Closed += OnClosed;
         StatsManager.Instance.StatsUpdateRequested += OnStatsUpdateRequested;
+        CloudSyncManager.Instance.StateChanged += OnCloudSyncStateChanged;
         ThemeManager.Instance.ThemeChanged += OnThemeChanged;
+        UpdateDeviceTabsUI();
+    }
+
+    private void OnCloudSyncStateChanged()
+    {
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            UpdateDeviceTabsUI();
+            RefreshData();
+        }));
+    }
+
+    private void UpdateDeviceTabsUI()
+    {
+        _deviceTabs.RefreshTabs();
+        DeviceTabsList.Visibility = _deviceTabs.IsVisible ? Visibility.Visible : Visibility.Collapsed;
+        if (!_deviceTabs.IsVisible)
+        {
+            return;
+        }
+
+        _suppressDeviceTabSelection = true;
+        DeviceTabsList.ItemsSource = _deviceTabs.Tabs;
+        DeviceTabsList.SelectedIndex = _deviceTabs.SelectedIndex;
+        _suppressDeviceTabSelection = false;
+    }
+
+    private void DeviceTabsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressDeviceTabSelection) return;
+        if (DeviceTabsList.SelectedIndex < 0) return;
+        _deviceTabs.SelectedIndex = DeviceTabsList.SelectedIndex;
+        RefreshData();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -53,7 +91,9 @@ public partial class KeyboardHeatmapWindow : Window
     private void OnClosed(object? sender, EventArgs e)
     {
         StatsManager.Instance.StatsUpdateRequested -= OnStatsUpdateRequested;
+        CloudSyncManager.Instance.StateChanged -= OnCloudSyncStateChanged;
         ThemeManager.Instance.ThemeChanged -= OnThemeChanged;
+        _deviceTabs.Cleanup();
     }
 
     private void OnActivated(object? sender, EventArgs e)
@@ -122,13 +162,13 @@ public partial class KeyboardHeatmapWindow : Window
 
     private void RefreshData()
     {
-        var manager = StatsManager.Instance;
-        var bounds = manager.GetKeyboardHeatmapDateBounds();
+        var selection = CloudSyncManager.Instance.ValidatedDisplaySelection();
+        var bounds = CloudSyncManager.Instance.KeyboardHeatmapDateBounds(selection);
         _startDate = bounds.Start.Date;
         _endDate = bounds.End.Date;
         _selectedDate = ClampDate(_selectedDate);
 
-        var dayData = manager.GetKeyboardHeatmapDay(_selectedDate);
+        var dayData = CloudSyncManager.Instance.KeyboardHeatmapDay(_selectedDate, selection);
         var visibleCounts = dayData.KeyCounts
             .Where(kvp => KeyboardHeatmapControl.SupportedKeyIds.Contains(kvp.Key))
             .ToDictionary(kvp => kvp.Key, kvp => kvp.Value, StringComparer.Ordinal);

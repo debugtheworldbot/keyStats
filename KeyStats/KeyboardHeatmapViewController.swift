@@ -56,6 +56,8 @@ final class KeyboardHeatmapViewController: NSViewController {
     private var backToTodayButton: NSButton!
     private var datePickerButton: NSButton!
     private var summaryLabel: NSTextField!
+    private var deviceSourceControl: NSSegmentedControl!
+    private var deviceTabSelections: [StatsDisplaySelection] = []
     private var heatmapContainer: NSView!
     private var keyboardHeatmapView: KeyboardHeatmapView!
     private var keyboardEmptyOverlayView: NSView!
@@ -71,6 +73,7 @@ final class KeyboardHeatmapViewController: NSViewController {
     private var pendingRefresh = false
     private var isDayTransitionAnimating = false
     private var appearanceObservation: NSKeyValueObservation?
+    private var cloudSyncObserver: NSObjectProtocol?
     private lazy var datePickerPopover: NSPopover = makeDatePickerPopover()
     private lazy var datePickerViewController: HeatmapDatePickerPopoverViewController = {
         let viewController = HeatmapDatePickerPopoverViewController()
@@ -111,6 +114,7 @@ final class KeyboardHeatmapViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        installCloudSyncObserverIfNeeded()
         refreshData()
         updateAppearance()
 
@@ -135,6 +139,9 @@ final class KeyboardHeatmapViewController: NSViewController {
     deinit {
         stopLiveUpdates()
         appearanceObservation = nil
+        if let cloudSyncObserver {
+            NotificationCenter.default.removeObserver(cloudSyncObserver)
+        }
     }
 
     private func setupUI() {
@@ -175,6 +182,12 @@ final class KeyboardHeatmapViewController: NSViewController {
         headerStack.translatesAutoresizingMaskIntoConstraints = false
         containerStack.addArrangedSubview(headerStack)
         headerStack.widthAnchor.constraint(equalTo: containerStack.widthAnchor).isActive = true
+
+        deviceSourceControl = NSSegmentedControl(labels: [], trackingMode: .selectOne, target: self, action: #selector(deviceSourceChanged))
+        deviceSourceControl.controlSize = .small
+        deviceSourceControl.translatesAutoresizingMaskIntoConstraints = false
+        containerStack.addArrangedSubview(deviceSourceControl)
+        deviceSourceControl.widthAnchor.constraint(lessThanOrEqualTo: containerStack.widthAnchor).isActive = true
 
         previousDayButton = makeIconControlButton(
             systemName: "chevron.left",
@@ -334,11 +347,12 @@ final class KeyboardHeatmapViewController: NSViewController {
     }
 
     func refreshData() {
-        let statsManager = StatsManager.shared
-        dateBounds = statsManager.keyboardHeatmapDateBounds()
+        updateDeviceSourceUI()
+        let selection = CloudSyncManager.shared.validatedDisplaySelection()
+        dateBounds = CloudSyncManager.shared.keyboardHeatmapDateBounds(selection: selection)
         selectedDate = clampedDate(selectedDate)
 
-        let dayData = statsManager.keyboardHeatmapDay(for: selectedDate)
+        let dayData = CloudSyncManager.shared.keyboardHeatmapDay(for: selectedDate, selection: selection)
         let visibleCounts = dayData.keyCounts.filter { KeyboardHeatmapView.supportedKeyIDs.contains($0.key) }
 
         keyboardHeatmapView.apply(keyCounts: visibleCounts)
@@ -355,6 +369,48 @@ final class KeyboardHeatmapViewController: NSViewController {
         keyboardHeatmapView.alphaValue = 1
         updateDateNavigationState()
         syncDatePickerState()
+    }
+
+    private func installCloudSyncObserverIfNeeded() {
+        guard cloudSyncObserver == nil else { return }
+        cloudSyncObserver = NotificationCenter.default.addObserver(
+            forName: .cloudSyncStateDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.refreshData()
+        }
+    }
+
+    private func updateDeviceSourceUI() {
+        let available = CloudSyncManager.shared.isCloudDisplayAvailable
+        deviceSourceControl.isHidden = !available
+        guard available else { return }
+
+        let tabs = CloudSyncManager.shared.displayTabs()
+        let labels = tabs.map(\.label)
+        deviceTabSelections = tabs.map(\.selection)
+
+        deviceSourceControl.segmentCount = labels.count
+        for (index, label) in labels.enumerated() {
+            deviceSourceControl.setLabel(label, forSegment: index)
+        }
+
+        let validated = CloudSyncManager.shared.validatedDisplaySelection()
+        if let index = deviceTabSelections.firstIndex(of: validated) {
+            deviceSourceControl.selectedSegment = index
+        } else {
+            deviceSourceControl.selectedSegment = 0
+        }
+    }
+
+    @objc private func deviceSourceChanged() {
+        let index = deviceSourceControl.selectedSegment
+        guard index >= 0, index < deviceTabSelections.count else { return }
+        let selection = deviceTabSelections[index]
+        CloudSyncManager.shared.displaySelection = selection
+        AppDelegate.trackClick("keyboard_heatmap_device_scope", properties: ["scope": selection.analyticsValue])
+        refreshData()
     }
 
     private func displayDateString(for date: Date) -> String {

@@ -43,3 +43,7 @@ fastlane/test_output
 
 # Claude
 .claude/settings.json
+
+# Go server
+server/.env
+server/keystats-server

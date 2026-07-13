@@ -65,6 +65,51 @@
             </Grid>
         </Border>
 
+        <TextBlock Text="{x:Static p:Strings.Settings_CloudSync}" FontSize="12" FontWeight="SemiBold"
+                   Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,4,0,6"/>
+
+        <Border Style="{DynamicResource CardBorder}" Margin="0,0,0,8" Padding="14,12">
+            <StackPanel>
+                <StackPanel x:Name="SyncAuthPanel">
+                    <TextBlock Text="{x:Static p:Strings.Sync_ServerURL}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                    <TextBox x:Name="SyncServerUrlTextBox" Margin="0,0,0,8"
+                             ToolTip="{x:Static p:Strings.Sync_ServerURLPlaceholder}"/>
+
+                    <TextBlock Text="{x:Static p:Strings.Sync_Username}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                    <TextBox x:Name="SyncUsernameTextBox" Margin="0,0,0,8"/>
+
+                    <TextBlock Text="{x:Static p:Strings.Sync_Password}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,4"/>
+                    <PasswordBox x:Name="SyncPasswordBox" Margin="0,0,0,10"/>
+
+                    <StackPanel Orientation="Horizontal">
+                        <Button x:Name="SyncLoginButton" Content="{x:Static p:Strings.Sync_Login}"
+                                Style="{DynamicResource GhostButton}" MinWidth="72" Margin="0,0,8,0"
+                                Click="SyncLogin_Click"/>
+                        <Button x:Name="SyncRegisterButton" Content="{x:Static p:Strings.Sync_Register}"
+                                Style="{DynamicResource GhostButton}" MinWidth="72"
+                                Click="SyncRegister_Click"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel x:Name="SyncControlsPanel" Margin="0,10,0,0" Visibility="Collapsed">
+                    <CheckBox x:Name="SyncEnabledCheckBox" Content="{x:Static p:Strings.Sync_Enabled}"
+                              Margin="0,0,0,10" Checked="SyncEnabled_Changed" Unchecked="SyncEnabled_Changed"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button x:Name="SyncNowButton" Content="{x:Static p:Strings.Sync_SyncNow}"
+                                Style="{DynamicResource GhostButton}" MinWidth="88" Margin="0,0,8,0"
+                                Click="SyncNow_Click"/>
+                        <Button x:Name="SyncLogoutButton" Content="{x:Static p:Strings.Sync_Logout}"
+                                Style="{DynamicResource GhostButton}" MinWidth="88"
+                                Click="SyncLogout_Click"/>
+                    </StackPanel>
+
+                    <TextBlock x:Name="SyncStatusTextBlock" FontSize="12"
+                               Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
         <Border Style="{DynamicResource CardBorder}" Margin="0,0,0,8" Padding="14,12">
             <Grid>
                 <Grid.ColumnDefinitions>

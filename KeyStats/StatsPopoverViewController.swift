@@ -22,11 +22,21 @@ class StatsPopoverViewController: NSViewController {
     var preferredSizeDidChange: ((NSSize) -> Void)?
 
     private let updatePermissionNoticeSuppressedKey = "update.permissionNoticeSuppressed"
-    private let popoverContentWidth: CGFloat = 360
+    private let popoverContentMinWidth: CGFloat = 460
+    private let contentHorizontalInset: CGFloat = 16
+    private let contentTopInset: CGFloat = 16
+    private let headerBottomInset: CGFloat = 0
+    private let bodyTopInset: CGFloat = 0
+    private let statsTopInset: CGFloat = 0
+    private var popoverHorizontalPadding: CGFloat { contentHorizontalInset * 2 }
     private let keyBreakdownGridHeight: CGFloat = 124
     private let chartHeight: CGFloat = 140
+    private var contentWidthConstraint: NSLayoutConstraint?
+    private var fixedHeaderHeight: CGFloat = 0
     
     // MARK: - UI 组件
+    private var headerView: NSView!
+    private var bodyView: NSView!
     private var containerView: NSView!
     private var titleLabel: NSTextField!
     private var statsStackView: NSStackView!
@@ -36,6 +46,8 @@ class StatsPopoverViewController: NSViewController {
     private var keyBreakdownSeparators: [NSView] = []
     private var keyBreakdownRowCache: [String: KeyCountRowView] = [:]
     private var keyBreakdownDisplayedKeys: [String] = []
+    private var deviceKeyBreakdownTitleLabel: NSTextField!
+    private var deviceKeyBreakdownStack: NSStackView!
     private var historyTitleLabel: NSTextField!
     private var rangeControl: NSSegmentedControl!
     private var metricControl: NSSegmentedControl!
@@ -46,6 +58,10 @@ class StatsPopoverViewController: NSViewController {
     private var appStatsButton: NSButton!
     private var allTimeStatsButton: NSButton!
     private var keyboardHeatmapButton: NSButton!
+    private var deviceStatsButton: NSButton!
+    private var deviceSourceControl: NSSegmentedControl!
+    private var deviceTabSelections: [StatsDisplaySelection] = []
+    private var cloudSyncObserverInstalled = false
     private var pendingStatsRefresh = false
     private var statsUpdateToken: UUID?
     private var updateAvailabilityToken: UUID?
@@ -78,17 +94,21 @@ class StatsPopoverViewController: NSViewController {
     
     override func loadView() {
         // 创建主视图
-        let mainView = AppearanceTrackingView(frame: NSRect(x: 0, y: 0, width: 360, height: 640))
+        let mainView = AppearanceTrackingView(frame: NSRect(x: 0, y: 0, width: popoverContentMinWidth, height: 640))
         mainView.onEffectiveAppearanceChange = { [weak self] in
             self?.updateAppearance()
         }
         mainView.wantsLayer = true
         self.view = mainView
+        contentWidthConstraint = mainView.widthAnchor.constraint(equalToConstant: popoverContentMinWidth)
+        contentWidthConstraint?.isActive = true
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        view.layoutSubtreeIfNeeded()
+        fixedHeaderHeight = ceil(headerView.fittingSize.height)
         updateStats()
         updateAppearance()
         updatePreferredPopoverSizeIfNeeded()
@@ -102,7 +122,10 @@ class StatsPopoverViewController: NSViewController {
                 self?.updatePermissionButtonVisibility()
             }
         }
+        installCloudSyncObserverIfNeeded()
     }
+
+    private var cloudSyncObserver: NSObjectProtocol?
 
     override func viewWillAppear() {
         super.viewWillAppear()
@@ -133,6 +156,9 @@ class StatsPopoverViewController: NSViewController {
     }
     
     deinit {
+        if let cloudSyncObserver {
+            NotificationCenter.default.removeObserver(cloudSyncObserver)
+        }
         stopLiveUpdates()
         stopUpdateAvailabilityUpdates()
         appearanceObservation = nil
@@ -141,34 +167,80 @@ class StatsPopoverViewController: NSViewController {
     // MARK: - UI 设置
     
     private func setupUI() {
+        headerView = NSView()
+        headerView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(headerView)
+
+        bodyView = NSView()
+        bodyView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(bodyView)
+
         containerView = NSView()
         containerView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(containerView)
+        bodyView.addSubview(containerView)
 
         NSLayoutConstraint.activate([
-            containerView.topAnchor.constraint(equalTo: view.topAnchor),
-            containerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            containerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            containerView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            headerView.topAnchor.constraint(equalTo: view.topAnchor),
+            headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+
+            bodyView.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: bodyTopInset),
+            bodyView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            bodyView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            bodyView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            containerView.topAnchor.constraint(equalTo: bodyView.topAnchor),
+            containerView.leadingAnchor.constraint(equalTo: bodyView.leadingAnchor),
+            containerView.trailingAnchor.constraint(equalTo: bodyView.trailingAnchor),
+            containerView.bottomAnchor.constraint(equalTo: bodyView.bottomAnchor)
         ])
 
         // 标题
         titleLabel = createLabel(text: "KeyStats", fontSize: 14, weight: .semibold)
+        titleLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        titleLabel.setContentHuggingPriority(.required, for: .horizontal)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        containerView.addSubview(titleLabel)
 
         // KPS 徽章（放在标题右侧，单行显示 KPS|CPS）
         kpsBadge = KPSBadgeView()
         kpsBadge.onTap = { [weak self] in self?.toggleKPSPopover() }
         kpsBadge.translatesAutoresizingMaskIntoConstraints = false
         updateKPSBadge()
-        containerView.addSubview(kpsBadge)
 
         permissionButton = NSButton(title: NSLocalizedString("button.permission", comment: ""), target: self, action: #selector(requestPermission))
         permissionButton.bezelStyle = .rounded
         permissionButton.controlSize = .regular
         permissionButton.translatesAutoresizingMaskIntoConstraints = false
-        containerView.addSubview(permissionButton)
+
+        deviceSourceControl = NSSegmentedControl(labels: [], trackingMode: .selectOne, target: self, action: #selector(deviceSourceChanged))
+        deviceSourceControl.controlSize = .small
+        deviceSourceControl.translatesAutoresizingMaskIntoConstraints = false
+
+        let titleRowSpacer = NSView()
+        titleRowSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+
+        let titleRow = NSStackView(views: [titleLabel, kpsBadge, titleRowSpacer, permissionButton])
+        titleRow.orientation = .horizontal
+        titleRow.alignment = .centerY
+        titleRow.spacing = 8
+        titleRow.translatesAutoresizingMaskIntoConstraints = false
+
+        let headerStack = NSStackView(views: [titleRow, deviceSourceControl])
+        headerStack.orientation = .vertical
+        headerStack.alignment = .leading
+        headerStack.spacing = 8
+        headerStack.detachesHiddenViews = true
+        headerStack.translatesAutoresizingMaskIntoConstraints = false
+        headerView.addSubview(headerStack)
+
+        NSLayoutConstraint.activate([
+            headerStack.topAnchor.constraint(equalTo: headerView.topAnchor, constant: contentTopInset),
+            headerStack.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: contentHorizontalInset),
+            headerStack.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -contentHorizontalInset),
+            headerStack.bottomAnchor.constraint(equalTo: headerView.bottomAnchor, constant: -headerBottomInset),
+            titleRow.widthAnchor.constraint(equalTo: headerStack.widthAnchor),
+            deviceSourceControl.widthAnchor.constraint(lessThanOrEqualTo: headerStack.widthAnchor)
+        ])
         
         // 统计项
         keyPressView = StatItemView(icon: "⌨️", title: NSLocalizedString("stats.keyPresses", comment: ""), value: "0")
@@ -287,6 +359,24 @@ class StatsPopoverViewController: NSViewController {
             keyBreakdownColumns[0].widthAnchor.constraint(equalTo: keyBreakdownColumns[1].widthAnchor).isActive = true
             keyBreakdownColumns[1].widthAnchor.constraint(equalTo: keyBreakdownColumns[2].widthAnchor).isActive = true
         }
+
+        deviceKeyBreakdownTitleLabel = createLabel(
+            text: NSLocalizedString("deviceStats.breakdown.title", comment: ""),
+            fontSize: 12,
+            weight: .semibold
+        )
+        deviceKeyBreakdownTitleLabel.textColor = .secondaryLabelColor
+        deviceKeyBreakdownTitleLabel.translatesAutoresizingMaskIntoConstraints = false
+        deviceKeyBreakdownTitleLabel.isHidden = true
+        containerView.addSubview(deviceKeyBreakdownTitleLabel)
+
+        deviceKeyBreakdownStack = NSStackView()
+        deviceKeyBreakdownStack.orientation = .vertical
+        deviceKeyBreakdownStack.alignment = .leading
+        deviceKeyBreakdownStack.spacing = 6
+        deviceKeyBreakdownStack.translatesAutoresizingMaskIntoConstraints = false
+        deviceKeyBreakdownStack.isHidden = true
+        containerView.addSubview(deviceKeyBreakdownStack)
 
         // 历史趋势标题
         historyTitleLabel = createLabel(text: NSLocalizedString("section.history", comment: ""), fontSize: 14, weight: .semibold)
@@ -413,6 +503,25 @@ class StatsPopoverViewController: NSViewController {
             appStatsButton.heightAnchor.constraint(equalToConstant: 28)
         ])
 
+        deviceStatsButton = makeSymbolButton(systemName: "externaldrive.connected.to.line.below",
+                                             fallbackTitle: NSLocalizedString("deviceStats.button", comment: ""),
+                                             pointSize: 15,
+                                             weight: .semibold,
+                                             action: #selector(showDeviceStats))
+        deviceStatsButton.toolTip = NSLocalizedString("deviceStats.button", comment: "")
+        deviceStatsButton.setAccessibilityLabel(NSLocalizedString("deviceStats.button", comment: ""))
+        deviceStatsButton.imageScaling = .scaleProportionallyDown
+        deviceStatsButton.setContentHuggingPriority(.required, for: .horizontal)
+        deviceStatsButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        if let hoverButton = deviceStatsButton as? HoverIconButton {
+            hoverButton.padding = 4
+            hoverButton.cornerRadius = 6
+        }
+        NSLayoutConstraint.activate([
+            deviceStatsButton.widthAnchor.constraint(equalToConstant: 28),
+            deviceStatsButton.heightAnchor.constraint(equalToConstant: 28)
+        ])
+
         allTimeStatsButton = makeSymbolButton(systemName: "chart.bar.xaxis",
                                               fallbackTitle: NSLocalizedString("allTimeStats.button", comment: ""),
                                               pointSize: 16,
@@ -447,9 +556,11 @@ class StatsPopoverViewController: NSViewController {
 
         footerStack.addArrangedSubview(settingsButton)
         footerStack.addArrangedSubview(appStatsButton)
+        footerStack.addArrangedSubview(deviceStatsButton)
         footerStack.addArrangedSubview(allTimeStatsButton)
         footerStack.setCustomSpacing(6, after: settingsButton)
         footerStack.setCustomSpacing(6, after: appStatsButton)
+        footerStack.setCustomSpacing(6, after: deviceStatsButton)
         footerStack.setCustomSpacing(6, after: allTimeStatsButton)
         footerStack.addArrangedSubview(footerSpacer)
         footerStack.addArrangedSubview(buttonStack)
@@ -458,67 +569,65 @@ class StatsPopoverViewController: NSViewController {
         
         // 布局约束
         NSLayoutConstraint.activate([
-            // 标题
-            titleLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 16),
-            titleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-
-            kpsBadge.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
-            kpsBadge.leadingAnchor.constraint(equalTo: titleLabel.trailingAnchor, constant: 8),
-
-            permissionButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
-            permissionButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
-            
             // 统计项
-            statsStackView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
-            statsStackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            statsStackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            statsStackView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: statsTopInset),
+            statsStackView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: contentHorizontalInset),
+            statsStackView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -contentHorizontalInset),
             
             // 键位统计
             keyBreakdownTitleLabel.topAnchor.constraint(equalTo: statsStackView.bottomAnchor, constant: 12),
-            keyBreakdownTitleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            keyBreakdownTitleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: contentHorizontalInset),
+            keyBreakdownTitleLabel.trailingAnchor.constraint(lessThanOrEqualTo: keyboardHeatmapButton.leadingAnchor, constant: -8),
 
             keyboardHeatmapButton.centerYAnchor.constraint(equalTo: keyBreakdownTitleLabel.centerYAnchor),
-            keyboardHeatmapButton.leadingAnchor.constraint(greaterThanOrEqualTo: keyBreakdownTitleLabel.trailingAnchor, constant: 8),
-            keyboardHeatmapButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            keyboardHeatmapButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -contentHorizontalInset),
 
             keyBreakdownGridStack.topAnchor.constraint(equalTo: keyBreakdownTitleLabel.bottomAnchor, constant: 8),
-            keyBreakdownGridStack.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            keyBreakdownGridStack.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            keyBreakdownGridStack.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: contentHorizontalInset),
+            keyBreakdownGridStack.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -contentHorizontalInset),
             keyBreakdownGridStack.heightAnchor.constraint(equalToConstant: 124),
+
+            deviceKeyBreakdownTitleLabel.topAnchor.constraint(equalTo: keyBreakdownGridStack.bottomAnchor, constant: 10),
+            deviceKeyBreakdownTitleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: contentHorizontalInset),
+            deviceKeyBreakdownTitleLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -contentHorizontalInset),
+
+            deviceKeyBreakdownStack.topAnchor.constraint(equalTo: deviceKeyBreakdownTitleLabel.bottomAnchor, constant: 6),
+            deviceKeyBreakdownStack.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: contentHorizontalInset),
+            deviceKeyBreakdownStack.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -contentHorizontalInset),
 
             // 历史趋势
             historyTitleLabel.topAnchor.constraint(equalTo: keyBreakdownGridStack.bottomAnchor, constant: 16),
-            historyTitleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            historyTitleLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: contentHorizontalInset),
             
             rangeControl.topAnchor.constraint(equalTo: historyTitleLabel.bottomAnchor, constant: 8),
-            rangeControl.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            rangeControl.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            rangeControl.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: contentHorizontalInset),
+            rangeControl.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -contentHorizontalInset),
             
             metricControl.topAnchor.constraint(equalTo: rangeControl.bottomAnchor, constant: 8),
-            metricControl.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            metricControl.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            metricControl.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: contentHorizontalInset),
+            metricControl.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -contentHorizontalInset),
             
             chartStyleControl.topAnchor.constraint(equalTo: metricControl.bottomAnchor, constant: 8),
-            chartStyleControl.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            chartStyleControl.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            chartStyleControl.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: contentHorizontalInset),
+            chartStyleControl.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -contentHorizontalInset),
             
             chartView.topAnchor.constraint(equalTo: chartStyleControl.bottomAnchor, constant: 8),
-            chartView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            chartView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            chartView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: contentHorizontalInset),
+            chartView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -contentHorizontalInset),
             chartView.heightAnchor.constraint(equalToConstant: 140),
             
             historySummaryLabel.topAnchor.constraint(equalTo: chartView.bottomAnchor, constant: 6),
-            historySummaryLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            historySummaryLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: contentHorizontalInset),
             
             // 底部分隔线
             bottomSeparator.topAnchor.constraint(equalTo: historySummaryLabel.bottomAnchor, constant: 16),
-            bottomSeparator.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            bottomSeparator.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            bottomSeparator.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: contentHorizontalInset),
+            bottomSeparator.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -contentHorizontalInset),
             
             // 按钮
             footerStack.topAnchor.constraint(equalTo: bottomSeparator.bottomAnchor, constant: 6),
-            footerStack.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
-            footerStack.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            footerStack.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: contentHorizontalInset),
+            footerStack.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -contentHorizontalInset),
             footerStack.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -10)
         ])
 
@@ -575,11 +684,12 @@ class StatsPopoverViewController: NSViewController {
     // MARK: - 更新统计数据
     
     private func updateStats() {
-        let stats = StatsManager.shared.currentStats
+        updateDeviceSourceUI()
+        let stats = CloudSyncManager.shared.statsForDisplay()
         let hasSideClickData = (stats.sideBackClicks + stats.sideForwardClicks) > 0
         
         keyPressView.updateValue(formatNumber(stats.keyPresses))
-        updateKPSBadge()
+        updateKPSBadge(using: stats)
         leftClickView.updateValue(formatNumber(stats.leftClicks))
         rightClickView.updateValue(formatNumber(stats.rightClicks))
         sideBackClickView.updateValue(formatNumber(stats.sideBackClicks))
@@ -591,6 +701,52 @@ class StatsPopoverViewController: NSViewController {
         updateHistorySection()
         updatePermissionButtonVisibility()
         updatePreferredPopoverSizeIfNeeded()
+    }
+
+    private func installCloudSyncObserverIfNeeded() {
+        guard !cloudSyncObserverInstalled else { return }
+        cloudSyncObserverInstalled = true
+        cloudSyncObserver = NotificationCenter.default.addObserver(
+            forName: .cloudSyncStateDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.updateStats()
+        }
+    }
+
+    private func updateDeviceSourceUI() {
+        let available = CloudSyncManager.shared.isCloudDisplayAvailable
+        deviceSourceControl.isHidden = !available
+        deviceStatsButton.isHidden = !available
+        guard available else { return }
+
+        let tabs = CloudSyncManager.shared.displayTabs()
+        let labels = tabs.map(\.label)
+        deviceTabSelections = tabs.map(\.selection)
+
+        deviceSourceControl.segmentCount = labels.count
+        for (index, label) in labels.enumerated() {
+            deviceSourceControl.setLabel(label, forSegment: index)
+        }
+
+        let validated = CloudSyncManager.shared.validatedDisplaySelection()
+        if let index = deviceTabSelections.firstIndex(of: validated) {
+            deviceSourceControl.selectedSegment = index
+        } else {
+            deviceSourceControl.selectedSegment = 0
+        }
+
+        fixedHeaderHeight = 0
+    }
+
+    private func resolvedHeaderHeight() -> CGFloat {
+        if fixedHeaderHeight > 0 {
+            return fixedHeaderHeight
+        }
+        view.layoutSubtreeIfNeeded()
+        fixedHeaderHeight = ceil(headerView.fittingSize.height)
+        return fixedHeaderHeight
     }
 
     func prepareForPopoverPresentation() {
@@ -617,9 +773,9 @@ class StatsPopoverViewController: NSViewController {
 
     // MARK: - KPS 实时刷新
 
-    private func updateKPSBadge() {
-        let stats = StatsManager.shared.currentStats
-        kpsBadge.update(peakKPS: stats.peakKPS, peakCPS: stats.peakCPS)
+    private func updateKPSBadge(using stats: DailyStats? = nil) {
+        let resolved = stats ?? CloudSyncManager.shared.statsForDisplay()
+        kpsBadge.update(peakKPS: resolved.peakKPS, peakCPS: resolved.peakCPS)
     }
 
     private func startKPSRefreshTimer() {
@@ -709,7 +865,7 @@ class StatsPopoverViewController: NSViewController {
     }
 
     private func updateKeyBreakdown() {
-        let items = StatsManager.shared.keyPressBreakdownSorted()
+        let items = CloudSyncManager.shared.keyPressBreakdownSortedForDisplay()
         let hasItems = !items.isEmpty
         keyBreakdownSeparators.forEach { $0.isHidden = !hasItems }
         guard hasItems else {
@@ -720,7 +876,15 @@ class StatsPopoverViewController: NSViewController {
                     $0.removeFromSuperview()
                 }
             }
-            let emptyLabel = createLabel(text: NSLocalizedString("keyBreakdown.empty", comment: ""), fontSize: 12, weight: .regular)
+            let selection = CloudSyncManager.shared.validatedDisplaySelection()
+            let stats = CloudSyncManager.shared.statsForDisplay()
+            let emptyKey: String
+            if selection != .local && stats.keyPresses > 0 {
+                emptyKey = "deviceStats.breakdown.keysUnavailable"
+            } else {
+                emptyKey = "keyBreakdown.empty"
+            }
+            let emptyLabel = createLabel(text: NSLocalizedString(emptyKey, comment: ""), fontSize: 12, weight: .regular)
             emptyLabel.textColor = .secondaryLabelColor
             emptyLabel.translatesAutoresizingMaskIntoConstraints = false
             if let firstColumn = keyBreakdownColumns.first {
@@ -881,6 +1045,21 @@ class StatsPopoverViewController: NSViewController {
         view.window?.performClose(nil)
     }
 
+    @objc private func showDeviceStats() {
+        AppDelegate.trackClick("open_device_stats")
+        DeviceStatsWindowController.shared.show()
+        view.window?.performClose(nil)
+    }
+
+    @objc private func deviceSourceChanged() {
+        let index = deviceSourceControl.selectedSegment
+        guard index >= 0, index < deviceTabSelections.count else { return }
+        let selection = deviceTabSelections[index]
+        CloudSyncManager.shared.displaySelection = selection
+        AppDelegate.trackClick("device_stats_scope", properties: ["scope": selection.analyticsValue])
+        updateStats()
+    }
+
     @objc private func showAppStats() {
         AppDelegate.trackClick("open_app_stats")
         AppStatsWindowController.shared.show()
@@ -958,6 +1137,9 @@ class StatsPopoverViewController: NSViewController {
 
     private func updatePreferredPopoverSizeIfNeeded() {
         guard isViewLoaded else { return }
+
+        let targetWidth = resolvedPopoverContentWidth()
+        contentWidthConstraint?.constant = targetWidth
         view.layoutSubtreeIfNeeded()
 
         let statsRows = statsStackView.arrangedSubviews
@@ -965,12 +1147,6 @@ class StatsPopoverViewController: NSViewController {
             partialResult + row.fittingSize.height
         }
         let statsSpacing = CGFloat(max(0, statsRows.count - 1)) * statsStackView.spacing
-
-        let titleRowHeight = max(
-            titleLabel.fittingSize.height,
-            kpsBadge.fittingSize.height,
-            permissionButton.isHidden ? 0 : permissionButton.fittingSize.height
-        )
 
         let footerHeight = max(
             settingsButton.fittingSize.height,
@@ -982,30 +1158,67 @@ class StatsPopoverViewController: NSViewController {
 
         let keyBreakdownHeaderHeight = max(keyBreakdownTitleLabel.fittingSize.height, keyboardHeatmapButton.fittingSize.height)
 
-        let computedHeight =
-            16 + titleRowHeight +
-            8 + // title -> stats stack
+        let bodyContentHeight =
+            bodyTopInset +
+            statsTopInset +
             statsRowsHeight + statsSpacing +
-            12 + // stats stack -> key breakdown title
+            12 +
             keyBreakdownHeaderHeight +
-            8 + // key breakdown title -> grid
+            8 +
             keyBreakdownGridHeight +
-            16 + // grid -> history title
+            16 +
             historyTitleLabel.fittingSize.height +
             8 + rangeControl.fittingSize.height +
             8 + metricControl.fittingSize.height +
             8 + chartStyleControl.fittingSize.height +
             8 + chartHeight +
             6 + historySummaryLabel.fittingSize.height +
-            16 + // summary -> bottom separator
-            6 + // bottom separator -> footer
+            16 +
+            6 +
             footerHeight +
-            10   // footer -> container bottom
+            10
 
-        let targetSize = NSSize(width: popoverContentWidth, height: ceil(computedHeight))
+        let headerHeight = resolvedHeaderHeight()
+        let targetSize = NSSize(width: targetWidth, height: ceil(headerHeight + bodyContentHeight))
         guard preferredContentSize != targetSize else { return }
         preferredContentSize = targetSize
         preferredSizeDidChange?(targetSize)
+    }
+
+    private func resolvedPopoverContentWidth() -> CGFloat {
+        view.layoutSubtreeIfNeeded()
+
+        let titleRowWidth =
+            titleLabel.fittingSize.width
+            + 8
+            + kpsBadge.fittingSize.width
+            + 8
+            + (permissionButton.isHidden ? 0 : permissionButton.fittingSize.width)
+            + popoverHorizontalPadding
+
+        let keyBreakdownHeaderWidth =
+            keyBreakdownTitleLabel.fittingSize.width
+            + 8
+            + keyboardHeatmapButton.fittingSize.width
+            + popoverHorizontalPadding
+
+        let segmentedControlsWidth = max(
+            rangeControl.fittingSize.width,
+            metricControl.fittingSize.width,
+            chartStyleControl.fittingSize.width,
+            deviceSourceControl.isHidden ? 0 : deviceSourceControl.fittingSize.width
+        ) + popoverHorizontalPadding
+
+        let statsRowWidth = statsStackView.arrangedSubviews.reduce(CGFloat.zero) { partial, row in
+            max(partial, row.fittingSize.width)
+        } + popoverHorizontalPadding
+
+        let footerWidth = quitButton.fittingSize.width + popoverHorizontalPadding
+
+        return max(
+            popoverContentMinWidth,
+            ceil(max(titleRowWidth, keyBreakdownHeaderWidth, segmentedControlsWidth, statsRowWidth, footerWidth))
+        )
     }
 }
 
@@ -1152,6 +1365,63 @@ class StatItemView: NSView {
 
         valueHostingView.invalidateIntrinsicContentSize()
         needsLayout = true
+    }
+}
+
+// MARK: - 分设备键位行
+
+private final class DeviceKeyBreakdownRowView: NSView {
+    private let nameLabel = NSTextField(labelWithString: "")
+    private let metricsLabel = NSTextField(labelWithString: "")
+
+    init(summary: DeviceTodaySummary, formatter: (Int) -> String) {
+        super.init(frame: .zero)
+        setup(summary: summary, formatter: formatter)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setup(summary: DeviceTodaySummary, formatter: (Int) -> String) {
+        translatesAutoresizingMaskIntoConstraints = false
+
+        var title = summary.titleText
+        if summary.isLocal {
+            title += " (\(NSLocalizedString("deviceStats.badge.local", comment: "")))"
+        }
+
+        nameLabel.stringValue = title
+        nameLabel.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        nameLabel.textColor = .labelColor
+        nameLabel.lineBreakMode = .byTruncatingTail
+        nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        nameLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        metricsLabel.stringValue = String(
+            format: NSLocalizedString("deviceStats.breakdown.row", comment: ""),
+            formatter(summary.keyPresses),
+            formatter(summary.totalClicks)
+        )
+        metricsLabel.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
+        metricsLabel.textColor = .secondaryLabelColor
+        metricsLabel.alignment = .right
+        metricsLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        metricsLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        addSubview(nameLabel)
+        addSubview(metricsLabel)
+
+        NSLayoutConstraint.activate([
+            nameLabel.leadingAnchor.constraint(equalTo: leadingAnchor),
+            nameLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+            nameLabel.topAnchor.constraint(equalTo: topAnchor, constant: 2),
+            nameLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -2),
+
+            metricsLabel.leadingAnchor.constraint(greaterThanOrEqualTo: nameLabel.trailingAnchor, constant: 8),
+            metricsLabel.trailingAnchor.constraint(equalTo: trailingAnchor),
+            metricsLabel.centerYAnchor.constraint(equalTo: centerYAnchor)
+        ])
     }
 }
 

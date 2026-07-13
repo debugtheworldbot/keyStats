@@ -205,6 +205,8 @@ public class StatsPopupViewModel : ViewModelBase
         set => SetProperty(ref _chartData, value);
     }
 
+    public DeviceTabsViewModel DeviceTabs { get; } = new();
+
     public ICommand QuitCommand { get; }
 
     public StatsPopupViewModel()
@@ -217,6 +219,12 @@ public class StatsPopupViewModel : ViewModelBase
         UpdateHistorySection();
 
         StatsManager.Instance.StatsChanged += OnStatsChanged;
+        CloudSyncManager.Instance.StateChanged += OnCloudSyncStateChanged;
+    }
+
+    private void OnCloudSyncStateChanged()
+    {
+        Application.Current?.Dispatcher.Invoke(RefreshAllSections);
     }
 
     private void OnStatsChanged(StatsManager.StatsUpdateKind updateKind)
@@ -243,7 +251,7 @@ public class StatsPopupViewModel : ViewModelBase
 
     private void UpdateStats()
     {
-        var stats = StatsManager.Instance.CurrentStats;
+        var stats = CloudSyncManager.Instance.StatsForDisplay();
         var manager = StatsManager.Instance;
 
         KeyPresses = stats.KeyPresses.ToString("N0");
@@ -266,7 +274,7 @@ public class StatsPopupViewModel : ViewModelBase
 
     private void UpdateKeyBreakdown()
     {
-        var items = StatsManager.Instance.GetKeyPressBreakdownSorted();
+        var items = CloudSyncManager.Instance.KeyPressBreakdownSortedForDisplay();
         var manager = StatsManager.Instance;
 
         Column1Items.Clear();
@@ -357,5 +365,7 @@ public class StatsPopupViewModel : ViewModelBase
     public void Cleanup()
     {
         StatsManager.Instance.StatsChanged -= OnStatsChanged;
+        CloudSyncManager.Instance.StateChanged -= OnCloudSyncStateChanged;
+        DeviceTabs.Cleanup();
     }
 }

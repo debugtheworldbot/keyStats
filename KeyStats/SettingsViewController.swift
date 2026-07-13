@@ -61,12 +61,26 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
     private var dynamicIconOptionsContainer: NSStackView!
     private var notificationThresholdContainer: NSStackView!
 
+    private var syncServerURLField: NSTextField!
+    private var syncUsernameField: NSTextField!
+    private var syncPasswordField: NSSecureTextField!
+    private var syncEnabledButton: NSSwitch!
+    private var syncLoginButton: NSButton!
+    private var syncRegisterButton: NSButton!
+    private var syncNowButton: NSButton!
+    private var syncLogoutButton: NSButton!
+    private var syncStatusLabel: NSTextField!
+    private var syncDevicesStack: NSStackView!
+    private var syncAuthContainer: NSStackView!
+    private var syncControlsContainer: NSStackView!
+
     private var cardViews: [NSView] = []
     private var dividerViews: [NSView] = []
     private var optionDividerViews: [NSView] = []
     private var appearanceObservation: NSKeyValueObservation?
     private var systemThemeObserver: NSObjectProtocol?
     private var appDidBecomeActiveObserver: NSObjectProtocol?
+    private var cloudSyncObserver: NSObjectProtocol?
 
     private let thresholdMinimum = 0
     private let thresholdMaximum = 1_000_000
@@ -150,9 +164,6 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
 
     override func viewDidAppear() {
         super.viewDidAppear()
-        DispatchQueue.main.async { [weak self] in
-            self?.view.window?.makeFirstResponder(nil)
-        }
     }
 
     override func viewDidLayout() {
@@ -167,6 +178,9 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
             DistributedNotificationCenter.default().removeObserver(observer)
         }
         if let observer = appDidBecomeActiveObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        if let observer = cloudSyncObserver {
             NotificationCenter.default.removeObserver(observer)
         }
     }
@@ -365,6 +379,62 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
         let notificationSection = makeSection(titleKey: "settings.section.notifications", content: notificationStack)
         addArrangedSubviewFillingWidth(notificationSection, to: contentStack)
 
+        syncServerURLField = makeTextField(placeholderKey: "sync.serverURL.placeholder")
+        syncUsernameField = makeTextField(placeholderKey: "sync.username.placeholder")
+        syncPasswordField = makeSecureTextField(placeholderKey: "sync.password.placeholder")
+
+        syncLoginButton = makeActionButton(titleKey: "sync.login", action: #selector(syncLogin))
+        syncRegisterButton = makeActionButton(titleKey: "sync.register", action: #selector(syncRegister))
+        syncNowButton = makeActionButton(titleKey: "sync.syncNow", action: #selector(syncNow))
+        syncLogoutButton = makeActionButton(titleKey: "sync.logout", action: #selector(syncLogout))
+        syncEnabledButton = makeSwitch(action: #selector(toggleCloudSync))
+
+        syncStatusLabel = NSTextField(labelWithString: "")
+        syncStatusLabel.font = NSFont.systemFont(ofSize: 11)
+        syncStatusLabel.textColor = .secondaryLabelColor
+        syncStatusLabel.lineBreakMode = .byWordWrapping
+        syncStatusLabel.maximumNumberOfLines = 0
+
+        syncDevicesStack = makeVerticalStack(spacing: 4)
+
+        let authButtons = NSStackView(views: [syncLoginButton, syncRegisterButton])
+        authButtons.orientation = .horizontal
+        authButtons.spacing = 8
+
+        syncAuthContainer = makeOptionSeparatedStack([
+            makeFormFieldRow(title: NSLocalizedString("sync.serverURL", comment: ""), control: syncServerURLField),
+            makeFormFieldRow(title: NSLocalizedString("sync.username", comment: ""), control: syncUsernameField),
+            makeFormFieldRow(title: NSLocalizedString("sync.password", comment: ""), control: syncPasswordField),
+            authButtons
+        ], spacing: 8)
+
+        let syncControlsTop = NSStackView(views: [syncNowButton, syncLogoutButton])
+        syncControlsTop.orientation = .horizontal
+        syncControlsTop.spacing = 8
+
+        syncControlsContainer = makeVerticalStack(spacing: 8)
+        addArrangedSubviewFillingWidth(makeSwitchRow(titleKey: "sync.enabled", toggle: syncEnabledButton), to: syncControlsContainer)
+        addArrangedSubviewFillingWidth(makeOptionDividerContainer(), to: syncControlsContainer)
+        addArrangedSubviewFillingWidth(syncControlsTop, to: syncControlsContainer)
+        addArrangedSubviewFillingWidth(syncStatusLabel, to: syncControlsContainer)
+        addArrangedSubviewFillingWidth(syncDevicesStack, to: syncControlsContainer)
+
+        let syncStack = makeVerticalStack(spacing: 8)
+        addArrangedSubviewFillingWidth(syncAuthContainer, to: syncStack)
+        addArrangedSubviewFillingWidth(makeOptionDividerContainer(), to: syncStack)
+        addArrangedSubviewFillingWidth(syncControlsContainer, to: syncStack)
+
+        let syncSection = makeSection(titleKey: "settings.section.cloudSync", content: syncStack)
+        addArrangedSubviewFillingWidth(syncSection, to: contentStack)
+
+        cloudSyncObserver = NotificationCenter.default.addObserver(
+            forName: .cloudSyncStateDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.updateCloudSyncState()
+        }
+
         mouseDistanceCalibrationButton = NSButton(title: NSLocalizedString("settings.mouseDistanceCalibration", comment: ""),
                                                   target: self,
                                                   action: #selector(calibrateMouseDistance))
@@ -499,6 +569,58 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
         toggle.action = action
         toggle.translatesAutoresizingMaskIntoConstraints = false
         return toggle
+    }
+
+    private func makeTextField(placeholderKey: String) -> NSTextField {
+        let field = NSTextField(string: "")
+        field.placeholderString = NSLocalizedString(placeholderKey, comment: "")
+        field.isEditable = true
+        field.isSelectable = true
+        field.isBordered = true
+        field.bezelStyle = .roundedBezel
+        field.focusRingType = .default
+        field.controlSize = .regular
+        field.font = NSFont.systemFont(ofSize: 13)
+        field.translatesAutoresizingMaskIntoConstraints = false
+        field.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        field.heightAnchor.constraint(greaterThanOrEqualToConstant: 28).isActive = true
+        return field
+    }
+
+    private func makeSecureTextField(placeholderKey: String) -> NSSecureTextField {
+        let field = NSSecureTextField(string: "")
+        field.placeholderString = NSLocalizedString(placeholderKey, comment: "")
+        field.isEditable = true
+        field.isSelectable = true
+        field.isBordered = true
+        field.bezelStyle = .roundedBezel
+        field.focusRingType = .default
+        field.controlSize = .regular
+        field.font = NSFont.systemFont(ofSize: 13)
+        field.translatesAutoresizingMaskIntoConstraints = false
+        field.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        field.heightAnchor.constraint(greaterThanOrEqualToConstant: 28).isActive = true
+        return field
+    }
+
+    private func makeFormFieldRow(title: String, control: NSView) -> NSStackView {
+        let label = makeRowLabel(title)
+        let stack = NSStackView(views: [label, control])
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 4
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        control.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        return stack
+    }
+
+    private func makeActionButton(titleKey: String, action: Selector) -> NSButton {
+        let button = NSButton(title: NSLocalizedString(titleKey, comment: ""), target: self, action: action)
+        button.bezelStyle = .rounded
+        button.controlSize = .regular
+        return button
     }
 
     private func makeSwitchRow(titleKey: String, toggle: NSSwitch, accessory: NSView? = nil) -> NSStackView {
@@ -689,6 +811,73 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
         showThresholdsButton.state = notificationsEnabled ? .on : .off
         notificationThresholdContainer.isHidden = !notificationsEnabled
         updateThresholdUI()
+        updateCloudSyncState()
+    }
+
+    private func updateCloudSyncState() {
+        let manager = CloudSyncManager.shared
+        syncServerURLField.stringValue = manager.serverURLString
+        syncUsernameField.stringValue = manager.savedUsername
+        syncEnabledButton.state = manager.isSyncEnabled ? .on : .off
+
+        let loggedIn = manager.isAuthenticated
+        syncAuthContainer.isHidden = loggedIn
+        syncControlsContainer.isHidden = !loggedIn
+        syncEnabledButton.isEnabled = loggedIn
+        syncNowButton.isEnabled = loggedIn
+        syncLogoutButton.isEnabled = loggedIn
+        syncServerURLField.isEnabled = true
+        syncUsernameField.isEnabled = true
+        syncPasswordField.isEnabled = true
+
+        switch manager.status {
+        case .idle:
+            syncStatusLabel.stringValue = loggedIn
+                ? NSLocalizedString("sync.status.ready", comment: "")
+                : NSLocalizedString("sync.status.notLoggedIn", comment: "")
+        case .syncing:
+            syncStatusLabel.stringValue = NSLocalizedString("sync.status.syncing", comment: "")
+        case .success(let date):
+            let formatter = DateFormatter()
+            formatter.dateStyle = .none
+            formatter.timeStyle = .medium
+            syncStatusLabel.stringValue = String(
+                format: NSLocalizedString("sync.status.success", comment: ""),
+                formatter.string(from: date)
+            )
+        case .failed(let message):
+            syncStatusLabel.stringValue = String(
+                format: NSLocalizedString("sync.status.failed", comment: ""),
+                message
+            )
+        }
+
+        syncDevicesStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        if loggedIn {
+            let devicesTitle = makeRowLabel(NSLocalizedString("sync.devices.title", comment: ""))
+            syncDevicesStack.addArrangedSubview(devicesTitle)
+            if manager.devices.isEmpty {
+                let empty = makeRowLabel(NSLocalizedString("sync.devices.empty", comment: ""))
+                empty.textColor = .secondaryLabelColor
+                syncDevicesStack.addArrangedSubview(empty)
+            } else {
+                for device in manager.devices {
+                    let platform = device.platform.uppercased()
+                    let name = device.deviceName.isEmpty ? device.id : device.deviceName
+                    let label = makeRowLabel("• \(platform) · \(name)")
+                    label.textColor = .secondaryLabelColor
+                    label.font = NSFont.systemFont(ofSize: 11)
+                    syncDevicesStack.addArrangedSubview(label)
+                }
+            }
+
+            let totalToday = manager.aggregatedTodayKeyPresses(includeLocal: true)
+            let totalLabel = makeRowLabel(
+                String(format: NSLocalizedString("sync.todayTotal", comment: ""), totalToday)
+            )
+            totalLabel.font = NSFont.systemFont(ofSize: 11, weight: .medium)
+            syncDevicesStack.addArrangedSubview(totalLabel)
+        }
     }
 
     private func updateDynamicIconColorStyleSelection() {
@@ -1066,6 +1255,107 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
         if alert.runModal() == .alertFirstButtonReturn {
             StatsManager.shared.resetStats()
             AppDelegate.trackEvent("stats_reset")
+        }
+    }
+
+    // MARK: - Cloud Sync
+
+    @objc private func toggleCloudSync() {
+        CloudSyncManager.shared.isSyncEnabled = syncEnabledButton.state == .on
+        AppDelegate.trackClick("cloud_sync_toggle", properties: ["enabled": CloudSyncManager.shared.isSyncEnabled])
+        updateCloudSyncState()
+    }
+
+    @objc private func syncLogin() {
+        AppDelegate.trackClick("cloud_sync_login")
+        performCloudAuth(register: false)
+    }
+
+    @objc private func syncRegister() {
+        AppDelegate.trackClick("cloud_sync_register")
+        performCloudAuth(register: true)
+    }
+
+    @objc private func syncNow() {
+        AppDelegate.trackClick("cloud_sync_now")
+        CloudSyncManager.shared.serverURLString = syncServerURLField.stringValue
+        Task {
+            await CloudSyncManager.shared.syncNow()
+        }
+    }
+
+    @objc private func syncLogout() {
+        AppDelegate.trackClick("cloud_sync_logout")
+        CloudSyncManager.shared.logout()
+        syncPasswordField.stringValue = ""
+        updateCloudSyncState()
+    }
+
+    private func performCloudAuth(register: Bool) {
+        let serverURL = syncServerURLField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let username = syncUsernameField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let password = syncPasswordField.stringValue
+
+        guard !serverURL.isEmpty, !username.isEmpty, !password.isEmpty else {
+            presentSyncAlert(
+                title: NSLocalizedString("sync.error.title", comment: ""),
+                message: NSLocalizedString("sync.error.missingFields", comment: "")
+            )
+            return
+        }
+
+        CloudSyncManager.shared.serverURLString = serverURL
+        setCloudAuthInProgress(true)
+        syncStatusLabel.stringValue = NSLocalizedString("sync.status.authenticating", comment: "")
+
+        Task {
+            do {
+                if register {
+                    try await CloudSyncManager.shared.register(username: username, password: password)
+                } else {
+                    try await CloudSyncManager.shared.login(username: username, password: password)
+                }
+                await MainActor.run {
+                    self.syncPasswordField.stringValue = ""
+                    self.setCloudAuthInProgress(false)
+                    self.updateCloudSyncState()
+                }
+            } catch {
+                await MainActor.run {
+                    self.setCloudAuthInProgress(false)
+                    self.syncStatusLabel.stringValue = String(
+                        format: NSLocalizedString("sync.status.failed", comment: ""),
+                        error.localizedDescription
+                    )
+                    self.presentSyncAlert(
+                        title: NSLocalizedString("sync.error.title", comment: ""),
+                        message: error.localizedDescription
+                    )
+                }
+            }
+        }
+    }
+
+    private func setCloudAuthInProgress(_ inProgress: Bool) {
+        syncLoginButton.isEnabled = !inProgress
+        syncRegisterButton.isEnabled = !inProgress
+        syncServerURLField.isEnabled = !inProgress
+        syncUsernameField.isEnabled = !inProgress
+        syncPasswordField.isEnabled = !inProgress
+    }
+
+    private func presentSyncAlert(title: String, message: String) {
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: NSLocalizedString("button.ok", comment: ""))
+
+        if let window = view.window ?? NSApp.keyWindow, window.isVisible {
+            alert.beginSheetModal(for: window, completionHandler: nil)
+        } else {
+            alert.runModal()
         }
     }
 

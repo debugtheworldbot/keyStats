@@ -850,6 +850,22 @@ class StatsManager {
         if let encoded = try? JSONEncoder().encode(historySnapshot) {
             userDefaults.set(encoded, forKey: historyKey)
         }
+
+        CloudSyncManager.shared.handleLocalStatsSaved()
+    }
+
+    /// Returns all local daily stats keyed by `yyyy-MM-dd` for cloud sync upload.
+    func statsSnapshotForSync() -> [String: DailyStats] {
+        statsStateLock.lock()
+        var snapshot = history
+        let current = currentStats
+        statsStateLock.unlock()
+
+        snapshot = normalizedHistory(snapshot)
+        let normalizedCurrent = normalizedDailyStats(current)
+        let key = dateFormatter.string(from: normalizedCurrent.date)
+        snapshot[key] = normalizedCurrent
+        return snapshot
     }
 
     private func loadStats() -> DailyStats? {

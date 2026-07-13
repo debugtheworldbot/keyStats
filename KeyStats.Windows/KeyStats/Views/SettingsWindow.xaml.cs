@@ -1,9 +1,12 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using KeyStats.Helpers;
+using KeyStats.Models;
 using KeyStats.Services;
 
 namespace KeyStats.Views;
@@ -11,6 +14,7 @@ namespace KeyStats.Views;
 public partial class SettingsWindow : Window
 {
     private const string GitHubUrl = "https://github.com/debugtheworldbot/keyStats";
+    private bool _isUpdatingSyncUi;
 
     public SettingsWindow()
     {
@@ -19,17 +23,198 @@ public partial class SettingsWindow : Window
         Loaded += OnLoaded;
         Closed += OnClosed;
         ThemeManager.Instance.ThemeChanged += OnThemeChanged;
+        CloudSyncManager.Instance.StateChanged += OnCloudSyncStateChanged;
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         ApplyWindowBackdrop();
         App.CurrentApp?.TrackPageView("settings");
+        LoadCloudSyncFields();
+        UpdateCloudSyncUi();
     }
 
     private void OnClosed(object? sender, System.EventArgs e)
     {
         ThemeManager.Instance.ThemeChanged -= OnThemeChanged;
+        CloudSyncManager.Instance.StateChanged -= OnCloudSyncStateChanged;
+    }
+
+    private void OnCloudSyncStateChanged()
+    {
+        Dispatcher.BeginInvoke(new System.Action(UpdateCloudSyncUi));
+    }
+
+    private void LoadCloudSyncFields()
+    {
+        var sync = CloudSyncManager.Instance;
+        SyncServerUrlTextBox.Text = sync.ServerURLString;
+        SyncUsernameTextBox.Text = sync.SavedUsername;
+        SyncPasswordBox.Password = "";
+    }
+
+    private void UpdateCloudSyncUi()
+    {
+        _isUpdatingSyncUi = true;
+        try
+        {
+            var sync = CloudSyncManager.Instance;
+            var authenticated = sync.IsAuthenticated;
+
+            SyncAuthPanel.Visibility = authenticated ? Visibility.Collapsed : Visibility.Visible;
+            SyncControlsPanel.Visibility = authenticated ? Visibility.Visible : Visibility.Collapsed;
+
+            SyncEnabledCheckBox.IsChecked = sync.IsSyncEnabled;
+            SyncEnabledCheckBox.IsEnabled = authenticated;
+            SyncNowButton.IsEnabled = authenticated && sync.IsSyncEnabled;
+            SyncLogoutButton.IsEnabled = authenticated;
+
+            SyncStatusTextBlock.Text = FormatSyncStatus(sync.Status, authenticated);
+        }
+        finally
+        {
+            _isUpdatingSyncUi = false;
+        }
+    }
+
+    private static string FormatSyncStatus(CloudSyncStatus status, bool authenticated)
+    {
+        if (!authenticated)
+        {
+            return KeyStats.Properties.Strings.Sync_StatusNotLoggedIn;
+        }
+
+        return status.Kind switch
+        {
+            CloudSyncStatusKind.Syncing => KeyStats.Properties.Strings.Sync_StatusSyncing,
+            CloudSyncStatusKind.Success when status.SuccessAt.HasValue =>
+                string.Format(
+                    CultureInfo.CurrentCulture,
+                    KeyStats.Properties.Strings.Sync_StatusSuccessFormat,
+                    status.SuccessAt.Value.ToString("g", CultureInfo.CurrentCulture)),
+            CloudSyncStatusKind.Failed =>
+                string.Format(
+                    CultureInfo.CurrentCulture,
+                    KeyStats.Properties.Strings.Sync_StatusFailedFormat,
+                    status.ErrorMessage ?? ""),
+            _ => KeyStats.Properties.Strings.Sync_StatusReady
+        };
+    }
+
+    private bool TryReadAuthInputs(out string username, out string password)
+    {
+        username = SyncUsernameTextBox.Text.Trim();
+        password = SyncPasswordBox.Password;
+        var serverUrl = SyncServerUrlTextBox.Text.Trim();
+
+        if (string.IsNullOrWhiteSpace(serverUrl) ||
+            string.IsNullOrWhiteSpace(username) ||
+            string.IsNullOrWhiteSpace(password))
+        {
+            MessageBox.Show(
+                this,
+                KeyStats.Properties.Strings.Sync_Error_MissingFields,
+                KeyStats.Properties.Strings.Settings_CloudSync,
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return false;
+        }
+
+        CloudSyncManager.Instance.ServerURLString = serverUrl;
+        return true;
+    }
+
+    private async void SyncLogin_Click(object sender, RoutedEventArgs e)
+    {
+        if (!TryReadAuthInputs(out var username, out var password)) return;
+
+        App.CurrentApp?.TrackClick("sync_login");
+        SetSyncButtonsEnabled(false);
+
+        try
+        {
+            await CloudSyncManager.Instance.LoginAsync(username, password).ConfigureAwait(true);
+            SyncPasswordBox.Password = "";
+            UpdateCloudSyncUi();
+        }
+        catch (CloudSyncException ex)
+        {
+            MessageBox.Show(this, ex.Message, KeyStats.Properties.Strings.Settings_CloudSync, MessageBoxButton.OK, MessageBoxImage.Warning);
+            UpdateCloudSyncUi();
+        }
+        finally
+        {
+            SetSyncButtonsEnabled(true);
+        }
+    }
+
+    private async void SyncRegister_Click(object sender, RoutedEventArgs e)
+    {
+        if (!TryReadAuthInputs(out var username, out var password)) return;
+
+        App.CurrentApp?.TrackClick("sync_register");
+        SetSyncButtonsEnabled(false);
+
+        try
+        {
+            await CloudSyncManager.Instance.RegisterAsync(username, password).ConfigureAwait(true);
+            SyncPasswordBox.Password = "";
+            UpdateCloudSyncUi();
+        }
+        catch (CloudSyncException ex)
+        {
+            MessageBox.Show(this, ex.Message, KeyStats.Properties.Strings.Settings_CloudSync, MessageBoxButton.OK, MessageBoxImage.Warning);
+            UpdateCloudSyncUi();
+        }
+        finally
+        {
+            SetSyncButtonsEnabled(true);
+        }
+    }
+
+    private async void SyncNow_Click(object sender, RoutedEventArgs e)
+    {
+        App.CurrentApp?.TrackClick("sync_now");
+        SetSyncButtonsEnabled(false);
+        try
+        {
+            await CloudSyncManager.Instance.SyncNowAsync().ConfigureAwait(true);
+            UpdateCloudSyncUi();
+        }
+        finally
+        {
+            SetSyncButtonsEnabled(true);
+        }
+    }
+
+    private void SyncLogout_Click(object sender, RoutedEventArgs e)
+    {
+        App.CurrentApp?.TrackClick("sync_logout");
+        CloudSyncManager.Instance.Logout();
+        SyncPasswordBox.Password = "";
+        UpdateCloudSyncUi();
+    }
+
+    private void SyncEnabled_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_isUpdatingSyncUi) return;
+        if (!CloudSyncManager.Instance.IsAuthenticated) return;
+
+        var enabled = SyncEnabledCheckBox.IsChecked == true;
+        App.CurrentApp?.TrackClick("sync_enabled_toggle", new System.Collections.Generic.Dictionary<string, object?>
+        {
+            ["enabled"] = enabled
+        });
+        CloudSyncManager.Instance.IsSyncEnabled = enabled;
+        UpdateCloudSyncUi();
+    }
+
+    private void SetSyncButtonsEnabled(bool enabled)
+    {
+        SyncLoginButton.IsEnabled = enabled;
+        SyncRegisterButton.IsEnabled = enabled;
+        SyncNowButton.IsEnabled = enabled && CloudSyncManager.Instance.IsAuthenticated && CloudSyncManager.Instance.IsSyncEnabled;
+        SyncLogoutButton.IsEnabled = enabled && CloudSyncManager.Instance.IsAuthenticated;
     }
 
     private void OnThemeChanged()
@@ -142,16 +327,12 @@ public partial class SettingsWindow : Window
                 ["to"] = newPref,
             });
             StatsManager.Instance.Settings.LanguagePreference = newPref!;
-            // SaveSettings() is debounced (2s) — RestartApp would spawn the new
-            // process before the disk write happens, so it would read the old
-            // language. FlushPendingSave forces a synchronous write.
             StatsManager.Instance.FlushPendingSave();
             RestartApp();
         }
         else
         {
             App.CurrentApp?.TrackClick("settings_language_change_cancelled");
-            // User cancelled — revert ComboBox to the previously persisted value.
             _isInitializingLanguage = true;
             LanguageComboBox.SelectedItem = LanguageComboBox.Items
                 .Cast<ComboBoxItem>()
@@ -172,8 +353,6 @@ public partial class SettingsWindow : Window
         }
         catch (System.Exception ex)
         {
-            // If relaunch fails, the user will have to start the app manually.
-            // Log so the failure is recoverable from a bug report.
             System.Console.WriteLine($"RestartApp: relaunch failed: {ex}");
         }
         Application.Current.Shutdown();

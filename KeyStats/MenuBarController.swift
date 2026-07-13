@@ -82,7 +82,15 @@ class MenuBarController {
         popover.animates = true
         let statsPopoverViewController = StatsPopoverViewController()
         statsPopoverViewController.preferredSizeDidChange = { [weak self] targetSize in
-            self?.popover.contentSize = targetSize
+            guard let self else { return }
+            let wasShown = self.popover.isShown
+            self.popover.contentSize = targetSize
+            guard wasShown else { return }
+            if let button = self.statusItem.button {
+                self.popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            } else if let view = self.statusItem.view {
+                self.popover.show(relativeTo: view.bounds, of: view, preferredEdge: .minY)
+            }
         }
         popover.contentViewController = statsPopoverViewController
         statsPopoverViewController.prepareForPopoverPresentation()

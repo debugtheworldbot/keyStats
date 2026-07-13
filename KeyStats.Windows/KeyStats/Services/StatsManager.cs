@@ -562,6 +562,35 @@ public class StatsManager : IDisposable
         }
 
         WriteJsonDurable(_statsFilePath, statsSnapshot, "stats");
+        CloudSyncManager.Instance.HandleLocalStatsSaved();
+    }
+
+    /// <summary>
+    /// Returns all local daily stats keyed by yyyy-MM-dd for cloud sync upload.
+    /// </summary>
+    public Dictionary<string, DailyStats> StatsSnapshotForSync()
+    {
+        lock (_lock)
+        {
+            var snapshot = CloneHistorySnapshot(History);
+            var current = CloneDailyStats(CurrentStats, CurrentStats.Date.Date);
+            snapshot[current.Date.ToString("yyyy-MM-dd")] = current;
+            return snapshot;
+        }
+    }
+
+    public KeyboardHeatmapDay BuildKeyboardHeatmapDay(
+        DateTime date,
+        Dictionary<string, int> keyPressCounts,
+        int totalKeyPresses)
+    {
+        var aggregated = AggregateKeyboardHeatmapCounts(keyPressCounts);
+        return new KeyboardHeatmapDay
+        {
+            Date = date.Date,
+            TotalKeyPresses = Math.Max(0, totalKeyPresses),
+            KeyCounts = aggregated
+        };
     }
 
     private void SaveHistory()

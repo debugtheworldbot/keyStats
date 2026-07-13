@@ -60,4 +60,28 @@ public class AppSettings
 
     [JsonPropertyName("languagePreference")]
     public string LanguagePreference { get; set; } = "system";  // "system" | "zh-Hans" | "zh-Hant" | "en"
+
+    [JsonPropertyName("cloudSyncServerURL")]
+    public string CloudSyncServerURL { get; set; } = "";
+
+    [JsonPropertyName("cloudSyncEnabled")]
+    public bool CloudSyncEnabled { get; set; }
+
+    [JsonPropertyName("cloudSyncDeviceId")]
+    public string? CloudSyncDeviceId { get; set; }
+
+    [JsonPropertyName("cloudSyncUsername")]
+    public string CloudSyncUsername { get; set; } = "";
+
+    [JsonPropertyName("cloudSyncLastUploadVersions")]
+    public Dictionary<string, long> CloudSyncLastUploadVersions { get; set; } = new();
+
+    [JsonPropertyName("cloudSyncLastUploadFingerprints")]
+    public Dictionary<string, string> CloudSyncLastUploadFingerprints { get; set; } = new();
+
+    [JsonPropertyName("cloudSyncInitialBulkUploaded")]
+    public bool CloudSyncInitialBulkUploaded { get; set; }
+
+    [JsonPropertyName("cloudSyncDisplaySelection")]
+    public string CloudSyncDisplaySelection { get; set; } = "local";
 }

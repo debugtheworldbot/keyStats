@@ -14,7 +14,7 @@ final class SettingsWindowController: NSWindowController {
         window.styleMask.insert(.fullSizeContentView)
         window.isMovableByWindowBackground = true
         window.backgroundColor = .windowBackgroundColor
-        window.setContentSize(NSSize(width: 520, height: 720))
+        window.setContentSize(NSSize(width: 520, height: 820))
         window.isReleasedWhenClosed = false
         window.center()
         super.init(window: window)

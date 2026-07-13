@@ -224,4 +224,29 @@
   <data name="Confirm_DefaultMessage" xml:space="preserve"><value>Are you sure you want to perform this action?</value></data>
   <data name="Confirm_DefaultTitle" xml:space="preserve"><value>Confirm</value></data>
   <data name="Confirm_DefaultConfirm" xml:space="preserve"><value>OK</value></data>
+
+  <!-- Cloud Sync -->
+  <data name="Settings_CloudSync" xml:space="preserve"><value>Cloud Sync</value></data>
+  <data name="Sync_ServerURL" xml:space="preserve"><value>Server URL</value></data>
+  <data name="Sync_ServerURLPlaceholder" xml:space="preserve"><value>http://localhost:8080</value></data>
+  <data name="Sync_Username" xml:space="preserve"><value>Username</value></data>
+  <data name="Sync_Password" xml:space="preserve"><value>Password</value></data>
+  <data name="Sync_Login" xml:space="preserve"><value>Login</value></data>
+  <data name="Sync_Register" xml:space="preserve"><value>Register</value></data>
+  <data name="Sync_Logout" xml:space="preserve"><value>Logout</value></data>
+  <data name="Sync_Enabled" xml:space="preserve"><value>Enable Cloud Sync</value></data>
+  <data name="Sync_SyncNow" xml:space="preserve"><value>Sync Now</value></data>
+  <data name="Sync_StatusReady" xml:space="preserve"><value>Ready to sync.</value></data>
+  <data name="Sync_StatusNotLoggedIn" xml:space="preserve"><value>Log in to sync stats across devices.</value></data>
+  <data name="Sync_StatusSyncing" xml:space="preserve"><value>Syncing...</value></data>
+  <data name="Sync_StatusSuccessFormat" xml:space="preserve"><value>Last synced at {0}.</value></data>
+  <data name="Sync_StatusFailedFormat" xml:space="preserve"><value>Sync failed: {0}</value></data>
+  <data name="Sync_Error_MissingFields" xml:space="preserve"><value>Please fill in server URL, username, and password.</value></data>
+  <data name="Sync_Error_InvalidServerURL" xml:space="preserve"><value>Invalid server URL.</value></data>
+  <data name="Sync_Error_NotAuthenticated" xml:space="preserve"><value>Please log in first.</value></data>
+  <data name="Sync_Error_NotConfigured" xml:space="preserve"><value>Cloud sync is not configured.</value></data>
+  <data name="Sync_Error_InvalidResponse" xml:space="preserve"><value>Invalid server response.</value></data>
+  <data name="Sync_Error_CredentialSaveFailed" xml:space="preserve"><value>Failed to save credentials.</value></data>
+  <data name="DeviceStats_ScopeLocal" xml:space="preserve"><value>This PC</value></data>
+  <data name="DeviceStats_ScopeAllDevices" xml:space="preserve"><value>All Devices</value></data>
 </root>

@@ -181,4 +181,28 @@ public static class Strings
     public static string Confirm_DefaultMessage => Get(nameof(Confirm_DefaultMessage));
     public static string Confirm_DefaultTitle => Get(nameof(Confirm_DefaultTitle));
     public static string Confirm_DefaultConfirm => Get(nameof(Confirm_DefaultConfirm));
+
+    public static string Settings_CloudSync => Get(nameof(Settings_CloudSync));
+    public static string Sync_ServerURL => Get(nameof(Sync_ServerURL));
+    public static string Sync_ServerURLPlaceholder => Get(nameof(Sync_ServerURLPlaceholder));
+    public static string Sync_Username => Get(nameof(Sync_Username));
+    public static string Sync_Password => Get(nameof(Sync_Password));
+    public static string Sync_Login => Get(nameof(Sync_Login));
+    public static string Sync_Register => Get(nameof(Sync_Register));
+    public static string Sync_Logout => Get(nameof(Sync_Logout));
+    public static string Sync_Enabled => Get(nameof(Sync_Enabled));
+    public static string Sync_SyncNow => Get(nameof(Sync_SyncNow));
+    public static string Sync_StatusReady => Get(nameof(Sync_StatusReady));
+    public static string Sync_StatusNotLoggedIn => Get(nameof(Sync_StatusNotLoggedIn));
+    public static string Sync_StatusSyncing => Get(nameof(Sync_StatusSyncing));
+    public static string Sync_StatusSuccessFormat => Get(nameof(Sync_StatusSuccessFormat));
+    public static string Sync_StatusFailedFormat => Get(nameof(Sync_StatusFailedFormat));
+    public static string Sync_Error_MissingFields => Get(nameof(Sync_Error_MissingFields));
+    public static string Sync_Error_InvalidServerURL => Get(nameof(Sync_Error_InvalidServerURL));
+    public static string Sync_Error_NotAuthenticated => Get(nameof(Sync_Error_NotAuthenticated));
+    public static string Sync_Error_NotConfigured => Get(nameof(Sync_Error_NotConfigured));
+    public static string Sync_Error_InvalidResponse => Get(nameof(Sync_Error_InvalidResponse));
+    public static string Sync_Error_CredentialSaveFailed => Get(nameof(Sync_Error_CredentialSaveFailed));
+    public static string DeviceStats_ScopeLocal => Get(nameof(DeviceStats_ScopeLocal));
+    public static string DeviceStats_ScopeAllDevices => Get(nameof(DeviceStats_ScopeAllDevices));
 }

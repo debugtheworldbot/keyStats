@@ -44,6 +44,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupWindowMenu()
 
         bootstrapHelperPipeline(wasPreviouslyInstalled: wasPreviouslyInstalled)
+        CloudSyncManager.shared.bootstrapIfNeeded()
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {
@@ -52,6 +53,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         HelperXPCClient.shared.disconnect()
         permissionCheckTimer?.invalidate()
         StatsManager.shared.flushPendingSave()
+        if CloudSyncManager.shared.isSyncEnabled {
+            Task {
+                await CloudSyncManager.shared.syncNow()
+            }
+        }
     }
     
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
