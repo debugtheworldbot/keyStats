@@ -36,6 +36,7 @@
   <!-- .NET Framework 需要显式引用 Microsoft.CSharp 以支持 dynamic 类型 -->
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Security" />
   </ItemGroup>
 
   <ItemGroup>

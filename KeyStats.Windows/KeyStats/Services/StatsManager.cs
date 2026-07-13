@@ -63,6 +63,10 @@ public class StatsManager : IDisposable
 
     private StatsManager()
     {
+        // Publish the singleton before any code that may re-enter Instance
+        // (e.g. SaveStats → CloudSyncManager → StatsManager.Instance).
+        _instance = this;
+
         _dataFolder = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "KeyStats");

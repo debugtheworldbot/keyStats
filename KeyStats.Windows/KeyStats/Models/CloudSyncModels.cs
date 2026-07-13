@@ -60,64 +60,64 @@ public sealed class CloudDailyStatsPayload
     [JsonPropertyName("date")]
     public string Date { get; set; } = "";
 
-    [JsonPropertyName("key_presses")]
+    [JsonPropertyName("keyPresses")]
     public int KeyPresses { get; set; }
 
-    [JsonPropertyName("key_press_counts")]
+    [JsonPropertyName("keyPressCounts")]
     public Dictionary<string, int>? KeyPressCounts { get; set; }
 
-    [JsonPropertyName("left_clicks")]
+    [JsonPropertyName("leftClicks")]
     public int LeftClicks { get; set; }
 
-    [JsonPropertyName("right_clicks")]
+    [JsonPropertyName("rightClicks")]
     public int RightClicks { get; set; }
 
-    [JsonPropertyName("side_back_clicks")]
+    [JsonPropertyName("sideBackClicks")]
     public int SideBackClicks { get; set; }
 
-    [JsonPropertyName("side_forward_clicks")]
+    [JsonPropertyName("sideForwardClicks")]
     public int SideForwardClicks { get; set; }
 
-    [JsonPropertyName("mouse_distance")]
+    [JsonPropertyName("mouseDistance")]
     public double MouseDistance { get; set; }
 
-    [JsonPropertyName("scroll_distance")]
+    [JsonPropertyName("scrollDistance")]
     public double ScrollDistance { get; set; }
 
-    [JsonPropertyName("peak_kps")]
+    [JsonPropertyName("peakKPS")]
     public int PeakKPS { get; set; }
 
-    [JsonPropertyName("peak_cps")]
+    [JsonPropertyName("peakCPS")]
     public int PeakCPS { get; set; }
 
-    [JsonPropertyName("app_stats")]
+    [JsonPropertyName("appStats")]
     public Dictionary<string, CloudAppStatsPayload>? AppStats { get; set; }
 }
 
 public sealed class CloudAppStatsPayload
 {
-    [JsonPropertyName("bundle_id")]
+    [JsonPropertyName("bundleId")]
     public string BundleId { get; set; } = "";
 
-    [JsonPropertyName("display_name")]
+    [JsonPropertyName("displayName")]
     public string DisplayName { get; set; } = "";
 
-    [JsonPropertyName("key_presses")]
+    [JsonPropertyName("keyPresses")]
     public int KeyPresses { get; set; }
 
-    [JsonPropertyName("left_clicks")]
+    [JsonPropertyName("leftClicks")]
     public int LeftClicks { get; set; }
 
-    [JsonPropertyName("right_clicks")]
+    [JsonPropertyName("rightClicks")]
     public int RightClicks { get; set; }
 
-    [JsonPropertyName("side_back_clicks")]
+    [JsonPropertyName("sideBackClicks")]
     public int SideBackClicks { get; set; }
 
-    [JsonPropertyName("side_forward_clicks")]
+    [JsonPropertyName("sideForwardClicks")]
     public int SideForwardClicks { get; set; }
 
-    [JsonPropertyName("scroll_distance")]
+    [JsonPropertyName("scrollDistance")]
     public double ScrollDistance { get; set; }
 }
 

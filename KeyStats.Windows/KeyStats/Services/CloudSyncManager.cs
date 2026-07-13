@@ -94,7 +94,13 @@ public sealed class CloudSyncManager
         get => StatsDisplaySelection.FromPersisted(Settings.CloudSyncDisplaySelection);
         set
         {
-            Settings.CloudSyncDisplaySelection = value.PersistedValue;
+            var persisted = value.PersistedValue;
+            if (string.Equals(Settings.CloudSyncDisplaySelection, persisted, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            Settings.CloudSyncDisplaySelection = persisted;
             StatsManager.Instance.SaveSettings();
             NotifyStateChanged();
         }
