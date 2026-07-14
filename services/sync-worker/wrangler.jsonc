@@ -1,0 +1,79 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "keystats-sync",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-13",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "observability": {
+    "enabled": false
+  },
+  "vars": {
+    "SYNC_ENABLED": "true",
+    "MIN_SYNC_INTERVAL_SECONDS": "3600",
+    "DAILY_SYNC_LIMIT": "8"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "keystats-sync-local",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "HISTORY",
+      "bucket_name": "keystats-sync-local"
+    }
+  ],
+  "env": {
+    "staging": {
+      "name": "keystats-sync-staging",
+      "vars": {
+        "SYNC_ENABLED": "true",
+        "MIN_SYNC_INTERVAL_SECONDS": "3600",
+        "DAILY_SYNC_LIMIT": "8"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "keystats-sync-staging",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "HISTORY",
+          "bucket_name": "keystats-sync-staging"
+        }
+      ]
+    },
+    "production": {
+      "name": "keystats-sync",
+      "vars": {
+        "SYNC_ENABLED": "true",
+        "MIN_SYNC_INTERVAL_SECONDS": "3600",
+        "DAILY_SYNC_LIMIT": "8"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "keystats-sync-production",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "HISTORY",
+          "bucket_name": "keystats-sync-production"
+        }
+      ]
+    }
+  },
+  "triggers": {
+    "crons": ["17 3 * * *"]
+  }
+}

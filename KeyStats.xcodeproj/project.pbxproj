@@ -43,6 +43,13 @@
 		A1000032 /* StatsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000032 /* StatsModels.swift */; };
 		A1000033 /* KPSDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000033 /* KPSDetailView.swift */; };
 		A1000034 /* UpdateCheckCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000034 /* UpdateCheckCoordinator.swift */; };
+		B1000001 /* SyncModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001 /* SyncModels.swift */; };
+		B1000002 /* SyncCrypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002 /* SyncCrypto.swift */; };
+		B1000003 /* SyncStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000003 /* SyncStorage.swift */; };
+		B1000004 /* SyncTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000004 /* SyncTransport.swift */; };
+		B1000005 /* DisplayStatsAggregator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000005 /* DisplayStatsAggregator.swift */; };
+		B1000006 /* SyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000006 /* SyncCoordinator.swift */; };
+		B1000007 /* SyncSettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000007 /* SyncSettingsWindowController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -85,6 +92,7 @@
 		A2000009 /* MainWindowViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowViewController.swift; sourceTree = "<group>"; };
 		A2000010 /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Localizable.strings; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		A2000011 /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Localizable.strings; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		A200001A /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Localizable.strings; path = "zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		A2000013 /* LaunchAtLoginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginManager.swift; sourceTree = "<group>"; };
 		A2000014 /* SettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewController.swift; sourceTree = "<group>"; };
 		A2000015 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
@@ -105,6 +113,13 @@
 		A2000032 /* StatsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsModels.swift; sourceTree = "<group>"; };
 		A2000033 /* KPSDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KPSDetailView.swift; sourceTree = "<group>"; };
 		A2000034 /* UpdateCheckCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckCoordinator.swift; sourceTree = "<group>"; };
+		B2000001 /* SyncModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncModels.swift; sourceTree = "<group>"; };
+		B2000002 /* SyncCrypto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCrypto.swift; sourceTree = "<group>"; };
+		B2000003 /* SyncStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStorage.swift; sourceTree = "<group>"; };
+		B2000004 /* SyncTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTransport.swift; sourceTree = "<group>"; };
+		B2000005 /* DisplayStatsAggregator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayStatsAggregator.swift; sourceTree = "<group>"; };
+		B2000006 /* SyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCoordinator.swift; sourceTree = "<group>"; };
+		B2000007 /* SyncSettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSettingsWindowController.swift; sourceTree = "<group>"; };
 		A3000001 /* KeyStats.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KeyStats.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A3000002 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A3000003 /* KeyStats.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KeyStats.entitlements; sourceTree = "<group>"; };
@@ -158,6 +173,7 @@
 		A5000002 /* KeyStats */ = {
 			isa = PBXGroup;
 			children = (
+				B5000001 /* Sync */,
 				A2000001 /* AppDelegate.swift */,
 				A2000023 /* AppActivityTracker.swift */,
 				A2000003 /* StatsManager.swift */,
@@ -195,6 +211,20 @@
 				A3000003 /* KeyStats.entitlements */,
 			);
 			path = KeyStats;
+			sourceTree = "<group>";
+		};
+		B5000001 /* Sync */ = {
+			isa = PBXGroup;
+			children = (
+				B2000001 /* SyncModels.swift */,
+				B2000002 /* SyncCrypto.swift */,
+				B2000003 /* SyncStorage.swift */,
+				B2000004 /* SyncTransport.swift */,
+				B2000005 /* DisplayStatsAggregator.swift */,
+				B2000006 /* SyncCoordinator.swift */,
+				B2000007 /* SyncSettingsWindowController.swift */,
+			);
+			path = Sync;
 			sourceTree = "<group>";
 		};
 		A5000003 /* Products */ = {
@@ -281,6 +311,7 @@
 				en,
 				Base,
 				"zh-Hans",
+				"zh-Hant",
 			);
 			mainGroup = A5000001;
 			packageReferences = (
@@ -329,6 +360,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B1000001 /* SyncModels.swift in Sources */,
+				B1000002 /* SyncCrypto.swift in Sources */,
+				B1000003 /* SyncStorage.swift in Sources */,
+				B1000004 /* SyncTransport.swift in Sources */,
+				B1000005 /* DisplayStatsAggregator.swift in Sources */,
+				B1000006 /* SyncCoordinator.swift in Sources */,
+				B1000007 /* SyncSettingsWindowController.swift in Sources */,
 				A1000001 /* AppDelegate.swift in Sources */,
 				9A10000A /* HelperSupervisor.swift in Sources */,
 				9A10000B /* HelperXPCClient.swift in Sources */,
@@ -378,6 +416,7 @@
 			children = (
 				A2000010 /* Localizable.strings */,
 				A2000011 /* Localizable.strings */,
+				A200001A /* Localizable.strings */,
 			);
 			name = Localizable.strings;
 			sourceTree = "<group>";

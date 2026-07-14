@@ -1,0 +1,68 @@
+name: Deploy Sync Worker Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type deploy-production after staging verification'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-worker-production
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: services/sync-worker
+
+jobs:
+  authorize:
+    name: Validate explicit confirmation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require exact production confirmation
+        if: ${{ inputs.confirmation != 'deploy-production' }}
+        run: exit 1
+
+  deploy:
+    name: Validate and deploy production
+    needs: authorize
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: sync-production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_D1_DATABASE_ID: ${{ vars.CLOUDFLARE_D1_DATABASE_ID }}
+      TOKEN_HASH_KEY: ${{ secrets.TOKEN_HASH_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: services/sync-worker/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - name: Validate deployment secrets
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "Cloudflare deployment credentials are not configured."
+            exit 1
+          fi
+          if [ "${#TOKEN_HASH_KEY}" -lt 32 ]; then
+            echo "TOKEN_HASH_KEY must contain at least 32 characters."
+            exit 1
+          fi
+      - name: Prepare bound production configuration
+        run: node scripts/write-deploy-config.mjs production wrangler.deploy.json
+      - name: Apply production D1 migrations
+        run: npx wrangler d1 migrations apply DB --env production --remote --config wrangler.deploy.json
+      - name: Configure token hashing secret
+        run: printf '%s' "$TOKEN_HASH_KEY" | npx wrangler secret put TOKEN_HASH_KEY --env production --config wrangler.deploy.json
+      - name: Deploy production Worker
+        run: npx wrangler deploy --env production --config wrangler.deploy.json

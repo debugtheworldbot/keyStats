@@ -101,7 +101,7 @@
   <data name="Settings_HeaderSubtitle" xml:space="preserve"><value>在這裡管理匯入、匯出與通知設定</value></data>
   <data name="Settings_GitHubTooltip" xml:space="preserve"><value>開啟 GitHub 儲存庫</value></data>
   <data name="Settings_DataImportExport" xml:space="preserve"><value>資料匯入 / 匯出</value></data>
-  <data name="Settings_DataImportExportDesc" xml:space="preserve"><value>從 JSON 匯入或匯出統計資料</value></data>
+  <data name="Settings_DataImportExportDesc" xml:space="preserve"><value>以 JSON 匯入或匯出這台裝置的本機統計</value></data>
   <data name="Settings_Notifications" xml:space="preserve"><value>通知設定</value></data>
   <data name="Settings_NotificationsDesc" xml:space="preserve"><value>設定按鍵/點擊門檻通知</value></data>
   <data name="Settings_DistanceCalibration" xml:space="preserve"><value>距離校準</value></data>
@@ -224,4 +224,54 @@
   <data name="Confirm_DefaultMessage" xml:space="preserve"><value>確定要執行此操作嗎？</value></data>
   <data name="Confirm_DefaultTitle" xml:space="preserve"><value>確認</value></data>
   <data name="Confirm_DefaultConfirm" xml:space="preserve"><value>確定</value></data>
+  <data name="Error_ImportDisabledWhileSyncing" xml:space="preserve"><value>裝置同步開啟時不能匯入資料。請先離開同步；匯出永遠只包含本機資料。</value></data>
+  <data name="Settings_Sync" xml:space="preserve"><value>裝置同步</value></data>
+  <data name="Settings_SyncDesc" xml:space="preserve"><value>端對端加密同步核心按鍵和點擊總數</value></data>
+  <data name="Settings_SyncUnavailable" xml:space="preserve"><value>此版本尚未設定同步服務</value></data>
+  <data name="Sync_WindowTitle" xml:space="preserve"><value>裝置同步 - KeyStats</value></data>
+  <data name="Sync_HeaderTitle" xml:space="preserve"><value>裝置同步</value></data>
+  <data name="Sync_HeaderSubtitle" xml:space="preserve"><value>核心按鍵和點擊總數會先在本機加密再上傳。應用程式統計、距離和峰值僅保留在本機。</value></data>
+  <data name="Sync_ServiceUnavailable" xml:space="preserve"><value>此版本沒有設定同步服務位址，不會發出任何網路請求。</value></data>
+  <data name="Sync_CreateTitle" xml:space="preserve"><value>從這台裝置開始</value></data>
+  <data name="Sync_CreateDescription" xml:space="preserve"><value>建立加密資料庫並首次上傳加密歷史。設定完成後，連接第二台裝置前不會進行一般同步，也不能手動同步。</value></data>
+  <data name="Sync_CreateButton" xml:space="preserve"><value>建立資料庫</value></data>
+  <data name="Sync_JoinTitle" xml:space="preserve"><value>加入這台裝置</value></data>
+  <data name="Sync_JoinDescription" xml:space="preserve"><value>產生六位驗證碼，然後在已連接的裝置上核准。</value></data>
+  <data name="Sync_BeginPairingButton" xml:space="preserve"><value>產生驗證碼</value></data>
+  <data name="Sync_CompletePairingButton" xml:space="preserve"><value>完成配對</value></data>
+  <data name="Sync_RecoverTitle" xml:space="preserve"><value>使用恢復碼</value></data>
+  <data name="Sync_RecoverDescription" xml:space="preserve"><value>其他裝置無法使用時，可用 28 位恢復碼加入這台裝置。</value></data>
+  <data name="Sync_RecoverButton" xml:space="preserve"><value>恢復</value></data>
+  <data name="Sync_StatusTitle" xml:space="preserve"><value>同步狀態</value></data>
+  <data name="Sync_NowButton" xml:space="preserve"><value>立即同步</value></data>
+  <data name="Sync_BootstrapPendingStatus" xml:space="preserve"><value>首次加密歷史上傳尚未完成。</value></data>
+  <data name="Sync_RetryBootstrapButton" xml:space="preserve"><value>重試設定</value></data>
+  <data name="Sync_RepairRequired" xml:space="preserve"><value>無法安全讀取本機同步設定，已禁止建立新的資料庫。請使用恢復碼或重新配對，也可以只清除本機同步設定。本機統計不會改變。</value></data>
+  <data name="Sync_ClearRepairButton" xml:space="preserve"><value>清除本機同步設定</value></data>
+  <data name="Sync_ClearRepairConfirm" xml:space="preserve"><value>要清除這台電腦上損壞或未完成的同步設定和加密憑證嗎？本機統計不會刪除，雲端資料也不會被刪除。</value></data>
+  <data name="Sync_RecoveryReplaceTitle" xml:space="preserve"><value>取代一台已連接裝置</value></data>
+  <data name="Sync_RecoveryReplaceMessage" xml:space="preserve"><value>此資料庫已有五台裝置。請選擇要接管的一台裝置身分。該裝置的權杖會被撤銷，但其加密歷史仍會保留。</value></data>
+  <data name="Sync_RecoveryReplaceConfirm" xml:space="preserve"><value>取代裝置</value></data>
+  <data name="Sync_ApproveTitle" xml:space="preserve"><value>核准另一台裝置</value></data>
+  <data name="Sync_ApproveDescription" xml:space="preserve"><value>輸入新裝置上的六位驗證碼，然後核對兩台裝置的安全碼。</value></data>
+  <data name="Sync_ApproveButton" xml:space="preserve"><value>核對</value></data>
+  <data name="Sync_RecoveryCodeTitle" xml:space="preserve"><value>恢復碼</value></data>
+  <data name="Sync_RecoveryCodeWarning" xml:space="preserve"><value>任何取得恢復碼的人都能恢復資料庫。請離線保存，也不要傳給客服。</value></data>
+  <data name="Sync_ShowRecoveryCodeButton" xml:space="preserve"><value>顯示恢復碼</value></data>
+  <data name="Sync_LeaveButton" xml:space="preserve"><value>從同步中移除這台裝置</value></data>
+  <data name="Sync_LeaveConfirm" xml:space="preserve"><value>要從加密資料庫中移除這台裝置嗎？本機統計不會被刪除。</value></data>
+  <data name="Sync_DeleteVaultButton" xml:space="preserve"><value>刪除全部雲端同步資料</value></data>
+  <data name="Sync_DeleteVaultConfirm" xml:space="preserve"><value>要永久刪除所有裝置的加密資料庫嗎？所有裝置會立即失去存取權，本機統計仍會保留。</value></data>
+  <data name="Sync_SingleDeviceStatus" xml:space="preserve"><value>目前只有一台裝置，不上傳統計，也不能手動同步。</value></data>
+  <data name="Sync_DeviceCountFormat" xml:space="preserve"><value>已連接 {0} 台裝置</value></data>
+  <data name="Sync_LastSuccessFormat" xml:space="preserve"><value>上次成功同步：{0}</value></data>
+  <data name="Sync_NeverSynced" xml:space="preserve"><value>尚未成功同步</value></data>
+  <data name="Sync_DevicesTitle" xml:space="preserve"><value>已連接裝置</value></data>
+  <data name="Sync_ThisDevice" xml:space="preserve"><value>這台裝置</value></data>
+  <data name="Sync_RevokeButton" xml:space="preserve"><value>移除</value></data>
+  <data name="Sync_RevokeConfirmFormat" xml:space="preserve"><value>要從加密資料庫中移除 {0} 嗎？</value></data>
+  <data name="Sync_SafetyCodeTitle" xml:space="preserve"><value>核對安全碼</value></data>
+  <data name="Sync_SafetyCodeConfirmFormat" xml:space="preserve"><value>請確認兩台裝置都顯示此安全碼：{0}</value></data>
+  <data name="Sync_ApprovalComplete" xml:space="preserve"><value>裝置已核准，請在新裝置上完成配對。</value></data>
+  <data name="Sync_GenericError" xml:space="preserve"><value>同步未完成，請檢查網路後再試一次。</value></data>
 </root>

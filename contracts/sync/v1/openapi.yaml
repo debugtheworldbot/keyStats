@@ -1,0 +1,559 @@
+openapi: 3.1.0
+info:
+  title: KeyStats E2EE Sync API
+  version: 1.0.0
+  description: >-
+    Accountless multi-device synchronization. Statistical payloads and device
+    profiles are encrypted by clients; the service stores opaque identifiers,
+    ciphertext, revisions, and rate-limit metadata only.
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+servers:
+  - url: https://keystats-sync-staging.example-account.workers.dev
+    description: Placeholder staging workers.dev address
+  - url: https://keystats-sync.example-account.workers.dev
+    description: Placeholder production workers.dev address
+tags:
+  - name: Vaults
+  - name: Pairing
+  - name: Sync
+paths:
+  /v1/vaults:
+    post:
+      tags: [Vaults]
+      operationId: createVault
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateVaultRequest' }
+      responses:
+        '201':
+          description: Vault and first device created, or an exact client-token replay acknowledged
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CreateVaultResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /v1/pairing-sessions:
+    post:
+      tags: [Pairing]
+      operationId: createPairingSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreatePairingSessionRequest' }
+      responses:
+        '201':
+          description: Ten-minute pairing session created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CreatePairingSessionResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /v1/pairing-sessions/{code}/join:
+    parameters:
+      - name: code
+        in: path
+        required: true
+        schema: { type: string, pattern: '^[0-9]{6}$' }
+    post:
+      tags: [Pairing]
+      operationId: joinPairingSession
+      security: [{ deviceToken: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/JoinPairingSessionRequest' }
+      responses:
+        '200':
+          description: Existing authenticated device joined the pending session
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JoinPairingSessionResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /v1/pairing-sessions/{sessionId}/approve:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    post:
+      tags: [Pairing]
+      operationId: approvePairingSession
+      security: [{ deviceToken: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ApprovePairingSessionRequest' }
+      responses:
+        '204':
+          description: Encrypted grant approved after the user confirms the safety code
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /v1/pairing-sessions/{sessionId}/complete:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    post:
+      tags: [Pairing]
+      operationId: completePairingSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CompletePairingSessionRequest' }
+      responses:
+        '200':
+          description: Pending state, encrypted grant, or completed device registration
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CompletePairingSessionResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /v1/recover:
+    post:
+      tags: [Vaults]
+      operationId: recoverVault
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecoverVaultRequest' }
+      responses:
+        '200':
+          description: New device registered or an existing identity rotated using the recovery credential
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecoverVaultResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /v1/state:
+    get:
+      tags: [Sync]
+      operationId: getSyncState
+      security: [{ deviceToken: [] }]
+      responses:
+        '200':
+          description: Read-only active device metadata and accepted current records; no sync quota is consumed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StateResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /v1/sync:
+    post:
+      tags: [Sync]
+      operationId: synchronize
+      security: [{ deviceToken: [] }]
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, minLength: 8, maxLength: 128, pattern: '^[A-Za-z0-9_-]+$' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SyncRequest' }
+      responses:
+        '200':
+          description: Atomic push acknowledgement plus pull response
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SyncResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /v1/history:
+    get:
+      tags: [Sync]
+      operationId: getHistory
+      security: [{ deviceToken: [] }]
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema: { type: integer, minimum: 0, maximum: 9007199254740991, default: 0 }
+      responses:
+        '200':
+          description: History delta page or a latest manifest when the cursor expired
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HistoryResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /v1/devices/{deviceId}:
+    parameters:
+      - name: deviceId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    delete:
+      tags: [Vaults]
+      operationId: revokeDevice
+      security: [{ deviceToken: [] }]
+      responses:
+        '204': { description: Current record archived and device token revoked }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /v1/vault:
+    delete:
+      tags: [Vaults]
+      operationId: deleteVault
+      security: [{ deviceToken: [] }]
+      responses:
+        '204':
+          description: >-
+            Tokens invalidated immediately and encrypted data queued for deletion.
+            A hash-only receipt lets the initiating token repeat this exact
+            DELETE with 204 for 30 days, including after Cron physically removes
+            the vault. That token remains unauthorized for every other endpoint.
+        '401': { $ref: '#/components/responses/Unauthorized' }
+components:
+  securitySchemes:
+    deviceToken:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque-device-token
+  parameters:
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  schemas:
+    Uuid: { type: string, format: uuid }
+    Timestamp: { type: string, format: date-time }
+    RecoveryAuthToken:
+      type: string
+      pattern: '^[A-Za-z0-9_-]{43}$'
+    DeviceToken:
+      type: string
+      minLength: 80
+      maxLength: 80
+      pattern: '^[0-9a-fA-F-]{36}\.[A-Za-z0-9_-]{43}$'
+    EncryptedEnvelope:
+      type: object
+      additionalProperties: false
+      required: [nonce, ciphertext, tag]
+      properties:
+        nonce: { type: string, pattern: '^[A-Za-z0-9+/]{16}$' }
+        ciphertext:
+          type: string
+          minLength: 4
+          maxLength: 87384
+          pattern: '^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$'
+        tag: { type: string, pattern: '^[A-Za-z0-9+/]{22}==$' }
+    EncryptedProfileEnvelope:
+      type: object
+      additionalProperties: false
+      required: [nonce, ciphertext, tag]
+      properties:
+        nonce: { type: string, pattern: '^[A-Za-z0-9+/]{16}$' }
+        ciphertext:
+          type: string
+          minLength: 4
+          maxLength: 2732
+          pattern: '^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$'
+        tag: { type: string, pattern: '^[A-Za-z0-9+/]{22}==$' }
+    EncryptedGrantEnvelope:
+      type: object
+      additionalProperties: false
+      required: [nonce, ciphertext, tag]
+      properties:
+        nonce: { type: string, pattern: '^[A-Za-z0-9+/]{16}$' }
+        ciphertext:
+          type: string
+          minLength: 4
+          maxLength: 5464
+          pattern: '^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$'
+        tag: { type: string, pattern: '^[A-Za-z0-9+/]{22}==$' }
+    EncryptedRecord:
+      $ref: './encrypted-record.schema.json'
+    CreateVaultRequest:
+      type: object
+      additionalProperties: false
+      required: [vaultId, deviceId, deviceToken, recoveryAuthToken, encryptedDeviceProfile]
+      properties:
+        vaultId: { $ref: '#/components/schemas/Uuid' }
+        deviceId: { $ref: '#/components/schemas/Uuid' }
+        deviceToken:
+          allOf: [{ $ref: '#/components/schemas/DeviceToken' }]
+          description: Client-generated token whose UUID prefix must equal deviceId.
+        recoveryAuthToken: { $ref: '#/components/schemas/RecoveryAuthToken' }
+        encryptedDeviceProfile: { $ref: '#/components/schemas/EncryptedProfileEnvelope' }
+    CreateVaultResponse:
+      type: object
+      additionalProperties: false
+      required: [vaultId, deviceId, deviceToken, activeDeviceCount, serverTime]
+      properties:
+        vaultId: { $ref: '#/components/schemas/Uuid' }
+        deviceId: { $ref: '#/components/schemas/Uuid' }
+        deviceToken: { $ref: '#/components/schemas/DeviceToken' }
+        activeDeviceCount: { type: integer, const: 1 }
+        serverTime: { $ref: '#/components/schemas/Timestamp' }
+    CreatePairingSessionRequest:
+      type: object
+      additionalProperties: false
+      required: [deviceId, joiningPublicKey]
+      properties:
+        deviceId: { $ref: '#/components/schemas/Uuid' }
+        joiningPublicKey: { type: string, pattern: '^[A-Za-z0-9+/]{43}=$' }
+    CreatePairingSessionResponse:
+      type: object
+      additionalProperties: false
+      required: [sessionId, code, completionToken, expiresAt]
+      properties:
+        sessionId: { $ref: '#/components/schemas/Uuid' }
+        code: { type: string, pattern: '^[0-9]{6}$' }
+        completionToken: { type: string, pattern: '^[A-Za-z0-9_-]{43}$' }
+        expiresAt: { $ref: '#/components/schemas/Timestamp' }
+    JoinPairingSessionRequest:
+      type: object
+      additionalProperties: false
+      required: [approvingPublicKey]
+      properties:
+        approvingPublicKey: { type: string, pattern: '^[A-Za-z0-9+/]{43}=$' }
+    JoinPairingSessionResponse:
+      type: object
+      additionalProperties: false
+      required: [sessionId, joiningDeviceId, joiningPublicKey, replacedExistingDevice, expiresAt]
+      properties:
+        sessionId: { $ref: '#/components/schemas/Uuid' }
+        joiningDeviceId: { $ref: '#/components/schemas/Uuid' }
+        joiningPublicKey: { type: string, pattern: '^[A-Za-z0-9+/]{43}=$' }
+        replacedExistingDevice:
+          type: boolean
+          description: True when completion rotates this same-vault device row in place.
+        expiresAt: { $ref: '#/components/schemas/Timestamp' }
+    ApprovePairingSessionRequest:
+      type: object
+      additionalProperties: false
+      required: [approvingPublicKey, encryptedGrant, newDeviceToken]
+      properties:
+        approvingPublicKey: { type: string, pattern: '^[A-Za-z0-9+/]{43}=$' }
+        encryptedGrant: { $ref: '#/components/schemas/EncryptedGrantEnvelope' }
+        newDeviceToken:
+          allOf: [{ $ref: '#/components/schemas/DeviceToken' }]
+          description: Client-generated token whose UUID prefix must equal the joining device ID.
+    CompletePairingSessionRequest:
+      type: object
+      additionalProperties: false
+      required: [completionToken]
+      properties:
+        completionToken: { type: string, pattern: '^[A-Za-z0-9_-]{43}$' }
+        encryptedDeviceProfile: { $ref: '#/components/schemas/EncryptedProfileEnvelope' }
+    CompletePairingSessionResponse:
+      type: object
+      additionalProperties: false
+      required: [pending, requiresProfile]
+      properties:
+        pending: { type: boolean }
+        requiresProfile: { type: boolean }
+        approvingPublicKey: { type: string, pattern: '^[A-Za-z0-9+/]{43}=$' }
+        encryptedGrant: { $ref: '#/components/schemas/EncryptedGrantEnvelope' }
+        replacedExistingDevice: { type: boolean }
+        activeDeviceCount: { type: integer, minimum: 1, maximum: 5 }
+        serverTime: { $ref: '#/components/schemas/Timestamp' }
+    RecoverVaultRequest:
+      type: object
+      additionalProperties: false
+      required: [recoveryAuthToken, deviceId, deviceToken]
+      properties:
+        recoveryAuthToken: { $ref: '#/components/schemas/RecoveryAuthToken' }
+        deviceId: { $ref: '#/components/schemas/Uuid' }
+        deviceToken:
+          allOf: [{ $ref: '#/components/schemas/DeviceToken' }]
+          description: Client-generated token whose UUID prefix must equal deviceId.
+        replaceDeviceId:
+          allOf: [{ $ref: '#/components/schemas/Uuid' }]
+          description: >-
+            Optional explicit identity takeover. When present it must equal
+            deviceId and identify an active or revoked device in the recovered
+            vault. Its token and bootstrap state are rotated in place while
+            current/history records are preserved.
+    RecoverVaultResponse:
+      type: object
+      additionalProperties: false
+      required: [vaultId, deviceId, deviceToken, activeDeviceCount, serverTime, cursor]
+      properties:
+        vaultId: { $ref: '#/components/schemas/Uuid' }
+        deviceId: { $ref: '#/components/schemas/Uuid' }
+        deviceToken: { $ref: '#/components/schemas/DeviceToken' }
+        activeDeviceCount: { type: integer, minimum: 1, maximum: 5 }
+        serverTime: { $ref: '#/components/schemas/Timestamp' }
+        cursor:
+          type: integer
+          const: 0
+          description: Recovery always restarts encrypted history bootstrap from cursor zero.
+        currentSnapshot:
+          $ref: '#/components/schemas/EncryptedRecord'
+    SyncRequest:
+      type: object
+      description: >-
+        At a current-record rollover, the service durably archives the previous
+        current envelope from its device row before replacing it. A client may
+        also submit a newer revision of that record in archives. Initial history
+        can be uploaded in batches of 16 by setting bootstrapComplete to false
+        on every page except the final page. A device may use at most 256
+        cooldown-exempt pages over its lifetime.
+      additionalProperties: false
+      required: [reason, historyCursor, archives]
+      properties:
+        reason: { type: string, enum: [manual, automatic, bootstrap, recovery, pairing] }
+        historyCursor: { type: integer, minimum: 0, maximum: 9007199254740991 }
+        currentSnapshot: { $ref: '#/components/schemas/EncryptedRecord' }
+        archives:
+          type: array
+          maxItems: 16
+          items: { $ref: '#/components/schemas/EncryptedRecord' }
+        encryptedDeviceProfile: { $ref: '#/components/schemas/EncryptedProfileEnvelope' }
+        bootstrapComplete:
+          type: boolean
+          default: true
+          description: >-
+            False keeps a bootstrap, recovery, or pairing exemption open for
+            the next archive page. It is invalid for manual or automatic sync.
+    HistoryChange:
+      type: object
+      additionalProperties: false
+      required: [cursor, recordId, tombstone]
+      properties:
+        cursor: { type: integer, minimum: 0, maximum: 9007199254740991 }
+        recordId: { type: string, pattern: '^[A-Za-z0-9_-]{43}$' }
+        tombstone: { type: boolean }
+        record: { $ref: '#/components/schemas/EncryptedRecord' }
+    EncryptedDeviceDescriptor:
+      type: object
+      additionalProperties: false
+      required: [deviceId, revoked]
+      properties:
+        deviceId: { $ref: '#/components/schemas/Uuid' }
+        encryptedDeviceProfile: { $ref: '#/components/schemas/EncryptedProfileEnvelope' }
+        lastSyncAt:
+          anyOf:
+            - { $ref: '#/components/schemas/Timestamp' }
+            - { type: 'null' }
+        revoked: { type: boolean }
+    SyncResponse:
+      type: object
+      additionalProperties: false
+      required:
+        [serverTime, nextAllowedSyncAt, remainingDailySyncs, activeDeviceCount,
+         currentSnapshots, historyChanges, historyHasMore, cursor, devices]
+      properties:
+        serverTime: { $ref: '#/components/schemas/Timestamp' }
+        nextAllowedSyncAt: { $ref: '#/components/schemas/Timestamp' }
+        remainingDailySyncs: { type: integer, minimum: 0, maximum: 8 }
+        activeDeviceCount: { type: integer, minimum: 0, maximum: 5 }
+        currentSnapshots:
+          type: array
+          maxItems: 5
+          items: { $ref: '#/components/schemas/EncryptedRecord' }
+        historyChanges:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/HistoryChange' }
+        historyHasMore: { type: boolean }
+        cursor: { type: integer, minimum: 0, maximum: 9007199254740991 }
+        devices:
+          type: array
+          maxItems: 5
+          items: { $ref: '#/components/schemas/EncryptedDeviceDescriptor' }
+    StateResponse:
+      type: object
+      additionalProperties: false
+      required: [serverTime, activeDeviceCount, currentSnapshots, devices]
+      properties:
+        serverTime: { $ref: '#/components/schemas/Timestamp' }
+        activeDeviceCount: { type: integer, minimum: 1, maximum: 5 }
+        currentSnapshots:
+          type: array
+          maxItems: 5
+          description: Accepted current records for all active devices, including the caller.
+          items: { $ref: '#/components/schemas/EncryptedRecord' }
+        devices:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items: { $ref: '#/components/schemas/EncryptedDeviceDescriptor' }
+    HistoryResponse:
+      type: object
+      additionalProperties: false
+      required: [changes, cursor, hasMore]
+      properties:
+        changes:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/HistoryChange' }
+        cursor: { type: integer, minimum: 0, maximum: 9007199254740991 }
+        hasMore: { type: boolean }
+        manifestReset: { type: boolean, default: false }
+    Error:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code: { type: string, pattern: '^[a-z0-9_]{1,64}$' }
+        message: { type: string, maxLength: 256 }
+        requestId: { $ref: '#/components/schemas/Uuid' }
+        activeDeviceCount:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: >-
+            Present as 1 when code is single_device_sync_disabled so clients
+            can persist the server-authoritative gate and stop ordinary sync.
+        vaultId:
+          allOf: [{ $ref: '#/components/schemas/Uuid' }]
+          description: Present with a recovery-authenticated maximum_devices response.
+        devices:
+          type: array
+          maxItems: 5
+          items: { $ref: '#/components/schemas/EncryptedDeviceDescriptor' }
+          description: >-
+            Present on maximum_devices only after recovery authentication
+            succeeds, so a full-vault client can choose an encrypted profile
+            and retry with replaceDeviceId.
+  responses:
+    BadRequest:
+      description: Invalid request
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Unauthorized:
+      description: Invalid, revoked, or cross-vault credential
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    NotFound:
+      description: Resource does not exist or is no longer available
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Conflict:
+      description: Revision, idempotency, state, or device-limit conflict
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    RateLimited:
+      description: Request is inside its cooldown or UTC-day quota
+      headers:
+        Retry-After:
+          required: true
+          schema: { type: integer, minimum: 1 }
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    PayloadTooLarge:
+      description: JSON request body exceeds the 2 MiB service limit
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Unavailable:
+      description: Service kill switch is active
+      headers:
+        Retry-After:
+          required: false
+          schema: { type: integer, minimum: 1 }
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }

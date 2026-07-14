@@ -1,0 +1,48 @@
+name: Sync Worker CI
+
+on:
+  pull_request:
+    paths:
+      - 'contracts/sync/v1/**'
+      - 'services/sync-worker/**'
+      - '.github/workflows/sync-worker-*.yml'
+  push:
+    branches-ignore: [main]
+    paths:
+      - 'contracts/sync/v1/**'
+      - 'services/sync-worker/**'
+      - '.github/workflows/sync-worker-*.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-worker-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: services/sync-worker
+
+jobs:
+  validate:
+    name: Contract, migration, type and Worker tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: services/sync-worker/package-lock.json
+      - run: npm ci
+      - name: Validate schemas, OpenAPI and golden vectors
+        run: npm run contracts:check
+      - name: Apply D1 migrations to an isolated local database
+        run: npx wrangler d1 migrations apply DB --local
+      - name: Type-check Worker
+        run: npm run types:check && npm run typecheck
+      - name: Run Miniflare and unit tests
+        run: npm test

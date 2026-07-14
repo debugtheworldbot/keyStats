@@ -31,6 +31,11 @@ echo "🔍 校验 vendored helper..."
 
 # 构建 Release 版本
 echo "🔨 构建 Release 版本..."
+SYNC_BUILD_SETTING=()
+if [ -n "${KEYSTATS_SYNC_SERVICE_URL:-}" ]; then
+    SYNC_BUILD_SETTING+=("KEYSTATS_SYNC_SERVICE_URL=$KEYSTATS_SYNC_SERVICE_URL")
+    echo "🔄 已配置生产同步服务地址"
+fi
 xcodebuild -project "$PROJECT" \
     -scheme "$SCHEME" \
     -configuration "$CONFIGURATION" \
@@ -40,6 +45,7 @@ xcodebuild -project "$PROJECT" \
     CODE_SIGN_IDENTITY="-" \
     ARCHS="arm64 x86_64" \
     ONLY_ACTIVE_ARCH=NO \
+    "${SYNC_BUILD_SETTING[@]}" \
     | xcpretty || xcodebuild -project "$PROJECT" \
     -scheme "$SCHEME" \
     -configuration "$CONFIGURATION" \
@@ -48,7 +54,8 @@ xcodebuild -project "$PROJECT" \
     archive \
     CODE_SIGN_IDENTITY="-" \
     ARCHS="arm64 x86_64" \
-    ONLY_ACTIVE_ARCH=NO
+    ONLY_ACTIVE_ARCH=NO \
+    "${SYNC_BUILD_SETTING[@]}"
 
 # 导出 .app
 echo "📤 导出应用..."

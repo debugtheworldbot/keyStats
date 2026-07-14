@@ -142,6 +142,7 @@ class StatsManager {
     private(set) var currentIconTintColor: NSColor?
     var menuBarUpdateHandler: (() -> Void)?
     private var statsUpdateHandlers: [UUID: () -> Void] = [:]
+    private var remoteCacheObserver: NSObjectProtocol?
 
     private var cachedMouseDistanceCalibrationFactor: Double = 1.0
     private let mouseDistanceCalibrationLock = NSLock()
@@ -155,11 +156,6 @@ class StatsManager {
     private var mouseDistanceCalibrationTargetMeters: Double = 0
     private var mouseDistanceCalibrationMinPixels: Double = 50
     private var mouseDistanceCalibrationCompletion: ((MouseDistanceCalibrationResult) -> Void)?
-    
-    // Cache for All-Time Stats
-    private var cachedHistoryStats: AllTimeStats?
-    private var cachedWeekdayStats: [Int: (total: Int, count: Int)]?
-    private var cachedForDateKey: String?
     
     /// 设置：是否在菜单栏显示按键数
     var showKeyPressesInMenuBar: Bool {
@@ -344,6 +340,14 @@ class StatsManager {
             updateCurrentInputRate()
         }
         setupMidnightReset()
+        remoteCacheObserver = NotificationCenter.default.addObserver(
+            forName: .syncRemoteCacheDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            self.notifyStatsUpdate()
+        }
     }
     
     // MARK: - 数据更新方法
@@ -838,9 +842,6 @@ class StatsManager {
         var normalizedStats = statsSnapshot
         normalizedStats.date = normalizedDate
         history[key] = normalizedStats
-        cachedHistoryStats = nil
-        cachedWeekdayStats = nil
-        cachedForDateKey = nil
         let historySnapshot = history
         statsStateLock.unlock()
 
@@ -872,6 +873,7 @@ class StatsManager {
 
     private struct ExportPayload: Codable {
         let version: Int
+        let scope: String?
         let exportedAt: Date
         let currentStats: DailyStats
         let history: [String: DailyStats]
@@ -881,6 +883,7 @@ class StatsManager {
         case invalidFormat
         case unsupportedVersion
         case emptyData
+        case syncEnabled
 
         var errorDescription: String? {
             switch self {
@@ -890,6 +893,8 @@ class StatsManager {
                 return NSLocalizedString("import.error.unsupportedVersion", comment: "")
             case .emptyData:
                 return NSLocalizedString("import.error.emptyData", comment: "")
+            case .syncEnabled:
+                return NSLocalizedString("import.error.syncEnabled", comment: "")
             }
         }
     }
@@ -906,6 +911,7 @@ class StatsManager {
 
         let payload = ExportPayload(
             version: 1,
+            scope: "currentDevice",
             exportedAt: Date(),
             currentStats: current,
             history: exportHistory
@@ -917,6 +923,7 @@ class StatsManager {
     }
 
     func importStatsData(from data: Data, mode: ImportMode = .overwrite) throws {
+        guard !SyncCoordinator.shared.blocksLegacyImport else { throw ImportError.syncEnabled }
         guard !data.isEmpty else { throw ImportError.emptyData }
 
         let decoder = JSONDecoder()
@@ -959,9 +966,6 @@ class StatsManager {
         recentClickTimestamps.removeAll()
         keyTimestampsHead = 0
         clickTimestampsHead = 0
-        cachedHistoryStats = nil
-        cachedWeekdayStats = nil
-        cachedForDateKey = nil
         statsStateLock.unlock()
 
         saveTimer?.invalidate()
@@ -1002,6 +1006,7 @@ class StatsManager {
         merged.keyPresses = safeAdd(lhs.keyPresses, rhs.keyPresses)
         merged.leftClicks = safeAdd(lhs.leftClicks, rhs.leftClicks)
         merged.rightClicks = safeAdd(lhs.rightClicks, rhs.rightClicks)
+        merged.middleClicks = safeAdd(lhs.middleClicks, rhs.middleClicks)
         merged.sideBackClicks = safeAdd(lhs.sideBackClicks, rhs.sideBackClicks)
         merged.sideForwardClicks = safeAdd(lhs.sideForwardClicks, rhs.sideForwardClicks)
         merged.mouseDistance = safeAddDistance(lhs.mouseDistance, rhs.mouseDistance)
@@ -1089,6 +1094,7 @@ class StatsManager {
         normalized.keyPresses = max(0, normalized.keyPresses)
         normalized.leftClicks = max(0, normalized.leftClicks)
         normalized.rightClicks = max(0, normalized.rightClicks)
+        normalized.middleClicks = max(0, normalized.middleClicks)
         normalized.sideBackClicks = max(0, normalized.sideBackClicks)
         normalized.sideForwardClicks = max(0, normalized.sideForwardClicks)
         normalized.mouseDistance = normalized.mouseDistance.isFinite ? max(0, normalized.mouseDistance) : 0
@@ -1369,11 +1375,7 @@ extension StatsManager {
 
         var earliestDate: Date?
 
-        if currentStats.keyPresses > 0 || !currentStats.keyPressCounts.isEmpty {
-            earliestDate = calendar.startOfDay(for: currentStats.date)
-        }
-
-        for daily in history.values {
+        for daily in displayHistorySnapshot().values {
             guard daily.keyPresses > 0 || !daily.keyPressCounts.isEmpty else { continue }
             let date = calendar.startOfDay(for: daily.date)
             if date > today { continue }
@@ -1395,7 +1397,8 @@ extension StatsManager {
     func keyboardHeatmapDay(for date: Date) -> KeyboardHeatmapDay {
         assert(Thread.isMainThread)
         let normalizedDate = Calendar.current.startOfDay(for: date)
-        let daily = dailyStats(for: normalizedDate)
+        let dayKey = dateFormatter.string(from: normalizedDate)
+        let daily = displayHistorySnapshot()[dayKey] ?? DailyStats(date: normalizedDate)
         let aggregated = keyboardHeatmapCounts(from: daily.keyPressCounts)
         return KeyboardHeatmapDay(
             date: normalizedDate,
@@ -1406,9 +1409,10 @@ extension StatsManager {
     
     func historySeries(range: HistoryRange, metric: HistoryMetric) -> [(date: Date, value: Double)] {
         let dates = datesInRange(range)
+        let displayHistory = displayHistorySnapshot()
         return dates.map { date in
             let key = dateFormatter.string(from: date)
-            let stats = history[key] ?? DailyStats(date: date)
+            let stats = displayHistory[key] ?? DailyStats(date: date)
             return (date, metricValue(metric, for: stats))
         }
     }
@@ -1449,13 +1453,12 @@ extension StatsManager {
 
         var result: [(date: Date, keyPresses: Int, clicks: Int)] = []
         var current = startDate
+        let displayHistory = displayHistorySnapshot()
 
         while current <= today {
             let key = dateFormatter.string(from: current)
 
-            if calendar.isDate(current, inSameDayAs: currentStats.date) {
-                result.append((current, currentStats.keyPresses, currentStats.totalClicks))
-            } else if let stats = history[key] {
+            if let stats = displayHistory[key] {
                 result.append((current, stats.keyPresses, stats.totalClicks))
             } else {
                 result.append((current, 0, 0))
@@ -1536,33 +1539,12 @@ extension StatsManager {
     // MARK: - 全量统计
     
     func getAllTimeStats() -> AllTimeStats {
-        let todayKey = dateFormatter.string(from: currentStats.date)
-        
-        // 1. 检查并重建缓存（如果需要）
-        // 如果缓存不存在，或者缓存是基于旧的日期（比如昨天）生成的，则需要更新
-        if cachedHistoryStats == nil || cachedForDateKey != todayKey {
-            var stats = AllTimeStats.initial()
-            var wdStats: [Int: (total: Int, count: Int)] = [:]
-            
-            // 聚合历史数据（排除今天）
-            for hStats in history.values {
-                if dateFormatter.string(from: hStats.date) == todayKey { continue }
-                aggregate(daily: hStats, into: &stats, weekdays: &wdStats)
-            }
-            
-            cachedHistoryStats = stats
-            cachedWeekdayStats = wdStats
-            cachedForDateKey = todayKey
+        var totalStats = AllTimeStats.initial()
+        var weekdayStats: [Int: (total: Int, count: Int)] = [:]
+        for daily in displayHistorySnapshot().values {
+            aggregate(daily: daily, into: &totalStats, weekdays: &weekdayStats)
         }
-        
-        // 2. 基于缓存开始构建最终结果
-        var totalStats = cachedHistoryStats ?? AllTimeStats.initial()
-        var weekdayStats = cachedWeekdayStats ?? [:]
-        
-        // 3. 聚合内存中最新的今日数据
-        aggregate(daily: currentStats, into: &totalStats, weekdays: &weekdayStats)
 
-        // 4. 计算衍生数据（如每周最佳）
         var maxAvg = 0.0
         var bestWeekday: Int?
         for (day, data) in weekdayStats {
@@ -1577,19 +1559,39 @@ extension StatsManager {
 
         return totalStats
     }
+
+    /// Returns the current device's writable history only. Remote shards are never included.
+    func localSyncHistorySnapshot() -> [String: DailyStats] {
+        statsStateLock.lock()
+        var snapshot = history
+        let current = currentStats
+        statsStateLock.unlock()
+        let normalized = normalizedDailyStats(current)
+        snapshot[dateFormatter.string(from: normalized.date)] = normalized
+        return normalizedHistory(snapshot)
+    }
+
+    private func displayHistorySnapshot() -> [String: DailyStats] {
+        let local = localSyncHistorySnapshot()
+        let syncState = SyncCoordinator.shared.state
+        guard syncState.isConfigured, !syncState.needsRepair else { return local }
+        let remote = RemoteShardCache.shared.snapshots(excludingDeviceId: syncState.deviceId)
+        return DisplayStatsAggregator.aggregate(local: local, remote: remote, currentDeviceId: syncState.deviceId)
+    }
     
     private func aggregate(daily: DailyStats, into total: inout AllTimeStats, weekdays: inout [Int: (total: Int, count: Int)]) {
         guard daily.hasAnyActivity else { return }
-        total.totalKeyPresses += daily.keyPresses
-        total.totalLeftClicks += daily.leftClicks
-        total.totalRightClicks += daily.rightClicks
-        total.totalSideBackClicks += daily.sideBackClicks
-        total.totalSideForwardClicks += daily.sideForwardClicks
-        total.totalMouseDistance += daily.mouseDistance
-        total.totalScrollDistance += daily.scrollDistance
+        total.totalKeyPresses = safeAdd(total.totalKeyPresses, daily.keyPresses)
+        total.totalLeftClicks = safeAdd(total.totalLeftClicks, daily.leftClicks)
+        total.totalRightClicks = safeAdd(total.totalRightClicks, daily.rightClicks)
+        total.totalMiddleClicks = safeAdd(total.totalMiddleClicks, daily.middleClicks)
+        total.totalSideBackClicks = safeAdd(total.totalSideBackClicks, daily.sideBackClicks)
+        total.totalSideForwardClicks = safeAdd(total.totalSideForwardClicks, daily.sideForwardClicks)
+        total.totalMouseDistance = safeAddDistance(total.totalMouseDistance, daily.mouseDistance)
+        total.totalScrollDistance = safeAddDistance(total.totalScrollDistance, daily.scrollDistance)
 
         for (key, count) in normalizedKeyPressCounts(daily.keyPressCounts) {
-            total.keyPressCounts[key, default: 0] += count
+            total.keyPressCounts[key] = safeAdd(total.keyPressCounts[key] ?? 0, count)
         }
 
         if daily.keyPresses > total.maxDailyKeyPresses {
@@ -1612,10 +1614,10 @@ extension StatsManager {
         
         // Weekday stats
         let weekday = Calendar.current.component(.weekday, from: date)
-        let dailyTotal = daily.keyPresses + dailyClicks
+        let dailyTotal = safeAdd(daily.keyPresses, dailyClicks)
         let current = weekdays[weekday, default: (0, 0)]
         let increment = dailyTotal > 0 ? 1 : 0
-        weekdays[weekday] = (current.total + dailyTotal, current.count + increment)
+        weekdays[weekday] = (safeAdd(current.total, dailyTotal), safeAdd(current.count, increment))
         
         if let currentFirst = total.firstDate {
             if date < currentFirst {

@@ -57,11 +57,28 @@
                                Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,4,0,0"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button Content="{x:Static p:Strings.Common_Import}" Style="{DynamicResource GhostButton}"
+                    <Button x:Name="ImportDataButton" Content="{x:Static p:Strings.Common_Import}" Style="{DynamicResource GhostButton}"
                             MinWidth="70" Margin="0,0,6,0" Click="ImportData_Click"/>
                     <Button Content="{x:Static p:Strings.Common_Export}" Style="{DynamicResource GhostButton}"
                             MinWidth="70" Click="ExportData_Click"/>
                 </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Style="{DynamicResource CardBorder}" Margin="0,0,0,8" Padding="14,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="{x:Static p:Strings.Settings_Sync}" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock x:Name="SyncStatusTextBlock" Text="{x:Static p:Strings.Settings_SyncDesc}" FontSize="12"
+                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,4,10,0" TextWrapping="Wrap"/>
+                </StackPanel>
+                <Button Grid.Column="1" Content="{x:Static p:Strings.Common_Open}" Style="{DynamicResource GhostButton}"
+                        MinWidth="70" Click="SyncSettings_Click"/>
             </Grid>
         </Border>
 

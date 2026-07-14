@@ -35,9 +35,11 @@ public partial class App : System.Windows.Application
     private AppStatsWindow? _appStatsWindow;
     private KeyboardHeatmapWindow? _keyboardHeatmapWindow;
     private KeyHistoryWindow? _keyHistoryWindow;
+    private SyncSettingsWindow? _syncSettingsWindow;
     private System.Threading.Mutex? _singleInstanceMutex;
     private string? _appVersion;
     private IPostHogAnalytics? _postHogClient;
+    private SyncCoordinator? _syncCoordinator;
     private long _lastResumeRecoveryTicks;
 
     protected override void OnStartup(StartupEventArgs e)
@@ -104,6 +106,16 @@ public partial class App : System.Windows.Application
             var statsManager = StatsManager.Instance;
             StartupManager.Instance.SyncWithSettings();
             _appVersion = typeof(App).Assembly.GetName().Version?.ToString() ?? "0.0.0";
+            SyncServiceConfiguration.TryCreateBaseUri(out var syncServiceUri);
+            var dataFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "KeyStats");
+            _syncCoordinator = new SyncCoordinator(
+                statsManager,
+                dataFolder,
+                syncServiceUri,
+                _appVersion);
+            _syncCoordinator.Start();
             InitializeAnalytics(statsManager);
             InputMonitorService.Instance.StartMonitoring();
 
@@ -240,6 +252,20 @@ public partial class App : System.Windows.Application
         _settingsWindow.Activate();
     }
 
+    public void ShowSyncSettingsWindow()
+    {
+        if (_syncSettingsWindow != null && _syncSettingsWindow.IsVisible)
+        {
+            _syncSettingsWindow.Activate();
+            return;
+        }
+
+        _syncSettingsWindow = new SyncSettingsWindow();
+        _syncSettingsWindow.Closed += (_, _) => _syncSettingsWindow = null;
+        _syncSettingsWindow.Show();
+        _syncSettingsWindow.Activate();
+    }
+
     public void ShowStatsPanel()
     {
         _trayIconViewModel?.ShowStatsCommand.Execute(null);
@@ -364,6 +390,11 @@ public partial class App : System.Windows.Application
 
         try
         {
+            if (_syncCoordinator?.BlocksImport == true)
+            {
+                throw new InvalidOperationException(KeyStats.Properties.Strings.Error_ImportDisabledWhileSyncing);
+            }
+
             var dialog = new OpenFileDialog
             {
                 Title = KeyStats.Properties.Strings.Dialog_ImportTitle,
@@ -457,6 +488,8 @@ public partial class App : System.Windows.Application
             _trayIcon = null;
         }
         InputMonitorService.Instance.StopMonitoring();
+        _syncCoordinator?.Dispose();
+        _syncCoordinator = null;
         StatsManager.Instance.Dispose();
         ThemeManager.Instance.Dispose();
         _singleInstanceMutex?.ReleaseMutex();
@@ -863,6 +896,7 @@ public partial class App : System.Windows.Application
     /// 获取 App 实例（用于其他类调用追踪方法）
     /// </summary>
     public static App? CurrentApp => Current as App;
+    public SyncCoordinator? SyncCoordinator => _syncCoordinator;
 
     private void RegisterSystemEventHandlers()
     {
@@ -962,6 +996,7 @@ public partial class App : System.Windows.Application
         {
             Console.WriteLine($"Tray icon resume recovery failed: {ex}");
         }
+        _syncCoordinator?.HandleAppResume();
     }
 
     private void RecreateTrayIntegration()

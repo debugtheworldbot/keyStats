@@ -88,6 +88,7 @@ final class StatsModelsTests: XCTestCase {
             totalKeyPresses: 12,
             totalLeftClicks: 2,
             totalRightClicks: 1,
+            totalMiddleClicks: 0,
             totalSideBackClicks: 1,
             totalSideForwardClicks: 0,
             totalMouseDistance: 0,

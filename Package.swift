@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "KeyStatsCoreTests",
+    platforms: [.macOS(.v13)],
     products: [
         .library(name: "KeyStatsCore", targets: ["KeyStatsCore"])
     ],
@@ -16,6 +17,7 @@ let package = Package(
                 "Info.plist",
                 "en.lproj",
                 "zh-Hans.lproj",
+                "zh-Hant.lproj",
                 "AppStatsViewController.swift",
                 "KeyStats.entitlements",
                 "NotificationManager.swift",
@@ -32,21 +34,37 @@ let package = Package(
                 "MenuBarController.swift",
                 "AllTimeStatsViewController.swift",
                 "MainWindowController.swift",
+                "HelperMigrationPresenter.swift",
+                "HelperSupervisor.swift",
+                "HelperXPCClient.swift",
                 "KeyboardHeatmapViewController.swift",
+                "KPSDetailView.swift",
                 "LaunchAtLoginManager.swift",
+                "RemoteEventProcessor.swift",
+                "Sync/SyncCoordinator.swift",
+                "Sync/SyncSettingsWindowController.swift",
                 "UpdateManager.swift",
                 "KeyboardHeatmapWindowController.swift",
                 "StatsPopoverViewController.swift",
                 "SettingsWindowController.swift",
                 "MainWindowViewController.swift"
             ],
-            sources: ["AppStats.swift", "StatsModels.swift", "UpdateCheckCoordinator.swift"]
+            sources: [
+                "AppStats.swift",
+                "StatsModels.swift",
+                "UpdateCheckCoordinator.swift",
+                "Sync/SyncModels.swift",
+                "Sync/SyncCrypto.swift",
+                "Sync/SyncStorage.swift",
+                "Sync/SyncTransport.swift",
+                "Sync/DisplayStatsAggregator.swift"
+            ]
         ),
         .testTarget(
             name: "KeyStatsCoreTests",
             dependencies: ["KeyStatsCore"],
             path: "KeyStatsTests",
-            sources: ["AppStatsTests.swift", "StatsModelsTests.swift", "UpdateCheckCoordinatorTests.swift"]
+            sources: ["AppStatsTests.swift", "StatsModelsTests.swift", "UpdateCheckCoordinatorTests.swift", "SyncCoreTests.swift"]
         )
     ]
 )

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "separator": "+",
+  "cases": [
+    { "platform": "mac", "input": "Escape", "expected": "Esc" },
+    { "platform": "windows", "input": "ESC", "expected": "Esc" },
+    { "platform": "mac", "input": "Return", "expected": "Enter" },
+    { "platform": "windows", "input": "NumpadEnter", "expected": "Enter" },
+    { "platform": "mac", "input": "BS", "expected": "Backspace" },
+    { "platform": "windows", "input": "ForwardDelete", "expected": "Delete" },
+    { "platform": "mac", "input": "ArrowLeft", "expected": "Left" },
+    { "platform": "windows", "input": "DownArrow", "expected": "Down" },
+    { "platform": "mac", "input": "Command+C", "expected": "Cmd+C" },
+    { "platform": "windows", "input": "Windows+C", "expected": "Win+C" },
+    { "platform": "mac", "input": "Option+P", "expected": "Option+P" },
+    { "platform": "windows", "input": "Alt+P", "expected": "Alt+P" },
+    { "platform": "mac", "input": "Option", "expected": "Option" },
+    { "platform": "windows", "input": "Option", "expected": "Option" },
+    { "platform": "mac", "input": "Alt", "expected": "Alt" },
+    { "platform": "windows", "input": "Cmd", "expected": "Cmd" },
+    { "platform": "mac", "input": "Globe", "expected": "Fn" },
+    { "platform": "windows", "input": "Spacebar", "expected": "Space" },
+    { "platform": "mac", "input": "command+command+C", "expected": "Cmd+C" },
+    { "platform": "windows", "input": "Vendor Key ☃", "expected": "windows:Vendor Key ☃" },
+    { "platform": "mac", "input": "+", "expected": "+" }
+  ],
+  "invalidLocalDays": [
+    "2026-02-29",
+    "2026-00-10",
+    "2026-13-01",
+    "2026-04-31",
+    "2026-7-13",
+    "2026-07-13T00:00:00Z"
+  ],
+  "validLocalDays": [
+    "2024-02-29",
+    "2026-07-13",
+    "9999-12-31"
+  ]
+}

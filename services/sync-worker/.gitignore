@@ -1,0 +1,8 @@
+node_modules/
+.wrangler/
+coverage/
+dist/
+wrangler.deploy.json
+*.log
+.dev.vars
+.env*

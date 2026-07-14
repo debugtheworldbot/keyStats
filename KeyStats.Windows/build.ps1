@@ -1,8 +1,9 @@
 # KeyStats Windows Build Script
-# Usage: .\build.ps1 [Release|Debug]
+# Usage: .\build.ps1 [Release|Debug] [-SyncServiceBaseUrl <https-url>]
 
 param(
-    [string]$Configuration = "Release"
+    [string]$Configuration = "Release",
+    [string]$SyncServiceBaseUrl = ""
 )
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -25,10 +26,16 @@ $ProjectDir = Join-Path $ScriptDir "KeyStats"
 $ProjectFile = Join-Path $ProjectDir "KeyStats.csproj"
 $OutputDir = Join-Path $ScriptDir "publish"
 $DistDir = Join-Path $ScriptDir "dist"
+$BuildProperties = @()
+$HasSyncServiceBaseUrl = -not [string]::IsNullOrWhiteSpace($SyncServiceBaseUrl)
+if ($HasSyncServiceBaseUrl) {
+    $BuildProperties += "/p:SyncServiceBaseUrl=$SyncServiceBaseUrl"
+}
 
 Write-Host "=== KeyStats Windows Build Script ===" -ForegroundColor Cyan
 Write-Host "Configuration: $Configuration" -ForegroundColor Yellow
 Write-Host "Target Framework: .NET Framework 4.8" -ForegroundColor Yellow
+Write-Host "Sync service URL configured: $HasSyncServiceBaseUrl" -ForegroundColor Yellow
 Write-Host ""
 
 if (-not (Test-Path $ProjectFile)) {
@@ -106,7 +113,7 @@ finally {
 Write-Host "Building project..." -ForegroundColor Cyan
 Push-Location $ScriptDir
 try {
-    dotnet build $ProjectFile -c $Configuration
+    dotnet build $ProjectFile -c $Configuration @BuildProperties
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Build failed!" -ForegroundColor Red
         exit 1
@@ -123,7 +130,7 @@ Write-Host "App size: about 5-10 MB, ready to use after extraction" -ForegroundC
 
 Push-Location $ScriptDir
 try {
-    dotnet build $ProjectFile -c $Configuration -o $OutputDir
+    dotnet build $ProjectFile -c $Configuration -o $OutputDir @BuildProperties
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Build failed!" -ForegroundColor Red
         exit 1

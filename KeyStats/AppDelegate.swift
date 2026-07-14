@@ -40,6 +40,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menuBarController = MenuBarController()
         applyAppIcon()
         _ = UpdateManager.shared
+        SyncCoordinator.shared.start()
 
         setupWindowMenu()
 

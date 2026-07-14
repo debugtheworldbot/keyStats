@@ -26,6 +26,14 @@ func formatMenuBarCompactNumber(_ number: Int) -> String {
     return String(format: "%.\(decimalPlaces)f%@", truncatedValue, units[unitIndex])
 }
 
+private func saturatingNonnegativeSum(_ values: [Int]) -> Int {
+    values.reduce(0) { total, value in
+        let nonnegative = max(0, value)
+        let (sum, overflow) = total.addingReportingOverflow(nonnegative)
+        return overflow ? Int.max : sum
+    }
+}
+
 private let leftControlRawMask = UInt64(NX_DEVICELCTLKEYMASK)
 private let rightControlRawMask = UInt64(NX_DEVICERCTLKEYMASK)
 private let leftShiftRawMask = UInt64(NX_DEVICELSHIFTKEYMASK)
@@ -452,6 +460,7 @@ struct DailyStats: Codable {
     var keyPressCounts: [String: Int]
     var leftClicks: Int
     var rightClicks: Int
+    var middleClicks: Int
     var sideBackClicks: Int
     var sideForwardClicks: Int
     var mouseDistance: Double
@@ -468,6 +477,7 @@ struct DailyStats: Codable {
         self.keyPressCounts = [:]
         self.leftClicks = 0
         self.rightClicks = 0
+        self.middleClicks = 0
         self.sideBackClicks = 0
         self.sideForwardClicks = 0
         self.mouseDistance = 0
@@ -483,6 +493,7 @@ struct DailyStats: Codable {
         self.keyPressCounts = [:]
         self.leftClicks = 0
         self.rightClicks = 0
+        self.middleClicks = 0
         self.sideBackClicks = 0
         self.sideForwardClicks = 0
         self.mouseDistance = 0
@@ -509,6 +520,7 @@ struct DailyStats: Codable {
         case keyPressCounts
         case leftClicks
         case rightClicks
+        case middleClicks
         case sideBackClicks
         case sideForwardClicks
         case otherClicks
@@ -526,6 +538,7 @@ struct DailyStats: Codable {
         keyPressCounts = try container.decodeIfPresent([String: Int].self, forKey: .keyPressCounts) ?? [:]
         leftClicks = try container.decodeIfPresent(Int.self, forKey: .leftClicks) ?? 0
         rightClicks = try container.decodeIfPresent(Int.self, forKey: .rightClicks) ?? 0
+        middleClicks = try container.decodeIfPresent(Int.self, forKey: .middleClicks) ?? 0
         sideBackClicks = try container.decodeIfPresent(Int.self, forKey: .sideBackClicks) ?? 0
         sideForwardClicks = try container.decodeIfPresent(Int.self, forKey: .sideForwardClicks) ?? 0
         if !container.contains(.sideBackClicks) && !container.contains(.sideForwardClicks) {
@@ -545,6 +558,7 @@ struct DailyStats: Codable {
         try container.encode(keyPressCounts, forKey: .keyPressCounts)
         try container.encode(leftClicks, forKey: .leftClicks)
         try container.encode(rightClicks, forKey: .rightClicks)
+        try container.encode(middleClicks, forKey: .middleClicks)
         try container.encode(sideBackClicks, forKey: .sideBackClicks)
         try container.encode(sideForwardClicks, forKey: .sideForwardClicks)
         try container.encode(mouseDistance, forKey: .mouseDistance)
@@ -555,13 +569,14 @@ struct DailyStats: Codable {
     }
 
     var totalClicks: Int {
-        leftClicks + rightClicks + sideBackClicks + sideForwardClicks
+        saturatingNonnegativeSum([leftClicks, rightClicks, middleClicks, sideBackClicks, sideForwardClicks])
     }
 
     var hasAnyActivity: Bool {
         keyPresses > 0 ||
             leftClicks > 0 ||
             rightClicks > 0 ||
+            middleClicks > 0 ||
             sideBackClicks > 0 ||
             sideForwardClicks > 0 ||
             mouseDistance > 0 ||
@@ -576,7 +591,7 @@ struct DailyStats: Codable {
         let deleteLikeCount = keyPressCounts.reduce(0) { partial, entry in
             let base = baseKeyComponent(entry.key)
             guard base == "Delete" || base == "ForwardDelete" else { return partial }
-            return partial + entry.value
+            return saturatingNonnegativeSum([partial, entry.value])
         }
         return Double(deleteLikeCount) / Double(keyPresses)
     }
@@ -594,6 +609,7 @@ struct AllTimeStats {
     var totalKeyPresses: Int
     var totalLeftClicks: Int
     var totalRightClicks: Int
+    var totalMiddleClicks: Int
     var totalSideBackClicks: Int
     var totalSideForwardClicks: Int
     var totalMouseDistance: Double
@@ -611,7 +627,22 @@ struct AllTimeStats {
     var clickActiveDays: Int
 
     var totalClicks: Int {
-        totalLeftClicks + totalRightClicks + totalSideBackClicks + totalSideForwardClicks
+        saturatingNonnegativeSum([
+            totalLeftClicks,
+            totalRightClicks,
+            totalMiddleClicks,
+            totalSideBackClicks,
+            totalSideForwardClicks
+        ])
+    }
+
+    var totalNonLeftClicks: Int {
+        saturatingNonnegativeSum([
+            totalRightClicks,
+            totalMiddleClicks,
+            totalSideBackClicks,
+            totalSideForwardClicks
+        ])
     }
 
     /// 纠错率 (Delete + ForwardDelete / Total Keys)
@@ -620,7 +651,7 @@ struct AllTimeStats {
         let deleteLikeCount = keyPressCounts.reduce(0) { partial, entry in
             let base = baseKeyComponent(entry.key)
             guard base == "Delete" || base == "ForwardDelete" else { return partial }
-            return partial + entry.value
+            return saturatingNonnegativeSum([partial, entry.value])
         }
         return Double(deleteLikeCount) / Double(totalKeyPresses)
     }
@@ -637,6 +668,7 @@ struct AllTimeStats {
             totalKeyPresses: 0,
             totalLeftClicks: 0,
             totalRightClicks: 0,
+            totalMiddleClicks: 0,
             totalSideBackClicks: 0,
             totalSideForwardClicks: 0,
             totalMouseDistance: 0,

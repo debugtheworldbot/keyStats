@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "description": "Deterministic cross-platform vectors. Hex is lowercase; base64 is RFC 4648 padded; base64url is unpadded.",
+  "recovery": {
+    "seedHex": "000102030405060708090a0b0c0d0e0f",
+    "seedBase64": "AAECAwQFBgcICQoLDA0ODw==",
+    "code": "000G40R40M30E209185GR38E1W29",
+    "formattedCode": "000G-40R4-0M30-E209-185G-R38E-1W29",
+    "checksumDomainUtf8": "keystats-recovery-checksum-v1"
+  },
+  "derivedKeys": {
+    "hkdfHash": "SHA-256",
+    "saltHex": "",
+    "outputByteCount": 32,
+    "encryptionInfoUtf8": "vault-encryption-v1",
+    "encryptionKeyHex": "12b4daed3dd05973ed06e169b0a5fe0ccf1b9d5f05527af644b35b46a212f8c2",
+    "recordIndexInfoUtf8": "record-index-v1",
+    "recordIndexKeyHex": "bb3ad3bb555398343b9e16e2a2d18957f9daf97290308c7a604fc1d12b34f912",
+    "recoveryAuthInfoUtf8": "recovery-auth-v1",
+    "recoveryAuthKeyHex": "906e6949a5dc4c47939996587719bcbfaf8df3555337aa1cd321dcae0c15b43b",
+    "recoveryCredentialBase64Url": "kG5pSaXcTEeTmZZYdxm8v6-N81VTN6oc0yHcrgwVtDs"
+  },
+  "record": {
+    "vaultId": "11111111-1111-4111-8111-111111111111",
+    "deviceId": "22222222-2222-4222-8222-222222222222",
+    "localDay": "2026-07-13",
+    "revision": 7,
+    "snapshot": {
+      "clicks": {
+        "left": 17,
+        "middle": 3,
+        "right": 5,
+        "sideBack": 2,
+        "sideForward": 1
+      },
+      "deviceId": "22222222-2222-4222-8222-222222222222",
+      "keyPressCounts": {
+        "A": 10,
+        "Enter": 4,
+        "LeftCmd+C": 2
+      },
+      "keyPresses": 42,
+      "localDay": "2026-07-13",
+      "revision": 7,
+      "schemaVersion": 1
+    },
+    "plaintextUtf8": "{\"clicks\":{\"left\":17,\"middle\":3,\"right\":5,\"sideBack\":2,\"sideForward\":1},\"deviceId\":\"22222222-2222-4222-8222-222222222222\",\"keyPressCounts\":{\"A\":10,\"Enter\":4,\"LeftCmd+C\":2},\"keyPresses\":42,\"localDay\":\"2026-07-13\",\"revision\":7,\"schemaVersion\":1}",
+    "recordId": "8dgxQ8oxi6TPVz2uZySYTexf6IIqtgO27SMzVwerp3M",
+    "recordIndexInputUtf8": "22222222-2222-4222-8222-222222222222\n2026-07-13",
+    "aadUtf8": "1\n11111111-1111-4111-8111-111111111111\n22222222-2222-4222-8222-222222222222\n8dgxQ8oxi6TPVz2uZySYTexf6IIqtgO27SMzVwerp3M\n7",
+    "aadBase64": "MQoxMTExMTExMS0xMTExLTQxMTEtODExMS0xMTExMTExMTExMTEKMjIyMjIyMjItMjIyMi00MjIyLTgyMjItMjIyMjIyMjIyMjIyCjhkZ3hROG94aTZUUFZ6MnVaeVNZVGV4ZjZJSXF0Z08yN1NNelZ3ZXJwM00KNw==",
+    "nonceBase64": "AAECAwQFBgcICQoL",
+    "ciphertextBase64": "Fq8powaIdU8rPh3OxnQHghepix11oa0KKgeCOlnWd3HZ7XM1YfWFxhQAJdULWmHtUJ9s2wOTq0/w7NUabaeFtb0klI2cJvTHJAoL5JE15+pxTP6h2g9kbqFuoHJwIquF5OzYKQQh1MHAj8LZ5fJMKk/U3SeHGZ3BHNcSmQu0IPk0S1HSLa8wLES+9xilwonXPIOmj8GnknUk1oU5IW9aQogvG2pnODNil3QFMn1krGz+22iPlOhYFtRz+PfgtEeXDnd8InjHrx+dbJMn9uzD8DAeLT/dpECtuHC2CGyH9BSRolFAndkwFdL9Odd048nZlE8T",
+    "tagBase64": "YEkecvnucs/fCNmchmBO0w==",
+    "ciphertextHashBase64Url": "l9ofxDb2Y5vM491fyMl4tYG5grlvnIHAiSIygdVYJYg"
+  },
+  "pairing": {
+    "sessionId": "33333333-3333-4333-8333-333333333333",
+    "joiningPrivateKeyHex": "77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a",
+    "joiningPublicKeyBase64": "hSDwCYkwp1R0i33ctD73Wg2/Og0mOBr066SpjqqbTmo=",
+    "approvingPrivateKeyHex": "5dab087e624a8a4b79e17f8b83800ee6f0b8e9dbf7ce9b4f2c7e6e15f7bbd0c8",
+    "approvingPublicKeyBase64": "urJntOlkrpGZxQD2TJmZax+Cgju05CnCfJvh+/f0tX8=",
+    "sharedSecretHex": "e82dd110bac69016c36799e04154b333383e4cbb4177ee5a08658737cd552425",
+    "safetyTranscriptPrefixUtf8": "pairing-safety-code-v1",
+    "safetyCode": "186481",
+    "wrapInfoUtf8": "pairing-wrap-v1",
+    "wrapKeyHex": "19f568d497087718ad3399e598db70cc39d7e91566f4f9d93d27a4afdef68055",
+    "grant": {
+      "deviceToken": "22222222-2222-4222-8222-222222222222.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "recoverySeed": "AAECAwQFBgcICQoLDA0ODw==",
+      "vaultId": "11111111-1111-4111-8111-111111111111"
+    },
+    "plaintextUtf8": "{\"deviceToken\":\"22222222-2222-4222-8222-222222222222.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\"recoverySeed\":\"AAECAwQFBgcICQoLDA0ODw==\",\"vaultId\":\"11111111-1111-4111-8111-111111111111\"}",
+    "aadUtf8": "1\n33333333-3333-4333-8333-333333333333",
+    "nonceBase64": "CwoJCAcGBQQDAgEA",
+    "ciphertextBase64": "cREyHT/iqtoMzagsS1To7lrXwKxiNIRjnznHaptjhT8JprpvaFQM83TOA2jisYTK8eYStNRKE6l8a6IKxiUD/mrTEPc9Td8tPPXx0eTIg+RtM0K3BV1GyYNsRMv4I5DlEpA63y6mrDzR1nsa+ENmNR/MP3cYUEqpgfAmJVaCNWfHKMXfdVMNglteKi8kDusjB/PssfxdzYY7dd9u/oSdotMW8UbLlNJY1eoIdKUC0z8USZZShdUaIsfLF/Zu",
+    "tagBase64": "0rcuzeh2OWwOt9X/xczcFA=="
+  },
+  "tamperCases": [
+    { "field": "nonce", "mutation": "flip_first_bit", "expected": "authentication_failure" },
+    { "field": "ciphertext", "mutation": "flip_first_bit", "expected": "hash_or_authentication_failure" },
+    { "field": "tag", "mutation": "flip_first_bit", "expected": "authentication_failure" },
+    { "field": "aad.deviceId", "mutation": "replace_uuid", "expected": "authentication_failure" },
+    { "field": "aad.revision", "mutation": "increment", "expected": "authentication_failure" }
+  ]
+}

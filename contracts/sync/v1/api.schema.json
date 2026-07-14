@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://keystats.app/contracts/sync/v1/api.schema.json",
+  "title": "KeyStats Sync API v1 shared definitions",
+  "$defs": {
+    "uuid": { "type": "string", "format": "uuid" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "base64url32": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$" },
+    "deviceToken": {
+      "type": "string",
+      "minLength": 80,
+      "maxLength": 80,
+      "pattern": "^[0-9a-fA-F-]{36}\\.[A-Za-z0-9_-]{43}$"
+    },
+    "encryptedEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nonce", "ciphertext", "tag"],
+      "properties": {
+        "nonce": { "type": "string", "pattern": "^[A-Za-z0-9+/]{16}$" },
+        "ciphertext": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 87384,
+          "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"
+        },
+        "tag": { "type": "string", "pattern": "^[A-Za-z0-9+/]{22}==$" }
+      }
+    },
+    "encryptedProfileEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nonce", "ciphertext", "tag"],
+      "properties": {
+        "nonce": { "type": "string", "pattern": "^[A-Za-z0-9+/]{16}$" },
+        "ciphertext": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 2732,
+          "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"
+        },
+        "tag": { "type": "string", "pattern": "^[A-Za-z0-9+/]{22}==$" }
+      }
+    },
+    "encryptedGrantEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nonce", "ciphertext", "tag"],
+      "properties": {
+        "nonce": { "type": "string", "pattern": "^[A-Za-z0-9+/]{16}$" },
+        "ciphertext": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 5464,
+          "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"
+        },
+        "tag": { "type": "string", "pattern": "^[A-Za-z0-9+/]{22}==$" }
+      }
+    },
+    "syncRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason", "historyCursor", "archives"],
+      "properties": {
+        "reason": {
+          "type": "string",
+          "enum": ["manual", "automatic", "bootstrap", "pairing", "recovery"]
+        },
+        "historyCursor": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "currentSnapshot": {
+          "$ref": "https://keystats.app/contracts/sync/v1/encrypted-record.schema.json"
+        },
+        "archives": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "$ref": "https://keystats.app/contracts/sync/v1/encrypted-record.schema.json"
+          }
+        },
+        "encryptedDeviceProfile": { "$ref": "#/$defs/encryptedProfileEnvelope" },
+        "bootstrapComplete": { "type": "boolean", "default": true }
+      }
+    },
+    "historyChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cursor", "recordId", "tombstone"],
+      "properties": {
+        "cursor": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "recordId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$" },
+        "tombstone": { "type": "boolean" },
+        "record": { "$ref": "encrypted-record.schema.json" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "tombstone": { "const": false } }, "required": ["tombstone"] },
+          "then": { "required": ["record"] }
+        }
+      ]
+    },
+    "encryptedDeviceDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deviceId", "revoked"],
+      "properties": {
+        "deviceId": { "$ref": "#/$defs/uuid" },
+        "encryptedDeviceProfile": { "$ref": "#/$defs/encryptedProfileEnvelope" },
+        "lastSyncAt": {
+          "anyOf": [
+            { "$ref": "#/$defs/timestamp" },
+            { "type": "null" }
+          ]
+        },
+        "revoked": { "type": "boolean" }
+      }
+    },
+    "stateResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["serverTime", "activeDeviceCount", "currentSnapshots", "devices"],
+      "properties": {
+        "serverTime": { "$ref": "#/$defs/timestamp" },
+        "activeDeviceCount": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "currentSnapshots": {
+          "type": "array",
+          "maxItems": 5,
+          "items": { "$ref": "https://keystats.app/contracts/sync/v1/encrypted-record.schema.json" }
+        },
+        "devices": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "items": { "$ref": "#/$defs/encryptedDeviceDescriptor" }
+        }
+      }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "type": "string", "pattern": "^[a-z0-9_]{1,64}$" },
+        "message": { "type": "string", "maxLength": 256 },
+        "requestId": { "$ref": "#/$defs/uuid" },
+        "activeDeviceCount": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "vaultId": { "$ref": "#/$defs/uuid" },
+        "devices": {
+          "type": "array",
+          "maxItems": 5,
+          "items": { "$ref": "#/$defs/encryptedDeviceDescriptor" }
+        }
+      }
+    }
+  }
+}

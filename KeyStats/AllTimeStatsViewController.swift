@@ -485,7 +485,7 @@ class AllTimeStatsViewController: NSViewController {
         // 3. 点击占比
         let ratioRow = ClickRatioView(
             leftClicks: stats.totalLeftClicks,
-            rightClicks: stats.totalRightClicks + stats.totalSideBackClicks + stats.totalSideForwardClicks
+            rightClicks: stats.totalNonLeftClicks
         )
         insightsGrid.addArrangedSubview(ratioRow)
         ratioRow.widthAnchor.constraint(equalTo: insightsGrid.widthAnchor).isActive = true
@@ -1163,9 +1163,11 @@ class ClickRatioView: NSView {
         translatesAutoresizingMaskIntoConstraints = false
         heightAnchor.constraint(equalToConstant: 80).isActive = true
 
-        let total = max(1, leftClicks + rightClicks)
-        let leftRatio = Double(leftClicks) / Double(total)
-        let rightRatio = Double(rightClicks) / Double(total)
+        let safeLeft = Double(max(0, leftClicks))
+        let safeRight = Double(max(0, rightClicks))
+        let total = max(1, safeLeft + safeRight)
+        let leftRatio = safeLeft / total
+        let rightRatio = safeRight / total
         targetLeftRatio = CGFloat(leftRatio)
 
         let titleLabel = NSTextField(labelWithString: NSLocalizedString("insights.clickRatio", comment: ""))

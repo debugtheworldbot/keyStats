@@ -21,6 +21,7 @@
     <Product>KeyStats</Product>
     <Description>Keyboard and mouse statistics tracker for Windows</Description>
     <LangVersion>10.0</LangVersion>
+    <SyncServiceBaseUrl Condition="'$(SyncServiceBaseUrl)' == ''"></SyncServiceBaseUrl>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,11 +32,21 @@
     <PackageReference Include="System.Text.Json" Version="8.0.5" />
     <!-- 使用 DotPostHog 社区库以支持 .NET Framework 4.8 -->
     <PackageReference Include="DotPostHog" Version="2.0.0-preview5" />
+    <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>SyncServiceBaseUrl</_Parameter1>
+      <_Parameter2>$(SyncServiceBaseUrl)</_Parameter2>
+    </AssemblyAttribute>
   </ItemGroup>
   
   <!-- .NET Framework 需要显式引用 Microsoft.CSharp 以支持 dynamic 类型 -->
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Security" />
   </ItemGroup>
 
   <ItemGroup>

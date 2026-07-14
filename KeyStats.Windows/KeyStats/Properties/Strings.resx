@@ -101,7 +101,7 @@
   <data name="Settings_HeaderSubtitle" xml:space="preserve"><value>Manage import/export and notification settings here</value></data>
   <data name="Settings_GitHubTooltip" xml:space="preserve"><value>Open GitHub repository</value></data>
   <data name="Settings_DataImportExport" xml:space="preserve"><value>Data Import / Export</value></data>
-  <data name="Settings_DataImportExportDesc" xml:space="preserve"><value>Import or export statistics from JSON</value></data>
+  <data name="Settings_DataImportExportDesc" xml:space="preserve"><value>Import or export this device's local statistics as JSON</value></data>
   <data name="Settings_Notifications" xml:space="preserve"><value>Notifications</value></data>
   <data name="Settings_NotificationsDesc" xml:space="preserve"><value>Configure key/click threshold notifications</value></data>
   <data name="Settings_DistanceCalibration" xml:space="preserve"><value>Distance Calibration</value></data>
@@ -224,4 +224,54 @@
   <data name="Confirm_DefaultMessage" xml:space="preserve"><value>Are you sure you want to perform this action?</value></data>
   <data name="Confirm_DefaultTitle" xml:space="preserve"><value>Confirm</value></data>
   <data name="Confirm_DefaultConfirm" xml:space="preserve"><value>OK</value></data>
+  <data name="Error_ImportDisabledWhileSyncing" xml:space="preserve"><value>Import is disabled while device sync is enabled. Leave sync first; export always contains this device's local data only.</value></data>
+  <data name="Settings_Sync" xml:space="preserve"><value>Device Sync</value></data>
+  <data name="Settings_SyncDesc" xml:space="preserve"><value>End-to-end encrypted sync for your core key and click totals</value></data>
+  <data name="Settings_SyncUnavailable" xml:space="preserve"><value>Sync service is not configured in this build</value></data>
+  <data name="Sync_WindowTitle" xml:space="preserve"><value>Device Sync - KeyStats</value></data>
+  <data name="Sync_HeaderTitle" xml:space="preserve"><value>Device Sync</value></data>
+  <data name="Sync_HeaderSubtitle" xml:space="preserve"><value>Core key and click totals are encrypted on this device before upload. App activity, distance, and peak rates stay local.</value></data>
+  <data name="Sync_ServiceUnavailable" xml:space="preserve"><value>This build does not have a sync service URL. No network request will be sent.</value></data>
+  <data name="Sync_CreateTitle" xml:space="preserve"><value>Start on this device</value></data>
+  <data name="Sync_CreateDescription" xml:space="preserve"><value>Create an encrypted vault and upload the initial encrypted history. After setup, ordinary and manual sync stay off until a second device is connected.</value></data>
+  <data name="Sync_CreateButton" xml:space="preserve"><value>Create vault</value></data>
+  <data name="Sync_JoinTitle" xml:space="preserve"><value>Add this device</value></data>
+  <data name="Sync_JoinDescription" xml:space="preserve"><value>Generate a six-digit code, then approve it on a device already connected to the vault.</value></data>
+  <data name="Sync_BeginPairingButton" xml:space="preserve"><value>Generate code</value></data>
+  <data name="Sync_CompletePairingButton" xml:space="preserve"><value>Finish pairing</value></data>
+  <data name="Sync_RecoverTitle" xml:space="preserve"><value>Recover with code</value></data>
+  <data name="Sync_RecoverDescription" xml:space="preserve"><value>Use your 28-character recovery code to add this device when another device is unavailable.</value></data>
+  <data name="Sync_RecoverButton" xml:space="preserve"><value>Recover</value></data>
+  <data name="Sync_StatusTitle" xml:space="preserve"><value>Sync status</value></data>
+  <data name="Sync_NowButton" xml:space="preserve"><value>Sync now</value></data>
+  <data name="Sync_BootstrapPendingStatus" xml:space="preserve"><value>The initial encrypted history upload is incomplete.</value></data>
+  <data name="Sync_RetryBootstrapButton" xml:space="preserve"><value>Retry setup</value></data>
+  <data name="Sync_RepairRequired" xml:space="preserve"><value>The local sync configuration could not be opened safely. Creating a new vault is blocked. Recover or pair this device again, or clear only the local sync configuration. Local statistics are unchanged.</value></data>
+  <data name="Sync_ClearRepairButton" xml:space="preserve"><value>Clear local sync configuration</value></data>
+  <data name="Sync_ClearRepairConfirm" xml:space="preserve"><value>Clear the damaged or incomplete sync configuration and encrypted credentials from this computer? Local statistics will remain. This does not delete cloud data.</value></data>
+  <data name="Sync_RecoveryReplaceTitle" xml:space="preserve"><value>Replace a connected device</value></data>
+  <data name="Sync_RecoveryReplaceMessage" xml:space="preserve"><value>This vault already has five devices. Choose one device identity to take over. That device's token will be revoked, but its encrypted history remains.</value></data>
+  <data name="Sync_RecoveryReplaceConfirm" xml:space="preserve"><value>Replace device</value></data>
+  <data name="Sync_ApproveTitle" xml:space="preserve"><value>Approve another device</value></data>
+  <data name="Sync_ApproveDescription" xml:space="preserve"><value>Enter the six-digit code shown on the new device, then compare the safety code on both devices.</value></data>
+  <data name="Sync_ApproveButton" xml:space="preserve"><value>Review</value></data>
+  <data name="Sync_RecoveryCodeTitle" xml:space="preserve"><value>Recovery code</value></data>
+  <data name="Sync_RecoveryCodeWarning" xml:space="preserve"><value>Anyone with this code can recover your vault. Keep it offline and never send it to support.</value></data>
+  <data name="Sync_ShowRecoveryCodeButton" xml:space="preserve"><value>Show recovery code</value></data>
+  <data name="Sync_LeaveButton" xml:space="preserve"><value>Remove this device from sync</value></data>
+  <data name="Sync_LeaveConfirm" xml:space="preserve"><value>Remove this device from the encrypted vault? Local statistics will remain on this computer.</value></data>
+  <data name="Sync_DeleteVaultButton" xml:space="preserve"><value>Delete all cloud sync data</value></data>
+  <data name="Sync_DeleteVaultConfirm" xml:space="preserve"><value>Permanently delete the encrypted vault for every device? Access will be revoked immediately. Local statistics on this computer will remain.</value></data>
+  <data name="Sync_SingleDeviceStatus" xml:space="preserve"><value>One connected device — statistics are not uploaded and manual sync is unavailable.</value></data>
+  <data name="Sync_DeviceCountFormat" xml:space="preserve"><value>{0} connected devices</value></data>
+  <data name="Sync_LastSuccessFormat" xml:space="preserve"><value>Last successful sync: {0}</value></data>
+  <data name="Sync_NeverSynced" xml:space="preserve"><value>No successful sync yet</value></data>
+  <data name="Sync_DevicesTitle" xml:space="preserve"><value>Connected devices</value></data>
+  <data name="Sync_ThisDevice" xml:space="preserve"><value>This device</value></data>
+  <data name="Sync_RevokeButton" xml:space="preserve"><value>Remove</value></data>
+  <data name="Sync_RevokeConfirmFormat" xml:space="preserve"><value>Remove {0} from the encrypted vault?</value></data>
+  <data name="Sync_SafetyCodeTitle" xml:space="preserve"><value>Compare safety code</value></data>
+  <data name="Sync_SafetyCodeConfirmFormat" xml:space="preserve"><value>Confirm that both devices show this code: {0}</value></data>
+  <data name="Sync_ApprovalComplete" xml:space="preserve"><value>Device approved. Finish pairing on the new device.</value></data>
+  <data name="Sync_GenericError" xml:space="preserve"><value>Sync could not be completed. Check your connection and try again.</value></data>
 </root>

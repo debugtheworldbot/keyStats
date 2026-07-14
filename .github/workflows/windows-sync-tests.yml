@@ -1,0 +1,35 @@
+name: Windows Sync Tests
+
+on:
+  pull_request:
+    paths:
+      - 'KeyStats.Windows/**'
+      - 'contracts/sync/v1/**'
+      - '.github/workflows/windows-sync-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'KeyStats.Windows/**'
+      - 'contracts/sync/v1/**'
+      - '.github/workflows/windows-sync-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-sync-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: .NET Framework sync tests
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Run Windows sync tests
+        run: dotnet test KeyStats.Windows/KeyStats.Sync.Tests/KeyStats.Sync.Tests.csproj --configuration Release --verbosity normal

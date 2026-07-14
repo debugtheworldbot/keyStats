@@ -11,6 +11,8 @@ jobs:
   # ============================================================
   build-macos:
     runs-on: macos-26
+    env:
+      KEYSTATS_SYNC_SERVICE_URL: ${{ vars.KEYSTATS_SYNC_PRODUCTION_URL }}
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
       sha256: ${{ steps.sha256.outputs.SHA256 }}
@@ -46,7 +48,12 @@ jobs:
         run: ./scripts/check_vendored_helper.sh
 
       - name: Build DMG
-        run: ./scripts/build_dmg.sh
+        run: |
+          if [[ ! "$KEYSTATS_SYNC_SERVICE_URL" =~ ^https://[A-Za-z0-9.-]+\.workers\.dev/?$ ]]; then
+            echo "KEYSTATS_SYNC_PRODUCTION_URL must be a production workers.dev URL."
+            exit 1
+          fi
+          ./scripts/build_dmg.sh
 
       - name: Validate Sparkle private key
         env:
@@ -93,7 +100,8 @@ jobs:
             archive \
             CODE_SIGN_IDENTITY="-" \
             ARCHS="arm64 x86_64" \
-            ONLY_ACTIVE_ARCH=NO
+            ONLY_ACTIVE_ARCH=NO \
+            KEYSTATS_SYNC_SERVICE_URL="$KEYSTATS_SYNC_SERVICE_URL"
 
           APP_PATH="$ARCHIVE_PATH/Products/Applications/$APP_NAME.app"
           cp -R "$APP_PATH" "$STAGING_DIR/"
@@ -139,6 +147,8 @@ jobs:
   # ============================================================
   build-windows:
     runs-on: windows-latest
+    env:
+      KEYSTATS_SYNC_SERVICE_URL: ${{ vars.KEYSTATS_SYNC_PRODUCTION_URL }}
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
 
@@ -168,7 +178,10 @@ jobs:
         shell: pwsh
         working-directory: KeyStats.Windows
         run: |
-          .\build.ps1 -Configuration Release
+          if ($env:KEYSTATS_SYNC_SERVICE_URL -notmatch '^https://[A-Za-z0-9.-]+\.workers\.dev/?$') {
+            throw 'KEYSTATS_SYNC_PRODUCTION_URL must be a production workers.dev URL.'
+          }
+          .\build.ps1 -Configuration Release -SyncServiceBaseUrl $env:KEYSTATS_SYNC_SERVICE_URL
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4

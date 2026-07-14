@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://keystats.app/contracts/sync/v1/core-day-snapshot.schema.json",
+  "title": "KeyStats CoreDaySnapshotV1",
+  "description": "The only plaintext statistics payload synchronized by protocol v1. It is encrypted on the client before transport.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "deviceId",
+    "localDay",
+    "revision",
+    "keyPresses",
+    "keyPressCounts",
+    "clicks"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "deviceId": { "$ref": "#/$defs/deviceId" },
+    "localDay": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])$",
+      "description": "Date-only value in the source device's local calendar. It is never converted through UTC."
+    },
+    "revision": { "$ref": "#/$defs/nonNegativeInt64" },
+    "keyPresses": { "$ref": "#/$defs/nonNegativeInt64" },
+    "keyPressCounts": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/nonNegativeInt64" },
+      "maxProperties": 512,
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+      },
+      "$comment": "Clients MUST additionally enforce at most 64 UTF-8 bytes per canonical key name. JSON Schema maxLength counts Unicode code points, not bytes."
+    },
+    "clicks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["left", "right", "middle", "sideBack", "sideForward"],
+      "properties": {
+        "left": { "$ref": "#/$defs/nonNegativeInt64" },
+        "right": { "$ref": "#/$defs/nonNegativeInt64" },
+        "middle": { "$ref": "#/$defs/nonNegativeInt64" },
+        "sideBack": { "$ref": "#/$defs/nonNegativeInt64" },
+        "sideForward": { "$ref": "#/$defs/nonNegativeInt64" }
+      }
+    }
+  },
+  "$defs": {
+    "deviceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "nonNegativeInt64": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9223372036854775807
+    }
+  }
+}

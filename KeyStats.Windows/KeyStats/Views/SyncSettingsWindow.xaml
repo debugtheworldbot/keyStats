@@ -1,0 +1,162 @@
+<Window x:Class="KeyStats.Views.SyncSettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:p="clr-namespace:KeyStats.Properties"
+        Title="{x:Static p:Strings.Sync_WindowTitle}"
+        Width="460" Height="640"
+        MinHeight="520"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResizeWithGrip"
+        Background="{DynamicResource WindowSurfaceBrush}"
+        ShowInTaskbar="True">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24,20">
+            <TextBlock Text="{x:Static p:Strings.Sync_HeaderTitle}"
+                       FontSize="18" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+            <TextBlock Text="{x:Static p:Strings.Sync_HeaderSubtitle}"
+                       Margin="0,5,0,16" TextWrapping="Wrap"
+                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+
+            <Border x:Name="ServiceUnavailableCard" Style="{DynamicResource CardBorder}" Padding="14,12" Margin="0,0,0,10">
+                <TextBlock Text="{x:Static p:Strings.Sync_ServiceUnavailable}"
+                           TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}"/>
+            </Border>
+
+            <Border x:Name="RepairCard" Style="{DynamicResource CardBorder}" Padding="14,12" Margin="0,0,0,10"
+                    Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock Text="{x:Static p:Strings.Sync_RepairRequired}" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <Button Content="{x:Static p:Strings.Sync_ClearRepairButton}" Click="ClearRepair_Click"
+                            HorizontalAlignment="Left" Margin="0,10,0,0" Foreground="#C42B1C"/>
+                </StackPanel>
+            </Border>
+
+            <Border x:Name="SetupRetryCard" Style="{DynamicResource CardBorder}" Padding="14,12" Margin="0,0,0,10"
+                    Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock Text="{x:Static p:Strings.Sync_BootstrapPendingStatus}" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <Button x:Name="SetupRetryButton"
+                            Content="{x:Static p:Strings.Sync_RetryBootstrapButton}"
+                            Click="SyncNow_Click" HorizontalAlignment="Left" Margin="0,10,0,0"/>
+                    <Button Content="{x:Static p:Strings.Sync_ClearRepairButton}"
+                            Click="ClearRepair_Click" HorizontalAlignment="Left"
+                            Margin="0,8,0,0" Foreground="#C42B1C"/>
+                </StackPanel>
+            </Border>
+
+            <StackPanel x:Name="SetupPanel">
+                <Border x:Name="CreateVaultCard" Style="{DynamicResource CardBorder}" Padding="14,12" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="{x:Static p:Strings.Sync_CreateTitle}" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{x:Static p:Strings.Sync_CreateDescription}" Margin="0,4,0,10"
+                                   TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <TextBox x:Name="SetupDeviceNameTextBox" Margin="0,0,0,8" MaxLength="128"/>
+                        <Button Content="{x:Static p:Strings.Sync_CreateButton}" Click="CreateVault_Click"
+                                HorizontalAlignment="Left" MinWidth="110"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{DynamicResource CardBorder}" Padding="14,12" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="{x:Static p:Strings.Sync_JoinTitle}" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{x:Static p:Strings.Sync_JoinDescription}" Margin="0,4,0,10"
+                                   TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <Button x:Name="BeginPairingButton" Content="{x:Static p:Strings.Sync_BeginPairingButton}"
+                                Click="BeginPairing_Click" HorizontalAlignment="Left" MinWidth="110"/>
+                        <TextBlock x:Name="PairingCodeTextBlock" Margin="0,10,0,6" FontSize="22"
+                                   FontFamily="Consolas" FontWeight="SemiBold" Visibility="Collapsed"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <Button x:Name="CompletePairingButton" Content="{x:Static p:Strings.Sync_CompletePairingButton}"
+                                Click="CompletePairing_Click" HorizontalAlignment="Left" Visibility="Collapsed"/>
+                        <Button x:Name="CancelPairingButton" Content="{x:Static p:Strings.Sync_ClearRepairButton}"
+                                Click="ClearRepair_Click" HorizontalAlignment="Left" Visibility="Collapsed"
+                                Margin="0,8,0,0" Foreground="#C42B1C"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{DynamicResource CardBorder}" Padding="14,12" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="{x:Static p:Strings.Sync_RecoverTitle}" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{x:Static p:Strings.Sync_RecoverDescription}" Margin="0,4,0,10"
+                                   TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <TextBox x:Name="RecoveryCodeTextBox" Margin="0,0,0,8" MaxLength="40"/>
+                        <Button Content="{x:Static p:Strings.Sync_RecoverButton}" Click="Recover_Click"
+                                HorizontalAlignment="Left" MinWidth="110"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <StackPanel x:Name="EnabledPanel">
+                <Border Style="{DynamicResource CardBorder}" Padding="14,12" Margin="0,0,0,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="{x:Static p:Strings.Sync_StatusTitle}" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock x:Name="StatusTextBlock" Margin="0,5,12,0" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+                            <TextBlock x:Name="LastSyncTextBlock" Margin="0,3,12,0" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        </StackPanel>
+                        <Button x:Name="SyncNowButton" Grid.Column="1"
+                                Content="{x:Static p:Strings.Sync_NowButton}" Click="SyncNow_Click"
+                                MinWidth="90" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <Border Style="{DynamicResource CardBorder}" Padding="14,12" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="{x:Static p:Strings.Sync_DevicesTitle}" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <StackPanel x:Name="DevicesStackPanel" Margin="0,8,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{DynamicResource CardBorder}" Padding="14,12" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="{x:Static p:Strings.Sync_ApproveTitle}" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{x:Static p:Strings.Sync_ApproveDescription}" Margin="0,4,0,10"
+                                   TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBox x:Name="ApproveCodeTextBox" Width="150" MaxLength="10" Margin="0,0,8,0"/>
+                            <Button Content="{x:Static p:Strings.Sync_ApproveButton}" Click="ApprovePairing_Click"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{DynamicResource CardBorder}" Padding="14,12" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="{x:Static p:Strings.Sync_RecoveryCodeTitle}" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{x:Static p:Strings.Sync_RecoveryCodeWarning}" Margin="0,4,0,8"
+                                   TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <Button x:Name="ShowRecoveryCodeButton" Content="{x:Static p:Strings.Sync_ShowRecoveryCodeButton}"
+                                Click="ShowRecoveryCode_Click" HorizontalAlignment="Left"/>
+                        <TextBox x:Name="RecoveryCodeDisplayTextBox" Margin="0,8,0,0" IsReadOnly="True"
+                                 FontFamily="Consolas" Visibility="Collapsed"/>
+                    </StackPanel>
+                </Border>
+
+                <StackPanel>
+                    <Button Content="{x:Static p:Strings.Sync_LeaveButton}" Click="LeaveSync_Click"
+                            HorizontalAlignment="Left" Foreground="#C42B1C"/>
+                    <Button Content="{x:Static p:Strings.Sync_DeleteVaultButton}" Click="DeleteVault_Click"
+                            HorizontalAlignment="Left" Foreground="#C42B1C" Margin="0,8,0,0"/>
+                </StackPanel>
+            </StackPanel>
+
+            <TextBlock x:Name="ErrorTextBlock" Margin="2,12,2,0" TextWrapping="Wrap"
+                       Foreground="#C42B1C"/>
+        </StackPanel>
+    </ScrollViewer>
+</Window>

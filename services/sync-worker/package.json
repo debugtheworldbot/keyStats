@@ -1,0 +1,26 @@
+{
+  "name": "@keystats/sync-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "npm run contracts:check && npm run types:check && npm run typecheck && npm test",
+    "contracts:check": "node scripts/validate-contracts.mjs",
+    "types": "wrangler types",
+    "types:check": "wrangler types --check",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.18.4",
+    "@types/node": "22.20.1",
+    "ajv": "8.20.0",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10",
+    "wrangler": "4.110.0",
+    "yaml": "2.9.0"
+  }
+}

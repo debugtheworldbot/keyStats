@@ -52,6 +52,8 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
     private var importButton: NSButton!
     private var exportButton: NSButton!
     private var mouseDistanceCalibrationButton: NSButton!
+    private var syncStatusLabel: NSTextField!
+    private var manageSyncButton: NSButton!
     private var showThresholdsButton: NSSwitch!
     private var thresholdStack: NSStackView!
     private var keyPressThresholdField: NSTextField!
@@ -67,6 +69,7 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
     private var appearanceObservation: NSKeyValueObservation?
     private var systemThemeObserver: NSObjectProtocol?
     private var appDidBecomeActiveObserver: NSObjectProtocol?
+    private var syncStateObserver: NSObjectProtocol?
 
     private let thresholdMinimum = 0
     private let thresholdMaximum = 1_000_000
@@ -140,6 +143,13 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
         ) { [weak self] _ in
             self?.updateAppearance()
         }
+        syncStateObserver = NotificationCenter.default.addObserver(
+            forName: .syncStateDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.updateState()
+        }
     }
 
     override func viewWillAppear() {
@@ -167,6 +177,9 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
             DistributedNotificationCenter.default().removeObserver(observer)
         }
         if let observer = appDidBecomeActiveObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        if let observer = syncStateObserver {
             NotificationCenter.default.removeObserver(observer)
         }
     }
@@ -364,6 +377,23 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
 
         let notificationSection = makeSection(titleKey: "settings.section.notifications", content: notificationStack)
         addArrangedSubviewFillingWidth(notificationSection, to: contentStack)
+
+        syncStatusLabel = NSTextField(wrappingLabelWithString: "")
+        syncStatusLabel.textColor = .secondaryLabelColor
+        syncStatusLabel.maximumNumberOfLines = 0
+        manageSyncButton = NSButton(
+            title: NSLocalizedString("sync.action.manage", comment: ""),
+            target: self,
+            action: #selector(openSyncSettings)
+        )
+        manageSyncButton.bezelStyle = .rounded
+        let syncRow = NSStackView(views: [syncStatusLabel, NSView(), manageSyncButton])
+        syncRow.orientation = .horizontal
+        syncRow.alignment = .centerY
+        syncRow.spacing = 12
+        syncStatusLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        let syncSection = makeSection(titleKey: "settings.section.sync", content: syncRow)
+        addArrangedSubviewFillingWidth(syncSection, to: contentStack)
 
         mouseDistanceCalibrationButton = NSButton(title: NSLocalizedString("settings.mouseDistanceCalibration", comment: ""),
                                                   target: self,
@@ -689,6 +719,28 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
         showThresholdsButton.state = notificationsEnabled ? .on : .off
         notificationThresholdContainer.isHidden = !notificationsEnabled
         updateThresholdUI()
+        updateSyncState()
+    }
+
+    private func updateSyncState() {
+        let coordinator = SyncCoordinator.shared
+        let state = coordinator.state
+        if !coordinator.isServiceConfigured {
+            syncStatusLabel.stringValue = NSLocalizedString("sync.status.serviceNotConfigured", comment: "")
+        } else if state.needsRepair {
+            syncStatusLabel.stringValue = NSLocalizedString("sync.status.needsRepair", comment: "")
+        } else if !state.isConfigured {
+            syncStatusLabel.stringValue = NSLocalizedString("sync.status.off", comment: "")
+        } else if state.activeDeviceCount < 2 {
+            syncStatusLabel.stringValue = NSLocalizedString("sync.status.singleDevice", comment: "")
+        } else {
+            syncStatusLabel.stringValue = NSLocalizedString("sync.status.on", comment: "")
+        }
+        importButton?.isEnabled = !coordinator.blocksLegacyImport
+        importButton?.toolTip = coordinator.blocksLegacyImport ? NSLocalizedString("import.disabled.syncEnabled", comment: "") : nil
+        resetButton?.title = state.isConfigured
+            ? NSLocalizedString("button.resetThisDevice", comment: "")
+            : NSLocalizedString("button.reset", comment: "")
     }
 
     private func updateDynamicIconColorStyleSelection() {
@@ -1047,6 +1099,11 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
         MouseDistanceCalibrationWindowController.shared.show()
     }
 
+    @objc private func openSyncSettings() {
+        AppDelegate.trackClick("open_sync_settings")
+        SyncSettingsWindowController.shared.show()
+    }
+
     @objc private func openGitHubRepository() {
         guard let url = githubRepositoryURL else { return }
         AppDelegate.trackClick("open_github_repository")
@@ -1057,8 +1114,9 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
         let alert = NSAlert()
         let appIcon = NSImage(named: "AppIcon") ?? NSApp.applicationIconImage
         alert.icon = appIcon
-        alert.messageText = NSLocalizedString("stats.reset.title", comment: "")
-        alert.informativeText = NSLocalizedString("stats.reset.message", comment: "")
+        let syncEnabled = SyncCoordinator.shared.isConfigured
+        alert.messageText = NSLocalizedString(syncEnabled ? "stats.reset.local.title" : "stats.reset.title", comment: "")
+        alert.informativeText = NSLocalizedString(syncEnabled ? "stats.reset.local.message" : "stats.reset.message", comment: "")
         alert.alertStyle = .warning
         alert.addButton(withTitle: NSLocalizedString("stats.reset.confirm", comment: ""))
         alert.addButton(withTitle: NSLocalizedString("stats.reset.cancel", comment: ""))
@@ -1093,6 +1151,14 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
     }
 
     @objc private func importData() {
+        guard !SyncCoordinator.shared.blocksLegacyImport else {
+            let alert = NSAlert()
+            alert.messageText = NSLocalizedString("import.disabled.title", comment: "")
+            alert.informativeText = NSLocalizedString("import.disabled.syncEnabled", comment: "")
+            alert.addButton(withTitle: NSLocalizedString("button.ok", comment: ""))
+            alert.runModal()
+            return
+        }
         AppDelegate.trackClick("import_data")
         let openPanel = NSOpenPanel()
         openPanel.allowedFileTypes = ["json"]
