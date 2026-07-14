@@ -615,6 +615,7 @@
 				INFOPLIST_FILE = KeyStats/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				KEYSTATS_SYNC_SERVICE_URL = "https://keystats-sync-staging.istiancz.workers.dev";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

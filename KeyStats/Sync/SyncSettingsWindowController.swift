@@ -161,7 +161,14 @@ private final class SyncSettingsViewController: NSViewController {
         devicesTitle.font = NSFont.systemFont(ofSize: 15, weight: .semibold)
         configuredActions.addArrangedSubview(devicesTitle)
         devicesStack = verticalStack(spacing: 8)
+        devicesStack.setContentHuggingPriority(.required, for: .vertical)
+        devicesStack.setContentCompressionResistancePriority(.required, for: .vertical)
         configuredActions.addArrangedSubview(devicesStack)
+
+        let deviceSectionSpacer = NSView()
+        deviceSectionSpacer.setContentHuggingPriority(.defaultLow, for: .vertical)
+        deviceSectionSpacer.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        configuredActions.addArrangedSubview(deviceSectionSpacer)
 
         let deleteButton = button("sync.action.deleteVault", action: #selector(deleteVault))
         deleteButton.contentTintColor = .systemRed
@@ -271,8 +278,8 @@ private final class SyncSettingsViewController: NSViewController {
             let row = NSStackView(views: views)
             row.orientation = .horizontal
             row.alignment = .centerY
-            row.widthAnchor.constraint(equalTo: devicesStack.widthAnchor).isActive = true
             devicesStack.addArrangedSubview(row)
+            row.widthAnchor.constraint(equalTo: devicesStack.widthAnchor).isActive = true
         }
         let missing = max(0, state.activeDeviceCount - state.devices.filter { !$0.isRevoked }.count)
         if missing > 0 {
