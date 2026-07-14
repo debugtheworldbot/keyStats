@@ -61,7 +61,7 @@ public sealed class SyncCoordinatorFailureTests
             errorCode: "single_device_sync_disabled"));
         using var coordinator = CreateCoordinator(directory.Path, transport);
 
-        await Assert.ThrowsExceptionAsync<SyncTransportException>(
+        await Assert.ThrowsExactlyAsync<SyncTransportException>(
             () => coordinator.SyncNowAsync()).ConfigureAwait(false);
 
         Assert.AreEqual(2, new SyncStateStore(directory.Path).Load().ActiveDeviceCount);
@@ -84,7 +84,7 @@ public sealed class SyncCoordinatorFailureTests
         using var coordinator = CreateCoordinator(directory.Path, transport);
         var before = DateTime.UtcNow;
 
-        await Assert.ThrowsExceptionAsync<SyncTransportException>(
+        await Assert.ThrowsExactlyAsync<SyncTransportException>(
             () => coordinator.SyncNowAsync()).ConfigureAwait(false);
 
         var after = DateTime.UtcNow;
@@ -152,7 +152,7 @@ public sealed class SyncCoordinatorFailureTests
                     "\"requestId\":\"not-exposed\"}")
             }));
 
-        var exception = await Assert.ThrowsExceptionAsync<SyncTransportException>(() =>
+        var exception = await Assert.ThrowsExactlyAsync<SyncTransportException>(() =>
             transport.SyncAsync(
                 new SyncRequest { Reason = "manual" },
                 "device.test-token",
@@ -188,7 +188,7 @@ public sealed class SyncCoordinatorFailureTests
                 Content = new StringContent(body)
             }));
 
-        var exception = await Assert.ThrowsExceptionAsync<SyncTransportException>(() =>
+        var exception = await Assert.ThrowsExactlyAsync<SyncTransportException>(() =>
             transport.RecoverVaultAsync(
                 new RecoverVaultRequest(),
                 CancellationToken.None)).ConfigureAwait(false);
@@ -225,7 +225,7 @@ public sealed class SyncCoordinatorFailureTests
         using var coordinator = CreateCoordinator(directory.Path, transport);
 
         Assert.IsTrue(coordinator.GetStatus().NeedsRepair);
-        await Assert.ThrowsExceptionAsync<InvalidOperationException>(
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(
             () => coordinator.DeleteVaultAsync()).ConfigureAwait(false);
         Assert.AreEqual(0, transport.DeleteVaultCallCount);
     }
@@ -245,7 +245,7 @@ public sealed class SyncCoordinatorFailureTests
             DeviceToken = "other-device.other-token"
         });
 
-        await Assert.ThrowsExceptionAsync<System.Security.Cryptography.CryptographicException>(
+        await Assert.ThrowsExactlyAsync<System.Security.Cryptography.CryptographicException>(
             () => coordinator.DeleteVaultAsync()).ConfigureAwait(false);
 
         Assert.AreEqual(0, transport.DeleteVaultCallCount);
@@ -316,7 +316,7 @@ public sealed class SyncCoordinatorFailureTests
                { DeleteFailuresRemaining = 1 })
         using (var coordinator = CreateCoordinator(directory.Path, failingTransport))
         {
-            await Assert.ThrowsExceptionAsync<SyncTransportException>(
+            await Assert.ThrowsExactlyAsync<SyncTransportException>(
                 () => coordinator.DeleteVaultAsync()).ConfigureAwait(false);
             Assert.AreEqual(1, failingTransport.DeleteVaultCallCount);
             Assert.AreEqual("device-id.test-token", failingTransport.LastDeleteToken);
@@ -359,7 +359,7 @@ public sealed class SyncCoordinatorFailureTests
         using var coordinator = CreateCoordinator(directory.Path, transport);
         var recoveryCode = new SyncCrypto().EncodeRecoveryCode(new byte[16]);
 
-        await Assert.ThrowsExceptionAsync<SyncTransportException>(() =>
+        await Assert.ThrowsExactlyAsync<SyncTransportException>(() =>
             coordinator.RecoverVaultAsync(recoveryCode, "Test device")).ConfigureAwait(false);
 
         var pending = new SyncStateStore(directory.Path).Load();
@@ -407,7 +407,7 @@ public sealed class SyncCoordinatorFailureTests
             null,
             errorCode: "recovery_failed");
         var recoveryCode = new SyncCrypto().EncodeRecoveryCode(new byte[16]);
-        await Assert.ThrowsExceptionAsync<SyncTransportException>(() =>
+        await Assert.ThrowsExactlyAsync<SyncTransportException>(() =>
             coordinator.RecoverVaultAsync(recoveryCode, "Recovered device")).ConfigureAwait(false);
         Assert.IsNotNull(transport.LastRecoverRequest);
         Assert.AreEqual(oldDeviceId, transport.LastRecoverRequest!.DeviceId);
@@ -443,7 +443,7 @@ public sealed class SyncCoordinatorFailureTests
         using var coordinator = CreateCoordinator(directory.Path, transport);
         var recoveryCode = new SyncCrypto().EncodeRecoveryCode(new byte[16]);
 
-        await Assert.ThrowsExceptionAsync<SyncTransportException>(() =>
+        await Assert.ThrowsExactlyAsync<SyncTransportException>(() =>
             coordinator.RecoverVaultAsync(recoveryCode, "Recovered device")).ConfigureAwait(false);
 
         Assert.AreEqual(2, transport.RecoverRequests.Count);
