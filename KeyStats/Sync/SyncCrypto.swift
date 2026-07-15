@@ -452,7 +452,7 @@ enum SyncCryptoError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .randomGenerationFailed: return "Secure random generation failed."
+        case .randomGenerationFailed: return NSLocalizedString("sync.error.randomGenerationFailed", comment: "")
         case .credentialStorage: return NSLocalizedString("sync.error.credentialStorage", comment: "")
         case .missingCredentials: return NSLocalizedString("sync.error.missingCredentials", comment: "")
         }

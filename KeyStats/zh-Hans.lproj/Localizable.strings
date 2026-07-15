@@ -312,10 +312,17 @@
 "sync.error.maximumDevices" = "一个同步组最多包含五台活跃设备。";
 "sync.error.bootstrapTooLarge" = "本机初始历史超过 4096 天的同步上限。";
 "sync.error.revisionExhausted" = "本地同步版本号已无法继续增加。";
+"sync.error.unsupportedSchema" = "不支持此同步数据版本。";
+"sync.error.invalidSnapshot" = "同步快照无效。";
+"sync.error.invalidKeyName" = "同步快照中的按键名称无效。";
+"sync.error.tooManyKeys" = "同步快照包含过多按键。";
+"sync.error.snapshotTooLarge" = "同步快照过大。";
 "sync.error.invalidRecoveryCode" = "恢复码无效或校验码错误。";
 "sync.error.authenticationFailed" = "密文认证失败，请重新配对或恢复本设备。";
+"sync.error.randomGenerationFailed" = "安全随机数生成失败。";
 "sync.error.credentialStorage" = "无法在本地保存同步凭证。";
 "sync.error.missingCredentials" = "本地同步凭证已丢失。";
+"sync.error.invalidApplicationSupportDirectory" = "应用支持目录不可用。";
 "sync.error.invalidConfiguration" = "同步服务配置无效。";
 "sync.error.invalidResponse" = "同步服务返回了无效响应。";
 "sync.error.notFound" = "找不到同步组或配对会话。";

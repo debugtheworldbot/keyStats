@@ -312,10 +312,17 @@
 "sync.error.maximumDevices" = "A sync group can contain at most five active devices.";
 "sync.error.bootstrapTooLarge" = "The initial local history exceeds the 4,096-day sync limit.";
 "sync.error.revisionExhausted" = "The local sync revision cannot be increased.";
+"sync.error.unsupportedSchema" = "Unsupported sync schema.";
+"sync.error.invalidSnapshot" = "The synchronized snapshot is invalid.";
+"sync.error.invalidKeyName" = "A synchronized key name is invalid.";
+"sync.error.tooManyKeys" = "The synchronized snapshot contains too many keys.";
+"sync.error.snapshotTooLarge" = "The synchronized snapshot is too large.";
 "sync.error.invalidRecoveryCode" = "The recovery code is invalid or has a checksum error.";
 "sync.error.authenticationFailed" = "Encrypted data authentication failed. Re-pair or recover this device.";
+"sync.error.randomGenerationFailed" = "Secure random generation failed.";
 "sync.error.credentialStorage" = "The sync credential could not be stored locally.";
 "sync.error.missingCredentials" = "The locally stored sync credential is missing.";
+"sync.error.invalidApplicationSupportDirectory" = "The application support directory is unavailable.";
 "sync.error.invalidConfiguration" = "The sync service configuration is invalid.";
 "sync.error.invalidResponse" = "The sync service returned an invalid response.";
 "sync.error.notFound" = "The sync group or pairing session was not found.";

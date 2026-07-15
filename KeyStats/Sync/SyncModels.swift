@@ -115,11 +115,11 @@ enum SyncValidationError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .unsupportedSchema: return "Unsupported sync schema."
-        case .invalidSnapshot: return "The synchronized snapshot is invalid."
-        case .invalidKeyName: return "A synchronized key name is invalid."
-        case .tooManyKeys: return "The synchronized snapshot contains too many keys."
-        case .snapshotTooLarge: return "The synchronized snapshot is too large."
+        case .unsupportedSchema: return NSLocalizedString("sync.error.unsupportedSchema", comment: "")
+        case .invalidSnapshot: return NSLocalizedString("sync.error.invalidSnapshot", comment: "")
+        case .invalidKeyName: return NSLocalizedString("sync.error.invalidKeyName", comment: "")
+        case .tooManyKeys: return NSLocalizedString("sync.error.tooManyKeys", comment: "")
+        case .snapshotTooLarge: return NSLocalizedString("sync.error.snapshotTooLarge", comment: "")
         case .invalidRecoveryCode: return NSLocalizedString("sync.error.invalidRecoveryCode", comment: "")
         case .authenticationFailed: return NSLocalizedString("sync.error.authenticationFailed", comment: "")
         }

@@ -8,7 +8,7 @@ enum SyncStorageError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidApplicationSupportDirectory:
-            return "The application support directory is unavailable."
+            return NSLocalizedString("sync.error.invalidApplicationSupportDirectory", comment: "")
         case .corruptState:
             return NSLocalizedString("sync.error.corruptState", comment: "")
         case .corruptCache:
