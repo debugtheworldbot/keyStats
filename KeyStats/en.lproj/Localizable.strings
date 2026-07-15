@@ -280,7 +280,7 @@
 "sync.device.unknownCount" = "%d additional encrypted device(s)";
 "sync.recoveryCode.title" = "Save Your Recovery Code";
 "sync.recoveryCode.message" = "This code is the only way to recover the group if every paired device is lost. KeyStats and Cloudflare cannot recover it for you.";
-"sync.recoveryCode.saved" = "I Saved It";
+"sync.recoveryCode.saved" = "Copy to Clipboard";
 "sync.safetyCode.title" = "Compare Security Codes";
 "sync.safetyCode.message" = "Confirm that both devices show this same code: %@";
 "sync.safetyCode.confirm" = "Codes Match";

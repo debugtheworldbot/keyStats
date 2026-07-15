@@ -280,7 +280,7 @@
 "sync.device.unknownCount" = "另外 %d 台加密設備";
 "sync.recoveryCode.title" = "保存恢復碼";
 "sync.recoveryCode.message" = "如果所有已配對設備都丟失，此恢復碼是恢復同步組的唯一方式。KeyStats 和 Cloudflare 都無法替你找回。";
-"sync.recoveryCode.saved" = "我已保存";
+"sync.recoveryCode.saved" = "複製到剪貼簿";
 "sync.safetyCode.title" = "核對安全碼";
 "sync.safetyCode.message" = "請確認兩台設備都顯示相同的安全碼：%@";
 "sync.safetyCode.confirm" = "安全碼一致";
