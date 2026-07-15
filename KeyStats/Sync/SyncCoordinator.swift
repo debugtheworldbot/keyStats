@@ -96,6 +96,7 @@ final class SyncCoordinator {
     private var joiningPairing: JoiningPairingState?
     private var approvingPairing: ApprovingPairingState?
     private(set) var isSyncing = false
+    private(set) var syncProgress: SyncProgress?
     private var isRefreshingState = false
     private(set) var lastError: Error?
     private(set) var state: SyncPersistentState
@@ -980,6 +981,7 @@ final class SyncCoordinator {
         notifyStateChanged()
         defer {
             isSyncing = false
+            syncProgress = nil
             notifyStateChanged()
         }
 
@@ -996,6 +998,11 @@ final class SyncCoordinator {
             let archiveBatches = bypassOrdinaryGating
                 ? SyncArchiveBatcher.batches(prepared.archives)
                 : [Array(prepared.archives.prefix(SyncConstants.maximumArchivesPerRequest))]
+            syncProgress = SyncProgress(
+                totalDays: archiveBatches.reduce(0) { $0 + $1.count }
+                    + (prepared.current == nil ? 0 : 1)
+            )
+            notifyStateChanged()
             let profileToUpload = state.pendingEncryptedDeviceProfile
             let transport = try makeTransport()
             let token = try boundCredentials().deviceToken
@@ -1025,6 +1032,10 @@ final class SyncCoordinator {
                         state.bootstrapUploadCompleted = true
                     }
                 }
+                syncProgress?.advance(
+                    by: archives.count + (isFinalBatch && prepared.current != nil ? 1 : 0)
+                )
+                notifyStateChanged()
                 try stateStore.save(state)
                 finalResponse = response
             }

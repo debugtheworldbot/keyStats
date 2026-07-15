@@ -4,6 +4,16 @@ import XCTest
 @testable import KeyStatsCore
 
 final class SyncCoreTests: XCTestCase {
+    func testSyncProgressAdvancesByDayAndStopsAtTotal() {
+        var progress = SyncProgress(totalDays: 18)
+
+        progress.advance(by: 16)
+        XCTAssertEqual(progress, SyncProgress(completedDays: 16, totalDays: 18))
+
+        progress.advance(by: 16)
+        XCTAssertEqual(progress, SyncProgress(completedDays: 18, totalDays: 18))
+    }
+
     func testArchiveBatcherUsesSixteenRecordPagesAndKeepsAnEmptyFinalPage() {
         XCTAssertEqual(SyncArchiveBatcher.batches(Array(0..<35)).map(\.count), [16, 16, 3])
         XCTAssertEqual(SyncArchiveBatcher.batches([Int]()).map(\.count), [0])

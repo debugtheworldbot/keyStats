@@ -21,6 +21,15 @@ enum SyncConstants {
     static let maximumHistoryPagesPerAttempt = 256
 }
 
+struct SyncProgress: Equatable {
+    private(set) var completedDays = 0
+    let totalDays: Int
+
+    mutating func advance(by days: Int) {
+        completedDays = min(totalDays, completedDays + max(0, days))
+    }
+}
+
 struct CoreClickSnapshotV1: Codable, Equatable {
     var left: Int64
     var right: Int64

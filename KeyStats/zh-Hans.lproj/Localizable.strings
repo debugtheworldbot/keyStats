@@ -262,6 +262,7 @@
 "sync.status.needsRepair.detail" = "本地统计仍然安全。请使用恢复码或重新配对本设备。";
 "sync.status.syncing" = "正在同步加密数据…";
 "sync.status.syncing.detail" = "同步期间本地统计会继续正常工作。";
+"sync.status.syncing.progress" = "已同步 %d / %d 天，本地统计会继续正常工作。";
 "sync.status.off" = "同步未启用";
 "sync.status.off.detail" = "可以创建同步组、恢复同步组或配对本设备。只有一台设备时不会发起普通同步请求。";
 "sync.status.singleDevice" = "只有一台设备，无需同步";

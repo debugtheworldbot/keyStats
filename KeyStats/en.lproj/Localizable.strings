@@ -262,6 +262,7 @@
 "sync.status.needsRepair.detail" = "Local statistics are safe. Use your recovery code or pair this device again.";
 "sync.status.syncing" = "Syncing encrypted data…";
 "sync.status.syncing.detail" = "Local tracking continues while sync is in progress.";
+"sync.status.syncing.progress" = "Synced %d of %d days. Local tracking continues normally.";
 "sync.status.off" = "Sync is off";
 "sync.status.off.detail" = "Create a group, recover one, or pair this device. A single device never makes ordinary sync requests.";
 "sync.status.singleDevice" = "Only one device — no sync needed";

@@ -224,7 +224,15 @@ private final class SyncSettingsViewController: NSViewController {
             detailLabel.stringValue = NSLocalizedString("sync.status.needsRepair.detail", comment: "")
         } else if coordinator.isSyncing {
             statusLabel.stringValue = NSLocalizedString("sync.status.syncing", comment: "")
-            detailLabel.stringValue = NSLocalizedString("sync.status.syncing.detail", comment: "")
+            if let progress = coordinator.syncProgress, progress.totalDays > 0 {
+                detailLabel.stringValue = String(
+                    format: NSLocalizedString("sync.status.syncing.progress", comment: ""),
+                    progress.completedDays,
+                    progress.totalDays
+                )
+            } else {
+                detailLabel.stringValue = NSLocalizedString("sync.status.syncing.detail", comment: "")
+            }
         } else if !state.isConfigured {
             statusLabel.stringValue = NSLocalizedString("sync.status.off", comment: "")
             detailLabel.stringValue = NSLocalizedString("sync.status.off.detail", comment: "")
