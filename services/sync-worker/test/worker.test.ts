@@ -1,8 +1,9 @@
 import { env, SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
+import { enforceHourlyLimit } from "../src/auth";
 import { CLEANUP_SUBREQUEST_BUDGET, runCleanup } from "../src/cleanup";
 import { validateEnvelope } from "../src/crypto";
-import { limits, type Env } from "../src/env";
+import { hourlyRateLimitsEnabled, limits, type Env } from "../src/env";
 import { ApiError, readJson } from "../src/http";
 import type { EncryptedEnvelope, EncryptedRecord } from "../src/types";
 
@@ -28,14 +29,24 @@ interface PairingResponse {
 }
 
 describe("sync Worker", () => {
-  it("supports disabling staging sync rate limits", () => {
-    const serviceLimits = limits({
+  it("supports disabling staging sync rate limits", async () => {
+    const stagingEnv = {
+      HOURLY_RATE_LIMITS_ENABLED: "false",
       MIN_SYNC_INTERVAL_SECONDS: "0",
       DAILY_SYNC_LIMIT: "0",
-    } as unknown as Env);
+    } as unknown as Env;
+    const serviceLimits = limits(stagingEnv);
 
+    expect(hourlyRateLimitsEnabled(stagingEnv)).toBe(false);
     expect(serviceLimits.minimumSyncIntervalSeconds).toBe(0);
     expect(serviceLimits.dailySyncLimit).toBe(0);
+    await expect(enforceHourlyLimit(
+      new Request("https://sync.test/v1/pairing-sessions"),
+      stagingEnv,
+      "pairing_create",
+      5,
+      Date.now(),
+    )).resolves.toBeUndefined();
   });
 
   it("cancels an oversized streaming body before reading the remainder", async () => {

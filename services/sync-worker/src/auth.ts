@@ -1,5 +1,5 @@
 import { keyedHash } from "./crypto";
-import type { Env } from "./env";
+import { hourlyRateLimitsEnabled, type Env } from "./env";
 import { ApiError } from "./http";
 import type { AuthContext, DeviceRow, VaultRow } from "./types";
 
@@ -84,6 +84,7 @@ export async function enforceHourlyLimit(
   now: number,
   extraScope = "",
 ): Promise<void> {
+  if (!hourlyRateLimitsEnabled(env)) return;
   const address = request.headers.get("cf-connecting-ip") ?? "unknown";
   const keyHash = await keyedHash(env.TOKEN_HASH_KEY, `rate-limit:${endpoint}:${address}:${extraScope}`);
   const windowFloor = now - 3_600_000;

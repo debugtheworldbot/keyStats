@@ -22,6 +22,10 @@ export function syncEnabled(env: Env): boolean {
   return (env.SYNC_ENABLED ?? "true").toLowerCase() !== "false";
 }
 
+export function hourlyRateLimitsEnabled(env: Env): boolean {
+  return (env.HOURLY_RATE_LIMITS_ENABLED ?? "true").toLowerCase() !== "false";
+}
+
 function boundedInteger(raw: string | undefined, fallback: number, minimum: number, maximum: number): number {
   if (!raw) return fallback;
   const parsed = Number(raw);
