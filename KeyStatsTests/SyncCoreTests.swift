@@ -215,6 +215,42 @@ final class SyncCoreTests: XCTestCase {
         XCTAssertEqual(aggregated["2026-07-13"]?.middleClicks, 1)
     }
 
+    func testCurrentDayDisplayAggregatesRemoteKeysAndClicksOnlyForSameDay() throws {
+        var localDay = DailyStats(date: try XCTUnwrap(SyncDay.date(from: "2026-07-15")))
+        localDay.keyPresses = 5
+        localDay.keyPressCounts = ["A": 5]
+        localDay.leftClicks = 1
+        localDay.mouseDistance = 42
+        let remoteToday = CoreDaySnapshotV1(
+            deviceId: "remote",
+            localDay: "2026-07-15",
+            revision: 3,
+            keyPresses: 7,
+            keyPressCounts: ["A": 7],
+            clicks: CoreClickSnapshotV1(left: 2, right: 1, middle: 0, sideBack: 0, sideForward: 0)
+        )
+        let remoteYesterday = CoreDaySnapshotV1(
+            deviceId: "remote",
+            localDay: "2026-07-14",
+            revision: 2,
+            keyPresses: 100,
+            keyPressCounts: ["B": 100],
+            clicks: CoreClickSnapshotV1(left: 100, right: 0, middle: 0, sideBack: 0, sideForward: 0)
+        )
+
+        let displayed = DisplayStatsAggregator.currentDay(
+            local: localDay,
+            remote: [remoteToday, remoteYesterday],
+            currentDeviceId: "local"
+        )
+
+        XCTAssertEqual(displayed.keyPresses, 12)
+        XCTAssertEqual(displayed.keyPressCounts, ["A": 12])
+        XCTAssertEqual(displayed.leftClicks, 3)
+        XCTAssertEqual(displayed.rightClicks, 1)
+        XCTAssertEqual(displayed.mouseDistance, 42)
+    }
+
     func testSingleDeviceGatingAndDailyLimit() {
         var state = SyncPersistentState.fresh(serverBaseURL: "https://sync.example.workers.dev")
         state.vaultId = "vault"

@@ -575,7 +575,7 @@ class StatsPopoverViewController: NSViewController {
     // MARK: - 更新统计数据
     
     private func updateStats() {
-        let stats = StatsManager.shared.currentStats
+        let stats = StatsManager.shared.displayCurrentStats()
         let hasSideClickData = (stats.sideBackClicks + stats.sideForwardClicks) > 0
         
         keyPressView.updateValue(formatNumber(stats.keyPresses))

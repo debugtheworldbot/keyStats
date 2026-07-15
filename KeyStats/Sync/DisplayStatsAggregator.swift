@@ -52,6 +52,20 @@ enum DisplayStatsAggregator {
         return result
     }
 
+    static func currentDay(
+        local: DailyStats,
+        remote: [CoreDaySnapshotV1],
+        currentDeviceId: String
+    ) -> DailyStats {
+        let day = SyncDay.string(from: local.date)
+        let remoteForDay = deduplicatedLatest(remote.filter { $0.localDay == day })
+        return aggregate(
+            local: [day: local],
+            remote: remoteForDay,
+            currentDeviceId: currentDeviceId
+        )[day] ?? local
+    }
+
     static func deduplicatedLatest(_ snapshots: [CoreDaySnapshotV1]) -> [CoreDaySnapshotV1] {
         var latest: [String: CoreDaySnapshotV1] = [:]
         for snapshot in snapshots {

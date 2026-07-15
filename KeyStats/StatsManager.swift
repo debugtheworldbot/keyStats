@@ -346,6 +346,7 @@ class StatsManager {
             queue: .main
         ) { [weak self] _ in
             guard let self else { return }
+            self.notifyMenuBarUpdate()
             self.notifyStatsUpdate()
         }
     }
@@ -1305,8 +1306,9 @@ class StatsManager {
 
     /// 获取菜单栏显示的数字部分
     func getMenuBarTextParts() -> (keys: String, clicks: String) {
-        let keys = showKeyPressesInMenuBar ? formatMenuBarNumber(currentStats.keyPresses) : ""
-        let clicks = showMouseClicksInMenuBar ? formatMenuBarNumber(currentStats.totalClicks) : ""
+        let stats = displayCurrentStats()
+        let keys = showKeyPressesInMenuBar ? formatMenuBarNumber(stats.keyPresses) : ""
+        let clicks = showMouseClicksInMenuBar ? formatMenuBarNumber(stats.totalClicks) : ""
         return (keys, clicks)
     }
     
@@ -1328,7 +1330,7 @@ class StatsManager {
 
     /// 按次数排序的键位统计
     func keyPressBreakdownSorted() -> [(key: String, count: Int)] {
-        return keyBreakdownDisplayCounts(from: currentStats.keyPressCounts)
+        return keyBreakdownDisplayCounts(from: displayCurrentStats().keyPressCounts)
             .sorted {
                 if $0.value != $1.value {
                     return $0.value > $1.value
@@ -1569,6 +1571,20 @@ extension StatsManager {
         let normalized = normalizedDailyStats(current)
         snapshot[dateFormatter.string(from: normalized.date)] = normalized
         return normalizedHistory(snapshot)
+    }
+
+    func displayCurrentStats() -> DailyStats {
+        statsStateLock.lock()
+        let local = currentStats
+        statsStateLock.unlock()
+        let syncState = SyncCoordinator.shared.state
+        guard syncState.isConfigured, !syncState.needsRepair else { return local }
+        let remote = RemoteShardCache.shared.snapshots(excludingDeviceId: syncState.deviceId)
+        return DisplayStatsAggregator.currentDay(
+            local: local,
+            remote: remote,
+            currentDeviceId: syncState.deviceId
+        )
     }
 
     private func displayHistorySnapshot() -> [String: DailyStats] {
