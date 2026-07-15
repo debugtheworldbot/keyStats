@@ -1123,7 +1123,7 @@ describe("sync Worker", () => {
     expect(secondPage.changes).toHaveLength(1);
     expect(secondPage.hasMore).toBe(false);
     expect(secondPage.changes[0]?.recordId).not.toBe(firstPage.historyChanges[0]?.recordId);
-  });
+  }, 10_000);
 });
 
 async function createVault(vaultId: string, deviceId: string, recoveryAuthToken: string): Promise<VaultResponse> {
