@@ -181,7 +181,7 @@ final class SyncCoordinator {
             }
         } else {
             scheduleIfNeeded()
-            Task { @MainActor [weak self] in await self?.refreshCloudStateIfNeeded() }
+            Task { @MainActor [weak self] in await self?.refreshCloudStateIfNeeded(force: true) }
         }
     }
 
@@ -1506,6 +1506,8 @@ final class SyncCoordinator {
                     self.pairingRefreshTask = nil
                     return
                 } catch SyncTransportError.conflict {
+                    attempt += 1
+                } catch SyncTransportError.singleDevice {
                     attempt += 1
                 } catch SyncCoordinatorError.syncInProgress {
                     attempt += 1
