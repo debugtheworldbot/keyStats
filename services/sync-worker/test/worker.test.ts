@@ -6,6 +6,7 @@ import { validateEnvelope } from "../src/crypto";
 import { hourlyRateLimitsEnabled, limits, type Env } from "../src/env";
 import { ApiError, readJson } from "../src/http";
 import type { EncryptedEnvelope, EncryptedRecord } from "../src/types";
+import { RequestValidationError, validator } from "../src/validation";
 
 const VAULT_A = "11111111-1111-4111-8111-111111111111";
 const DEVICE_A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
@@ -29,6 +30,28 @@ interface PairingResponse {
 }
 
 describe("sync Worker", () => {
+  it("only exposes expected request validation failures as client errors", () => {
+    let validationFailure: unknown;
+    try {
+      validator(() => {
+        throw new RequestValidationError("field is invalid");
+      });
+    } catch (error) {
+      validationFailure = error;
+    }
+    expect(validationFailure).toBeInstanceOf(ApiError);
+    expect(validationFailure).toMatchObject({
+      status: 400,
+      code: "invalid_request",
+    });
+    expect((validationFailure as ApiError).message).toBe("field is invalid");
+
+    const internalFailure = new Error("internal crypto detail");
+    expect(() => validator(() => {
+      throw internalFailure;
+    })).toThrow(internalFailure);
+  });
+
   it("supports disabling staging sync rate limits", async () => {
     const stagingEnv = {
       HOURLY_RATE_LIMITS_ENABLED: "false",

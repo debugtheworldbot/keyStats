@@ -29,6 +29,31 @@ enum SyncConfiguration {
               url.host?.hasSuffix(".workers.dev") == true else { return nil }
         return url
     }
+
+    @discardableResult
+    static func bind(configuredServiceURL: URL, to state: inout SyncPersistentState) -> Bool {
+        if state.isConfigured,
+           !state.serverBaseURL.isEmpty,
+           serviceIdentity(URL(string: state.serverBaseURL)) != serviceIdentity(configuredServiceURL) {
+            state.needsRepair = true
+            return false
+        }
+        state.serverBaseURL = configuredServiceURL.absoluteString
+        return true
+    }
+
+    private static func serviceIdentity(_ url: URL?) -> String? {
+        guard let url,
+              var components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let scheme = components.scheme,
+              let host = components.host else { return nil }
+        components.scheme = scheme.lowercased()
+        components.host = host.lowercased()
+        if components.path == "/" {
+            components.path = ""
+        }
+        return components.string
+    }
 }
 
 /// Random installation lineage used only to reclaim the same cloud device

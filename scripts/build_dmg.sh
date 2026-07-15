@@ -2,7 +2,7 @@
 
 # KeyStats DMG 打包脚本
 
-set -e
+set -eo pipefail
 
 # 配置
 APP_NAME="KeyStats"

@@ -18,6 +18,7 @@ import {
   requiredNonNegativeInteger,
   validateSyncReason,
   validator,
+  validatorAsync,
 } from "./validation";
 
 export const MAX_ARCHIVES_PER_SYNC = 16;
@@ -418,13 +419,4 @@ function rateLimitError(retryAt: number, now: number, message: string): ApiError
     "retry-after": String(Math.max(1, Math.ceil((retryAt - now) / 1_000))),
     "x-ratelimit-reset": isoTime(retryAt),
   });
-}
-
-async function validatorAsync<T>(operation: () => Promise<T>): Promise<T> {
-  try {
-    return await operation();
-  } catch (error) {
-    if (error instanceof ApiError) throw error;
-    throw new ApiError(400, "invalid_request", error instanceof Error ? error.message : "Request is invalid");
-  }
 }

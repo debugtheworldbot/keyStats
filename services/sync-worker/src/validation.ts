@@ -1,5 +1,7 @@
 import { ApiError } from "./http";
 
+export class RequestValidationError extends Error {}
+
 export function requiredString(
   value: unknown,
   field: string,
@@ -74,7 +76,22 @@ export function validator<T>(operation: () => T): T {
     return operation();
   } catch (error) {
     if (error instanceof ApiError) throw error;
-    throw new ApiError(400, "invalid_request", error instanceof Error ? error.message : "Request is invalid");
+    if (error instanceof RequestValidationError) {
+      throw new ApiError(400, "invalid_request", error.message);
+    }
+    throw error;
+  }
+}
+
+export async function validatorAsync<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    if (error instanceof RequestValidationError) {
+      throw new ApiError(400, "invalid_request", error.message);
+    }
+    throw error;
   }
 }
 

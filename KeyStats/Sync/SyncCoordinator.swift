@@ -89,6 +89,8 @@ final class SyncCoordinator {
     private let stateStore: SyncStateStore
     private let cache: RemoteShardCache
     private let credentialStore: SyncCredentialStore
+    private let buildServiceURL: URL?
+    private var serviceEnvironmentMismatch = false
     private var automaticTimer: Timer?
     private var stateRefreshTimer: Timer?
     private var appDidBecomeActiveObserver: NSObjectProtocol?
@@ -115,11 +117,13 @@ final class SyncCoordinator {
     init(
         stateStore: SyncStateStore = .shared,
         cache: RemoteShardCache = .shared,
-        credentialStore: SyncCredentialStore = .shared
+        credentialStore: SyncCredentialStore = .shared,
+        configuredServiceURL: URL? = SyncConfiguration.serverBaseURL
     ) {
         self.stateStore = stateStore
         self.cache = cache
         self.credentialStore = credentialStore
+        buildServiceURL = configuredServiceURL
         state = stateStore.load()
         if stateStore.loadError != nil {
             state.deviceId = SyncInstallationIdentity.current()
@@ -129,8 +133,11 @@ final class SyncCoordinator {
         state.deviceId = SyncInstallationIdentity.current(
             preferred: state.isConfigured ? state.deviceId : nil
         )
-        if let serviceURL = SyncConfiguration.serverBaseURL {
-            state.serverBaseURL = serviceURL.absoluteString
+        if let configuredServiceURL {
+            serviceEnvironmentMismatch = !SyncConfiguration.bind(
+                configuredServiceURL: configuredServiceURL,
+                to: &state
+            )
         }
         if cache.loadError != nil {
             state.cursor = 0
@@ -1538,7 +1545,8 @@ final class SyncCoordinator {
     private func configuredServiceURL() -> URL? {
         // The endpoint is a build-time trust decision. Never revive a staging
         // or user-edited URL solely from persisted state in another build.
-        SyncConfiguration.serverBaseURL
+        guard !serviceEnvironmentMismatch else { return nil }
+        return buildServiceURL
     }
 
     private func makeTransport() throws -> SyncTransport {
@@ -1624,8 +1632,9 @@ final class SyncCoordinator {
         pairingRefreshTask = nil
         try credentialStore.clear()
         try cache.clear()
-        let baseURL = configuredServiceURL()?.absoluteString ?? ""
+        let baseURL = buildServiceURL?.absoluteString ?? ""
         state = .fresh(serverBaseURL: baseURL)
+        serviceEnvironmentMismatch = false
         state.deviceId = rotateIdentity
             ? SyncInstallationIdentity.rotate()
             : SyncInstallationIdentity.current()

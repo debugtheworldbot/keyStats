@@ -543,6 +543,21 @@ final class SyncCoreTests: XCTestCase {
         XCTAssertThrowsError(try SyncJSON.decoder.decode(SyncPersistentState.self, from: data))
     }
 
+    func testConfiguredServiceURLDoesNotRetargetExistingVaultAcrossEnvironments() throws {
+        let productionURL = "https://keystats-sync.workers.dev"
+        var state = SyncPersistentState.fresh(serverBaseURL: productionURL)
+        state.vaultId = "11111111-1111-4111-8111-111111111111"
+
+        let didBind = SyncConfiguration.bind(
+            configuredServiceURL: try XCTUnwrap(URL(string: "https://keystats-sync-staging.workers.dev")),
+            to: &state
+        )
+
+        XCTAssertFalse(didBind)
+        XCTAssertTrue(state.needsRepair)
+        XCTAssertEqual(state.serverBaseURL, productionURL)
+    }
+
     func testAtomicCredentialBundleRejectsMismatchedVaultAndDeviceBindings() throws {
         let credentials = SyncStoredCredentials(
             vaultId: "11111111-1111-4111-8111-111111111111",
