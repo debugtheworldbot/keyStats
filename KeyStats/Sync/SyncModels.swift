@@ -4,6 +4,11 @@ enum SyncConstants {
     static let schemaVersion = 1
     static let maximumActiveDevices = 5
     static let minimumSuccessfulSyncInterval: TimeInterval = 60 * 60
+#if DEBUG
+    static let enforcesSuccessfulSyncRateLimits = false
+#else
+    static let enforcesSuccessfulSyncRateLimits = true
+#endif
     static let automaticSyncInterval: TimeInterval = 24 * 60 * 60
     static let maximumSuccessfulSyncsPerUTCDay = 8
     static let maximumAutomaticFailuresPerUTCDay = 3
@@ -469,27 +474,39 @@ enum SyncAvailability: Equatable {
 }
 
 enum SyncSchedulePolicy {
-    static func availability(state: SyncPersistentState, now: Date = Date()) -> SyncAvailability {
+    static func availability(
+        state: SyncPersistentState,
+        now: Date = Date(),
+        enforcesRateLimits: Bool = SyncConstants.enforcesSuccessfulSyncRateLimits
+    ) -> SyncAvailability {
         guard state.isConfigured else { return .notConfigured }
         guard state.activeDeviceCount >= 2 else { return .singleDevice }
-        let remaining = state.quotaUTCDay == utcDay(now)
-            ? state.remainingSuccessfulSyncsToday
-            : SyncConstants.maximumSuccessfulSyncsPerUTCDay
-        guard remaining > 0 else { return .dailyLimit }
-        if let next = state.nextAllowedSyncAt, next > now { return .coolingDown(until: next) }
-        if let last = state.lastSuccessfulSyncAt {
-            let next = last.addingTimeInterval(SyncConstants.minimumSuccessfulSyncInterval)
-            if next > now { return .coolingDown(until: next) }
+        if enforcesRateLimits {
+            let remaining = state.quotaUTCDay == utcDay(now)
+                ? state.remainingSuccessfulSyncsToday
+                : SyncConstants.maximumSuccessfulSyncsPerUTCDay
+            guard remaining > 0 else { return .dailyLimit }
+            if let next = state.nextAllowedSyncAt, next > now { return .coolingDown(until: next) }
+            if let last = state.lastSuccessfulSyncAt {
+                let next = last.addingTimeInterval(SyncConstants.minimumSuccessfulSyncInterval)
+                if next > now { return .coolingDown(until: next) }
+            }
         }
         return .available
     }
 
-    static func shouldScheduleAutomaticSync(state: SyncPersistentState, now: Date = Date()) -> Bool {
+    static func shouldScheduleAutomaticSync(
+        state: SyncPersistentState,
+        now: Date = Date(),
+        enforcesRateLimits: Bool = SyncConstants.enforcesSuccessfulSyncRateLimits
+    ) -> Bool {
         guard state.isConfigured, state.activeDeviceCount >= 2 else { return false }
-        let remaining = state.quotaUTCDay == utcDay(now)
-            ? state.remainingSuccessfulSyncsToday
-            : SyncConstants.maximumSuccessfulSyncsPerUTCDay
-        guard remaining > 0 else { return false }
+        if enforcesRateLimits {
+            let remaining = state.quotaUTCDay == utcDay(now)
+                ? state.remainingSuccessfulSyncsToday
+                : SyncConstants.maximumSuccessfulSyncsPerUTCDay
+            guard remaining > 0 else { return false }
+        }
         guard automaticFailureCount(state: state, now: now) < SyncConstants.maximumAutomaticFailuresPerUTCDay else {
             return false
         }

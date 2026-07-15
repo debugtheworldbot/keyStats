@@ -10,8 +10,8 @@ export interface ServiceLimits {
 
 export function limits(env: Env): ServiceLimits {
   return {
-    minimumSyncIntervalSeconds: boundedInteger(env.MIN_SYNC_INTERVAL_SECONDS, 3_600, 60, 86_400),
-    dailySyncLimit: boundedInteger(env.DAILY_SYNC_LIMIT, 8, 1, 100),
+    minimumSyncIntervalSeconds: boundedInteger(env.MIN_SYNC_INTERVAL_SECONDS, 3_600, 0, 86_400),
+    dailySyncLimit: boundedInteger(env.DAILY_SYNC_LIMIT, 8, 0, 100),
     // The D1 migration enforces this same product invariant at the write point
     // so concurrent recovery/pairing requests cannot race past the limit.
     maximumDevicesPerVault: 5,

@@ -203,12 +203,13 @@ async function isExemptReason(
 }
 
 function enforceOrdinaryLimits(device: DeviceRow, serviceLimits: ServiceLimits, now: number): void {
-  if (device.last_sync_at !== null) {
+  if (serviceLimits.minimumSyncIntervalSeconds > 0 && device.last_sync_at !== null) {
     const nextAllowed = device.last_sync_at + serviceLimits.minimumSyncIntervalSeconds * 1_000;
     if (now < nextAllowed) throw rateLimitError(nextAllowed, now, "The device sync cooldown has not elapsed");
   }
   const utcDay = new Date(now).toISOString().slice(0, 10);
-  if (device.sync_utc_day === utcDay && device.sync_count >= serviceLimits.dailySyncLimit) {
+  if (serviceLimits.dailySyncLimit > 0 &&
+      device.sync_utc_day === utcDay && device.sync_count >= serviceLimits.dailySyncLimit) {
     const nextDay = Date.parse(`${utcDay}T00:00:00.000Z`) + 24 * 60 * 60 * 1_000;
     throw rateLimitError(nextDay, now, "The daily sync limit has been reached");
   }
@@ -375,7 +376,7 @@ async function buildSyncResponse(
   let nextAllowed = ownDevice.last_sync_at === null
     ? now
     : ownDevice.last_sync_at + serviceLimits.minimumSyncIntervalSeconds * 1_000;
-  if (used >= serviceLimits.dailySyncLimit) {
+  if (serviceLimits.dailySyncLimit > 0 && used >= serviceLimits.dailySyncLimit) {
     nextAllowed = Math.max(nextAllowed, Date.parse(`${utcDay}T00:00:00.000Z`) + 24 * 60 * 60 * 1_000);
   }
   const currentSnapshots = devices.results
@@ -400,7 +401,9 @@ async function buildSyncResponse(
   return {
     serverTime: isoTime(now),
     nextAllowedSyncAt: isoTime(nextAllowed),
-    remainingDailySyncs: Math.max(0, serviceLimits.dailySyncLimit - used),
+    remainingDailySyncs: serviceLimits.dailySyncLimit > 0
+      ? Math.max(0, serviceLimits.dailySyncLimit - used)
+      : 0,
     activeDeviceCount: devices.results.length,
     currentSnapshots,
     historyChanges: history.changes,

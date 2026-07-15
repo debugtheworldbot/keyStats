@@ -261,7 +261,7 @@ final class SyncCoreTests: XCTestCase {
         state.activeDeviceCount = 2
         state.quotaUTCDay = SyncSchedulePolicy.utcDay(Date())
         state.remainingSuccessfulSyncsToday = 0
-        XCTAssertEqual(SyncSchedulePolicy.availability(state: state), .dailyLimit)
+        XCTAssertEqual(SyncSchedulePolicy.availability(state: state, enforcesRateLimits: true), .dailyLimit)
     }
 
     func testHourlyManualAndTwentyFourHourAutomaticSchedulePolicy() {
@@ -274,20 +274,58 @@ final class SyncCoreTests: XCTestCase {
         state.remainingSuccessfulSyncsToday = SyncConstants.maximumSuccessfulSyncsPerUTCDay
 
         state.lastSuccessfulSyncAt = now.addingTimeInterval(-3_599)
-        guard case .coolingDown = SyncSchedulePolicy.availability(state: state, now: now) else {
+        guard case .coolingDown = SyncSchedulePolicy.availability(
+            state: state,
+            now: now,
+            enforcesRateLimits: true
+        ) else {
             return XCTFail("Manual sync must remain unavailable for the full one-hour interval.")
         }
         state.lastSuccessfulSyncAt = now.addingTimeInterval(-3_600)
-        XCTAssertEqual(SyncSchedulePolicy.availability(state: state, now: now), .available)
+        XCTAssertEqual(SyncSchedulePolicy.availability(
+            state: state,
+            now: now,
+            enforcesRateLimits: true
+        ), .available)
 
         state.lastSuccessfulSyncAt = now.addingTimeInterval(-(24 * 60 * 60 - 1))
-        XCTAssertFalse(SyncSchedulePolicy.shouldScheduleAutomaticSync(state: state, now: now))
+        XCTAssertFalse(SyncSchedulePolicy.shouldScheduleAutomaticSync(
+            state: state,
+            now: now,
+            enforcesRateLimits: true
+        ))
         state.lastSuccessfulSyncAt = now.addingTimeInterval(-(24 * 60 * 60))
-        XCTAssertTrue(SyncSchedulePolicy.shouldScheduleAutomaticSync(state: state, now: now))
+        XCTAssertTrue(SyncSchedulePolicy.shouldScheduleAutomaticSync(
+            state: state,
+            now: now,
+            enforcesRateLimits: true
+        ))
 
         state.automaticFailureUTCDay = SyncSchedulePolicy.utcDay(now)
         state.automaticFailureCount = SyncConstants.maximumAutomaticFailuresPerUTCDay
-        XCTAssertFalse(SyncSchedulePolicy.shouldScheduleAutomaticSync(state: state, now: now))
+        XCTAssertFalse(SyncSchedulePolicy.shouldScheduleAutomaticSync(
+            state: state,
+            now: now,
+            enforcesRateLimits: true
+        ))
+    }
+
+    func testDebugSchedulePolicyIgnoresServerAndDailyRateLimits() {
+        let now = Date(timeIntervalSince1970: 1_783_944_000)
+        var state = SyncPersistentState.fresh(serverBaseURL: "https://sync.example.workers.dev")
+        state.vaultId = "vault"
+        state.deviceId = "device"
+        state.activeDeviceCount = 2
+        state.quotaUTCDay = SyncSchedulePolicy.utcDay(now)
+        state.remainingSuccessfulSyncsToday = 0
+        state.lastSuccessfulSyncAt = now
+        state.nextAllowedSyncAt = now.addingTimeInterval(60 * 60)
+
+        XCTAssertEqual(SyncSchedulePolicy.availability(
+            state: state,
+            now: now,
+            enforcesRateLimits: false
+        ), .available)
     }
 
     func testKeyCanonicalizationPreservesPlatformModifierSemantics() {

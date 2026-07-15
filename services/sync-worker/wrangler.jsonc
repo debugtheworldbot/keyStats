@@ -32,8 +32,8 @@
       "name": "keystats-sync-staging",
       "vars": {
         "SYNC_ENABLED": "true",
-        "MIN_SYNC_INTERVAL_SECONDS": "3600",
-        "DAILY_SYNC_LIMIT": "8"
+        "MIN_SYNC_INTERVAL_SECONDS": "0",
+        "DAILY_SYNC_LIMIT": "0"
       },
       "d1_databases": [
         {

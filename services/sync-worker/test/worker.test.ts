@@ -2,6 +2,7 @@ import { env, SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import { CLEANUP_SUBREQUEST_BUDGET, runCleanup } from "../src/cleanup";
 import { validateEnvelope } from "../src/crypto";
+import { limits, type Env } from "../src/env";
 import { ApiError, readJson } from "../src/http";
 import type { EncryptedEnvelope, EncryptedRecord } from "../src/types";
 
@@ -27,6 +28,16 @@ interface PairingResponse {
 }
 
 describe("sync Worker", () => {
+  it("supports disabling staging sync rate limits", () => {
+    const serviceLimits = limits({
+      MIN_SYNC_INTERVAL_SECONDS: "0",
+      DAILY_SYNC_LIMIT: "0",
+    } as unknown as Env);
+
+    expect(serviceLimits.minimumSyncIntervalSeconds).toBe(0);
+    expect(serviceLimits.dailySyncLimit).toBe(0);
+  });
+
   it("cancels an oversized streaming body before reading the remainder", async () => {
     let cancelled = false;
     const body = new ReadableStream<Uint8Array>({

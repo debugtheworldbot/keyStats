@@ -1303,7 +1303,9 @@ final class SyncCoordinator {
             target = retryAt
         } else if SyncSchedulePolicy.automaticFailureCount(state: state, now: now) >= SyncConstants.maximumAutomaticFailuresPerUTCDay {
             target = nextUTCMidnight(after: now).addingTimeInterval(stableJitter(for: nextUTCMidnight(after: now)))
-        } else if state.quotaUTCDay == SyncSchedulePolicy.utcDay(now), state.remainingSuccessfulSyncsToday <= 0 {
+        } else if SyncConstants.enforcesSuccessfulSyncRateLimits,
+                  state.quotaUTCDay == SyncSchedulePolicy.utcDay(now),
+                  state.remainingSuccessfulSyncsToday <= 0 {
             target = nextUTCMidnight(after: now).addingTimeInterval(stableJitter(for: nextUTCMidnight(after: now)))
         } else if let due = state.automaticDueAt {
             target = due
@@ -1316,7 +1318,9 @@ final class SyncCoordinator {
             try? stateStore.save(state)
             target = due
         }
-        let serverAllowed = state.nextAllowedSyncAt ?? .distantPast
+        let serverAllowed = SyncConstants.enforcesSuccessfulSyncRateLimits
+            ? state.nextAllowedSyncAt ?? .distantPast
+            : .distantPast
         let finalTarget = max(target, serverAllowed)
         automaticTimer = Timer.scheduledTimer(withTimeInterval: max(0.25, finalTarget.timeIntervalSince(now)), repeats: false) { [weak self] _ in
             Task { @MainActor [weak self] in

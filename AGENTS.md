@@ -99,6 +99,13 @@ Issue type?
 - ✅ Implement Codable for data structures needing persistence
 - ✅ Batch UI updates to reduce main thread blocking
 
+### 🟣 Automatic Commit Policy
+
+- ✅ After a feature or module is fully implemented and its relevant checks pass, automatically create an atomic Git commit without waiting for an additional user request
+- ✅ Before committing, inspect `git status` again and include only files changed for the completed feature or module
+- ✅ Do not automatically commit incomplete work, failed verification, or unrelated existing changes
+- ✅ Follow the repository's commit message and Git safety rules for every automatic commit
+
 ---
 
 ## Build & Development Commands
