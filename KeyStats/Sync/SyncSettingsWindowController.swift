@@ -490,12 +490,29 @@ private final class SyncSettingsViewController: NSViewController {
         field.isSelectable = true
         field.alignment = .center
         field.frame = NSRect(x: 0, y: 0, width: 390, height: 28)
+        field.addGestureRecognizer(
+            NSClickGestureRecognizer(target: self, action: #selector(copyRecoveryCode(_:)))
+        )
         alert.accessoryView = field
         alert.addButton(withTitle: NSLocalizedString("sync.recoveryCode.saved", comment: ""))
         if allowsCancel {
             alert.addButton(withTitle: NSLocalizedString("button.cancel", comment: ""))
         }
-        return alert.runModal() == .alertFirstButtonReturn
+        let confirmed = alert.runModal() == .alertFirstButtonReturn
+        if confirmed {
+            copyRecoveryCodeToPasteboard(code)
+        }
+        return confirmed
+    }
+
+    @objc private func copyRecoveryCode(_ sender: NSClickGestureRecognizer) {
+        guard let field = sender.view as? NSTextField else { return }
+        copyRecoveryCodeToPasteboard(field.stringValue)
+    }
+
+    private func copyRecoveryCodeToPasteboard(_ code: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(code, forType: .string)
     }
 
     private func confirmSafetyCode(_ code: String) -> Bool {
