@@ -447,19 +447,19 @@ enum SyncCrypto {
 
 enum SyncCryptoError: LocalizedError {
     case randomGenerationFailed(OSStatus)
-    case keychain(OSStatus)
+    case credentialStorage
     case missingCredentials
 
     var errorDescription: String? {
         switch self {
         case .randomGenerationFailed: return "Secure random generation failed."
-        case .keychain: return NSLocalizedString("sync.error.keychain", comment: "")
+        case .credentialStorage: return NSLocalizedString("sync.error.credentialStorage", comment: "")
         case .missingCredentials: return NSLocalizedString("sync.error.missingCredentials", comment: "")
         }
     }
 }
 
-struct SyncKeychainCredentials: Codable, Equatable {
+struct SyncStoredCredentials: Codable, Equatable {
     let schemaVersion: Int
     let vaultId: String
     let deviceId: String
@@ -474,7 +474,7 @@ struct SyncKeychainCredentials: Codable, Equatable {
         self.deviceToken = deviceToken
     }
 
-    func validated(vaultId expectedVaultId: String? = nil, deviceId expectedDeviceId: String? = nil) throws -> SyncKeychainCredentials {
+    func validated(vaultId expectedVaultId: String? = nil, deviceId expectedDeviceId: String? = nil) throws -> SyncStoredCredentials {
         guard schemaVersion == 1,
               !vaultId.isEmpty,
               !deviceId.isEmpty,
@@ -488,145 +488,49 @@ struct SyncKeychainCredentials: Codable, Equatable {
     }
 }
 
-final class SyncKeychain {
-    static let shared = SyncKeychain()
+final class SyncCredentialStore {
+    static let shared = SyncCredentialStore()
 
-    private let service = "com.keystats.app.sync.v1"
-    private let credentialsAccount = "credentials-v1"
-    private let recoverySeedAccount = "recovery-seed"
-    private let deviceTokenAccount = "device-token"
-    private let pendingPairingAccount = "pending-pairing-v1"
+    private let defaults: UserDefaults
+    private let credentialsKey = "sync.credentials.v1"
+    private let pendingPairingKey = "sync.pendingPairing.v1"
 
-    private init() {}
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+    }
 
-    func saveCredentials(_ credentials: SyncKeychainCredentials) throws {
+    func saveCredentials(_ credentials: SyncStoredCredentials) throws {
         _ = try credentials.validated()
-        try save(try SyncJSON.encoder.encode(credentials), account: credentialsAccount)
+        do {
+            defaults.set(try SyncJSON.encoder.encode(credentials), forKey: credentialsKey)
+        } catch {
+            throw SyncCryptoError.credentialStorage
+        }
     }
 
-    func credentials(vaultId: String? = nil, deviceId: String? = nil) throws -> SyncKeychainCredentials {
-        if let data = try read(account: credentialsAccount) {
-            let credentials = try SyncJSON.decoder.decode(SyncKeychainCredentials.self, from: data)
-            return try credentials.validated(vaultId: vaultId, deviceId: deviceId)
-        }
-
-        // One-time migration from the original two-item layout. The coordinator
-        // supplies the non-secret vault/device binding from durable state.
-        guard let vaultId, let deviceId,
-              let seed = try read(account: recoverySeedAccount), seed.count == 16,
-              let tokenData = try read(account: deviceTokenAccount),
-              let token = String(data: tokenData, encoding: .utf8) else {
+    func credentials(vaultId: String? = nil, deviceId: String? = nil) throws -> SyncStoredCredentials {
+        guard let data = defaults.data(forKey: credentialsKey),
+              let credentials = try? SyncJSON.decoder.decode(SyncStoredCredentials.self, from: data) else {
             throw SyncCryptoError.missingCredentials
         }
-        let migrated = try SyncKeychainCredentials(
-            vaultId: vaultId,
-            deviceId: deviceId,
-            recoverySeed: seed,
-            deviceToken: token
-        ).validated(vaultId: vaultId, deviceId: deviceId)
-        try saveCredentials(migrated)
-        try? delete(account: recoverySeedAccount)
-        try? delete(account: deviceTokenAccount)
-        return migrated
-    }
-
-    func saveRecoverySeed(_ seed: Data) throws {
-        try save(seed, account: recoverySeedAccount)
-    }
-
-    func recoverySeed() throws -> Data {
-        if let data = try read(account: credentialsAccount),
-           let credentials = try? SyncJSON.decoder.decode(SyncKeychainCredentials.self, from: data) {
-            return try credentials.validated().recoverySeed
-        }
-        guard let data = try read(account: recoverySeedAccount), data.count == 16 else {
-            throw SyncCryptoError.missingCredentials
-        }
-        return data
-    }
-
-    func saveDeviceToken(_ token: String) throws {
-        try save(Data(token.utf8), account: deviceTokenAccount)
-    }
-
-    func deviceToken() throws -> String {
-        if let data = try read(account: credentialsAccount),
-           let credentials = try? SyncJSON.decoder.decode(SyncKeychainCredentials.self, from: data) {
-            return try credentials.validated().deviceToken
-        }
-        guard let data = try read(account: deviceTokenAccount),
-              let token = String(data: data, encoding: .utf8), !token.isEmpty else {
-            throw SyncCryptoError.missingCredentials
-        }
-        return token
+        return try credentials.validated(vaultId: vaultId, deviceId: deviceId)
     }
 
     func clear() throws {
-        try delete(account: credentialsAccount)
-        try delete(account: recoverySeedAccount)
-        try delete(account: deviceTokenAccount)
-        try delete(account: pendingPairingAccount)
+        defaults.removeObject(forKey: credentialsKey)
+        defaults.removeObject(forKey: pendingPairingKey)
     }
 
     func savePendingPairing(_ data: Data) throws {
-        try save(data, account: pendingPairingAccount)
+        defaults.set(data, forKey: pendingPairingKey)
     }
 
     func pendingPairing() throws -> Data? {
-        try read(account: pendingPairingAccount)
+        defaults.data(forKey: pendingPairingKey)
     }
 
     func clearPendingPairing() throws {
-        try delete(account: pendingPairingAccount)
-    }
-
-    private func save(_ data: Data, account: String) throws {
-        let identity: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account
-        ]
-        let updateStatus = SecItemUpdate(
-            identity as CFDictionary,
-            [kSecValueData as String: data] as CFDictionary
-        )
-        if updateStatus == errSecSuccess { return }
-        guard updateStatus == errSecItemNotFound else { throw SyncCryptoError.keychain(updateStatus) }
-
-        var query = identity
-        query.merge([
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
-            kSecValueData as String: data
-        ]) { _, new in new }
-        let status = SecItemAdd(query as CFDictionary, nil)
-        guard status == errSecSuccess else { throw SyncCryptoError.keychain(status) }
-    }
-
-    private func read(account: String) throws -> Data? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne
-        ]
-        var result: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-        if status == errSecItemNotFound { return nil }
-        guard status == errSecSuccess else { throw SyncCryptoError.keychain(status) }
-        return result as? Data
-    }
-
-    private func delete(account: String) throws {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account
-        ]
-        let status = SecItemDelete(query as CFDictionary)
-        guard status == errSecSuccess || status == errSecItemNotFound else {
-            throw SyncCryptoError.keychain(status)
-        }
+        defaults.removeObject(forKey: pendingPairingKey)
     }
 }
 

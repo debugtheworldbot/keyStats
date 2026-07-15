@@ -88,7 +88,7 @@ final class SyncCoordinator {
 
     private let stateStore: SyncStateStore
     private let cache: RemoteShardCache
-    private let keychain: SyncKeychain
+    private let credentialStore: SyncCredentialStore
     private var automaticTimer: Timer?
     private var stateRefreshTimer: Timer?
     private var appDidBecomeActiveObserver: NSObjectProtocol?
@@ -114,11 +114,11 @@ final class SyncCoordinator {
     init(
         stateStore: SyncStateStore = .shared,
         cache: RemoteShardCache = .shared,
-        keychain: SyncKeychain = .shared
+        credentialStore: SyncCredentialStore = .shared
     ) {
         self.stateStore = stateStore
         self.cache = cache
-        self.keychain = keychain
+        self.credentialStore = credentialStore
         state = stateStore.load()
         if stateStore.loadError != nil {
             state.deviceId = SyncInstallationIdentity.current()
@@ -138,7 +138,7 @@ final class SyncCoordinator {
         if state.isConfigured {
             do {
                 guard let vaultId = state.vaultId else { throw SyncCryptoError.missingCredentials }
-                _ = try keychain.credentials(vaultId: vaultId, deviceId: state.deviceId)
+                _ = try credentialStore.credentials(vaultId: vaultId, deviceId: state.deviceId)
             } catch {
                 state.needsRepair = true
             }
@@ -199,7 +199,7 @@ final class SyncCoordinator {
             deviceId: deviceId,
             seed: seed
         )
-        try keychain.saveCredentials(SyncKeychainCredentials(
+        try credentialStore.saveCredentials(SyncStoredCredentials(
             vaultId: vaultId,
             deviceId: deviceId,
             recoverySeed: seed,
@@ -259,7 +259,7 @@ final class SyncCoordinator {
         let deviceId = knownDeviceId ?? SyncInstallationIdentity.current()
         let deviceToken = try SyncCrypto.makeDeviceToken(deviceId: deviceId)
         let provisionalVaultId = state.vaultId ?? "pending-recovery"
-        try keychain.saveCredentials(SyncKeychainCredentials(
+        try credentialStore.saveCredentials(SyncStoredCredentials(
             vaultId: provisionalVaultId,
             deviceId: deviceId,
             recoverySeed: seed,
@@ -297,7 +297,7 @@ final class SyncCoordinator {
               devices.count == SyncConstants.maximumActiveDevices else {
             throw SyncTransportError.invalidResponse
         }
-        let seed = try keychain.credentials(deviceId: state.deviceId).recoverySeed
+        let seed = try credentialStore.credentials(deviceId: state.deviceId).recoverySeed
         return devices.map { device in
             let profile = device.encryptedDeviceProfile.flatMap {
                 try? SyncCrypto.decryptDeviceProfile(
@@ -323,9 +323,9 @@ final class SyncCoordinator {
               !vaultId.isEmpty else {
             throw SyncCoordinatorError.notConfigured
         }
-        let existing = try keychain.credentials(deviceId: state.deviceId)
+        let existing = try credentialStore.credentials(deviceId: state.deviceId)
         let replacementToken = try SyncCrypto.makeDeviceToken(deviceId: option.deviceId)
-        try keychain.saveCredentials(SyncKeychainCredentials(
+        try credentialStore.saveCredentials(SyncStoredCredentials(
             vaultId: vaultId,
             deviceId: option.deviceId,
             recoverySeed: existing.recoverySeed,
@@ -359,7 +359,7 @@ final class SyncCoordinator {
         guard pending.kind != .create || pending.recoveryCodeConfirmed else {
             throw SyncCoordinatorError.notConfigured
         }
-        var credentials = try keychain.credentials(deviceId: state.deviceId)
+        var credentials = try credentialStore.credentials(deviceId: state.deviceId)
         let transport = try makeTransport()
 
         isSyncing = true
@@ -406,13 +406,13 @@ final class SyncCoordinator {
                     // concurrent recovery and must not create a duplicate device.
                     let freshDeviceId = SyncInstallationIdentity.rotate()
                     SyncInstallationIdentity.clearReplacementCandidate()
-                    let freshCredentials = SyncKeychainCredentials(
+                    let freshCredentials = SyncStoredCredentials(
                         vaultId: "pending-recovery",
                         deviceId: freshDeviceId,
                         recoverySeed: credentials.recoverySeed,
                         deviceToken: try SyncCrypto.makeDeviceToken(deviceId: freshDeviceId)
                     )
-                    try keychain.saveCredentials(freshCredentials)
+                    try credentialStore.saveCredentials(freshCredentials)
                     credentials = freshCredentials
                     recoveryPending.replaceDeviceId = nil
                     recoveryPending.reconcileAcceptedRecordsBeforePush = false
@@ -443,13 +443,13 @@ final class SyncCoordinator {
                       response.cursor >= 0 else {
                     throw SyncTransportError.invalidResponse
                 }
-                let bound = SyncKeychainCredentials(
+                let bound = SyncStoredCredentials(
                     vaultId: response.vaultId,
                     deviceId: state.deviceId,
                     recoverySeed: credentials.recoverySeed,
                     deviceToken: credentials.deviceToken
                 )
-                try keychain.saveCredentials(bound)
+                try credentialStore.saveCredentials(bound)
                 state.vaultId = response.vaultId
                 state.activeDeviceCount = response.activeDeviceCount
                 state.needsRepair = false
@@ -506,7 +506,7 @@ final class SyncCoordinator {
                 state.pendingProvisioning = nil
                 self.joiningPairing = nil
                 try persistAndNotify()
-                try keychain.clearPendingPairing()
+                try credentialStore.clearPendingPairing()
             }
         } catch {
             lastError = error
@@ -538,7 +538,7 @@ final class SyncCoordinator {
     @MainActor
     private func reconcileAcceptedRecords(
         currentSnapshot: EncryptedSyncRecordV1?,
-        credentials: SyncKeychainCredentials
+        credentials: SyncStoredCredentials
     ) async throws {
         guard let vaultId = state.vaultId else { throw SyncCoordinatorError.notConfigured }
         if state.cursor == 0 {
@@ -700,7 +700,7 @@ final class SyncCoordinator {
         guard safetyCodeConfirmed else { throw SyncCoordinatorError.pairingNotConfirmed }
         guard let pending = approvingPairing,
               let vaultId = state.vaultId else { throw SyncCoordinatorError.pairingNotStarted }
-        let credentials: SyncKeychainCredentials
+        let credentials: SyncStoredCredentials
         do {
             credentials = try boundCredentials()
         } catch {
@@ -807,7 +807,7 @@ final class SyncCoordinator {
             throw SyncTransportError.invalidResponse
         }
         let isIdentityTakeover = approval.replacedExistingDevice == true
-        try keychain.saveCredentials(SyncKeychainCredentials(
+        try credentialStore.saveCredentials(SyncStoredCredentials(
             vaultId: grant.vaultId,
             deviceId: pending.deviceId,
             recoverySeed: seed,
@@ -1379,7 +1379,7 @@ final class SyncCoordinator {
 
     private func validateAndApplyCloudState(
         _ response: SyncStateResponseV1,
-        credentials: SyncKeychainCredentials,
+        credentials: SyncStoredCredentials,
         applyCurrentSnapshots: Bool
     ) throws {
         guard let vaultId = state.vaultId,
@@ -1535,14 +1535,14 @@ final class SyncCoordinator {
         return CloudflareSyncTransport(baseURL: url)
     }
 
-    private func boundCredentials() throws -> SyncKeychainCredentials {
+    private func boundCredentials() throws -> SyncStoredCredentials {
         guard let vaultId = state.vaultId else { throw SyncCryptoError.missingCredentials }
-        return try keychain.credentials(vaultId: vaultId, deviceId: state.deviceId)
+        return try credentialStore.credentials(vaultId: vaultId, deviceId: state.deviceId)
     }
 
     private func persistJoiningPairing() throws {
         guard let joiningPairing else {
-            try keychain.clearPendingPairing()
+            try credentialStore.clearPendingPairing()
             return
         }
         let stored = StoredJoiningPairingState(
@@ -1553,19 +1553,19 @@ final class SyncCoordinator {
             expiresAt: joiningPairing.expiresAt,
             approvalResponse: joiningPairing.approvalResponse
         )
-        try keychain.savePendingPairing(try SyncJSON.encoder.encode(stored))
+        try credentialStore.savePendingPairing(try SyncJSON.encoder.encode(stored))
     }
 
     private func restorePendingPairingIfPossible() {
         do {
-            guard let data = try keychain.pendingPairing() else { return }
+            guard let data = try credentialStore.pendingPairing() else { return }
             if state.isConfigured, state.pendingProvisioning?.kind != .pairing {
-                try keychain.clearPendingPairing()
+                try credentialStore.clearPendingPairing()
                 return
             }
             let stored = try SyncJSON.decoder.decode(StoredJoiningPairingState.self, from: data)
             guard stored.expiresAt > Date(), stored.deviceId == state.deviceId else {
-                try keychain.clearPendingPairing()
+                try credentialStore.clearPendingPairing()
                 return
             }
             joiningPairing = JoiningPairingState(
@@ -1577,7 +1577,7 @@ final class SyncCoordinator {
                 approvalResponse: stored.approvalResponse
             )
         } catch {
-            try? keychain.clearPendingPairing()
+            try? credentialStore.clearPendingPairing()
             joiningPairing = nil
         }
     }
@@ -1611,7 +1611,7 @@ final class SyncCoordinator {
         stateRefreshTimer = nil
         pairingRefreshTask?.cancel()
         pairingRefreshTask = nil
-        try keychain.clear()
+        try credentialStore.clear()
         try cache.clear()
         let baseURL = configuredServiceURL()?.absoluteString ?? ""
         state = .fresh(serverBaseURL: baseURL)

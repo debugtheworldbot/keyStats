@@ -534,7 +534,7 @@ final class SyncCoreTests: XCTestCase {
     }
 
     func testAtomicCredentialBundleRejectsMismatchedVaultAndDeviceBindings() throws {
-        let credentials = SyncKeychainCredentials(
+        let credentials = SyncStoredCredentials(
             vaultId: "11111111-1111-4111-8111-111111111111",
             deviceId: "22222222-2222-4222-8222-222222222222",
             recoverySeed: Data(0..<16),
@@ -546,12 +546,40 @@ final class SyncCoreTests: XCTestCase {
         ))
         XCTAssertThrowsError(try credentials.validated(vaultId: "another-vault"))
         XCTAssertThrowsError(try credentials.validated(deviceId: "another-device"))
-        XCTAssertThrowsError(try SyncKeychainCredentials(
+        XCTAssertThrowsError(try SyncStoredCredentials(
             vaultId: credentials.vaultId,
             deviceId: credentials.deviceId,
             recoverySeed: credentials.recoverySeed,
             deviceToken: "33333333-3333-4333-8333-333333333333.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
         ).validated())
+    }
+
+    func testCredentialStorePersistsAndClearsUserDefaultsData() throws {
+        let suiteName = "keystats-sync-credentials-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let store = SyncCredentialStore(defaults: defaults)
+        let credentials = SyncStoredCredentials(
+            vaultId: "11111111-1111-4111-8111-111111111111",
+            deviceId: "22222222-2222-4222-8222-222222222222",
+            recoverySeed: Data(0..<16),
+            deviceToken: "22222222-2222-4222-8222-222222222222.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        )
+        let pendingPairing = Data([1, 2, 3])
+
+        try store.saveCredentials(credentials)
+        try store.savePendingPairing(pendingPairing)
+        XCTAssertEqual(try store.credentials(
+            vaultId: credentials.vaultId,
+            deviceId: credentials.deviceId
+        ), credentials)
+        XCTAssertEqual(try store.pendingPairing(), pendingPairing)
+
+        try store.clear()
+        XCTAssertThrowsError(try store.credentials())
+        XCTAssertNil(try store.pendingPairing())
     }
 
     func testAggregatedClickTotalsSaturateInsteadOfOverflowing() {

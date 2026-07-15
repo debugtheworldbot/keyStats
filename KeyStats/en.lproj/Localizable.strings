@@ -313,8 +313,8 @@
 "sync.error.revisionExhausted" = "The local sync revision cannot be increased.";
 "sync.error.invalidRecoveryCode" = "The recovery code is invalid or has a checksum error.";
 "sync.error.authenticationFailed" = "Encrypted data authentication failed. Re-pair or recover this device.";
-"sync.error.keychain" = "The sync credential could not be stored in Keychain.";
-"sync.error.missingCredentials" = "The Keychain sync credential is missing.";
+"sync.error.credentialStorage" = "The sync credential could not be stored locally.";
+"sync.error.missingCredentials" = "The locally stored sync credential is missing.";
 "sync.error.invalidConfiguration" = "The sync service configuration is invalid.";
 "sync.error.invalidResponse" = "The sync service returned an invalid response.";
 "sync.error.notFound" = "The sync group or pairing session was not found.";

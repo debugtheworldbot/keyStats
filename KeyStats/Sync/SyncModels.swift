@@ -351,8 +351,8 @@ struct SyncPersistentState: Codable, Equatable {
     /// Exact encrypted profile envelope retained until the final bootstrap
     /// response is accepted, so a lost response can be replayed byte-for-byte.
     var pendingEncryptedDeviceProfile: SyncEncryptedGrant?
-    /// Durable non-secret transaction metadata. Seed and token remain in one
-    /// atomically replaced Keychain credential bundle.
+    /// Durable non-secret transaction metadata. Seed and token remain bundled
+    /// in the local credential store.
     var pendingProvisioning: SyncPendingProvisioning?
     var pendingVaultDeletion: Bool
     var lastStateRefreshAt: Date?

@@ -313,8 +313,8 @@
 "sync.error.revisionExhausted" = "本地同步版本號已無法繼續增加。";
 "sync.error.invalidRecoveryCode" = "恢復碼無效或校驗碼錯誤。";
 "sync.error.authenticationFailed" = "密文認證失敗，請重新配對或恢復本設備。";
-"sync.error.keychain" = "無法在鑰匙串中保存同步憑證。";
-"sync.error.missingCredentials" = "鑰匙串中的同步憑證已丟失。";
+"sync.error.credentialStorage" = "無法在本機儲存同步憑證。";
+"sync.error.missingCredentials" = "本機同步憑證已遺失。";
 "sync.error.invalidConfiguration" = "同步服務配置無效。";
 "sync.error.invalidResponse" = "同步服務返回了無效響應。";
 "sync.error.notFound" = "找不到同步組或配對會話。";

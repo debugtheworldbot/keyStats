@@ -36,10 +36,9 @@ Pairing uses an ephemeral X25519 exchange. A new device displays a six-digit
 pairing code. Both devices must explicitly confirm the same safety code before
 the existing device releases an encrypted vault seed and new device token.
 
-macOS stores secrets in Keychain with
-`AfterFirstUnlockThisDeviceOnly`. Windows stores secrets with DPAPI
-`CurrentUser`. Secrets, IDs, key names, and counts are never analytics
-properties or log fields.
+macOS stores the credential bundle in the app's UserDefaults domain. Windows
+stores secrets with DPAPI `CurrentUser`. Secrets, IDs, key names, and counts are
+never analytics properties or log fields.
 
 ## Wire record
 
