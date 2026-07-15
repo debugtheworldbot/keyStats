@@ -358,5 +358,7 @@ public sealed class SyncStatusSnapshot
     public DateTime? LastSuccessfulSyncAtUtc { get; set; }
     public DateTime? NextAllowedSyncAtUtc { get; set; }
     public int RemainingDailySyncs { get; set; }
+    public int? SyncCompletedDays { get; set; }
+    public int? SyncTotalDays { get; set; }
     public string? LastError { get; set; }
 }

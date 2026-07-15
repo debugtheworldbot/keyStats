@@ -49,6 +49,7 @@ public sealed class SyncCoordinator : IDisposable
     private Timer? _stateRefreshTimer;
     private SyncState _state;
     private bool _isBusy;
+    private SyncProgress? _syncProgress;
     private string? _lastError;
     private bool _disposed;
 
@@ -384,6 +385,8 @@ public sealed class SyncCoordinator : IDisposable
                 LastSuccessfulSyncAtUtc = _state.LastSuccessfulSyncAtUtc,
                 NextAllowedSyncAtUtc = allowedAt,
                 RemainingDailySyncs = _state.RemainingDailySyncs,
+                SyncCompletedDays = _syncProgress?.CompletedDays,
+                SyncTotalDays = _syncProgress?.TotalDays,
                 LastError = _lastError
             };
         }
@@ -1563,6 +1566,13 @@ public sealed class SyncCoordinator : IDisposable
             var batches = SyncBatchPlanner.CreateBatches(
                 prepared.Request,
                 prepared.LastAcknowledgedCurrentSnapshot);
+            lock (_stateLock)
+            {
+                _syncProgress = new SyncProgress(
+                    batches.Sum(batch => batch.Archives.Count) +
+                    (batches.Count > 0 && batches[batches.Count - 1].CurrentSnapshot != null ? 1 : 0));
+            }
+            RaiseStatusChanged();
             SyncRequest? finalRequest = null;
             SyncResponse? finalResponse = null;
             foreach (var batch in batches)
@@ -1605,8 +1615,10 @@ public sealed class SyncCoordinator : IDisposable
                     lock (_stateLock)
                     {
                         CompletePreparedUploadsLocked(batch);
+                        _syncProgress?.Advance(batch.Archives.Count);
                         _stateStore.Save(_state);
                     }
+                    RaiseStatusChanged();
                     continue;
                 }
 
@@ -1630,6 +1642,8 @@ public sealed class SyncCoordinator : IDisposable
             lock (_stateLock)
             {
                 CompletePreparedUploadsLocked(finalRequest);
+                _syncProgress?.Advance(
+                    finalRequest.Archives.Count + (finalRequest.CurrentSnapshot != null ? 1 : 0));
                 _state.LastSuccessfulSyncAtUtc = NormalizeUtc(finalResponse.ServerTime);
                 _state.NextAllowedSyncAtUtc = NormalizeUtc(finalResponse.NextAllowedSyncAt);
                 _state.RemainingDailySyncs = Math.Max(0, finalResponse.RemainingDailySyncs);
@@ -1702,6 +1716,7 @@ public sealed class SyncCoordinator : IDisposable
         }
         finally
         {
+            lock (_stateLock) _syncProgress = null;
             SetBusy(false);
             _operationGate.Release();
         }

@@ -244,6 +244,8 @@
   <data name="Sync_RecoverButton" xml:space="preserve"><value>Recover</value></data>
   <data name="Sync_StatusTitle" xml:space="preserve"><value>Sync status</value></data>
   <data name="Sync_NowButton" xml:space="preserve"><value>Sync now</value></data>
+  <data name="Sync_InProgressStatus" xml:space="preserve"><value>Syncing encrypted data…</value></data>
+  <data name="Sync_ProgressFormat" xml:space="preserve"><value>Synced {0} of {1} days. Local tracking continues normally.</value></data>
   <data name="Sync_BootstrapPendingStatus" xml:space="preserve"><value>The initial encrypted history upload is incomplete.</value></data>
   <data name="Sync_RetryBootstrapButton" xml:space="preserve"><value>Retry setup</value></data>
   <data name="Sync_RepairRequired" xml:space="preserve"><value>The local sync configuration could not be opened safely. Creating a new vault is blocked. Recover or pair this device again, or clear only the local sync configuration. Local statistics are unchanged.</value></data>

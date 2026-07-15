@@ -85,7 +85,14 @@ public partial class SyncSettingsWindow : Window
 
         if (status.IsEnabled && !status.NeedsRepair)
         {
-            StatusTextBlock.Text = status.NeedsBootstrap
+            StatusTextBlock.Text = status.SyncTotalDays.HasValue
+                ? status.SyncTotalDays.Value > 0
+                    ? string.Format(
+                        KeyStats.Properties.Strings.Sync_ProgressFormat,
+                        status.SyncCompletedDays.GetValueOrDefault(),
+                        status.SyncTotalDays.Value)
+                    : KeyStats.Properties.Strings.Sync_InProgressStatus
+                : status.NeedsBootstrap
                 ? KeyStats.Properties.Strings.Sync_BootstrapPendingStatus
                 : status.ActiveDeviceCount < 2
                     ? KeyStats.Properties.Strings.Sync_SingleDeviceStatus

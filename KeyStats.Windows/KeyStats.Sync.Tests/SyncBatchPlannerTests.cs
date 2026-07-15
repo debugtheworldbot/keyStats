@@ -10,6 +10,18 @@ namespace KeyStats.Sync.Tests;
 [TestClass]
 public sealed class SyncBatchPlannerTests
 {
+    [TestMethod]
+    public void SyncProgress_AdvancesByDayAndStopsAtTotal()
+    {
+        var progress = new SyncProgress(18);
+
+        progress.Advance(16);
+        Assert.AreEqual(16, progress.CompletedDays);
+
+        progress.Advance(16);
+        Assert.AreEqual(18, progress.CompletedDays);
+    }
+
     [DataTestMethod]
     [DataRow(0, 1, "0")]
     [DataRow(16, 1, "16")]

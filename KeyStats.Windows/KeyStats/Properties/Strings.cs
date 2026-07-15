@@ -89,6 +89,8 @@ public static class Strings
     public static string Sync_RecoverButton => Get(nameof(Sync_RecoverButton));
     public static string Sync_StatusTitle => Get(nameof(Sync_StatusTitle));
     public static string Sync_NowButton => Get(nameof(Sync_NowButton));
+    public static string Sync_InProgressStatus => Get(nameof(Sync_InProgressStatus));
+    public static string Sync_ProgressFormat => Get(nameof(Sync_ProgressFormat));
     public static string Sync_BootstrapPendingStatus => Get(nameof(Sync_BootstrapPendingStatus));
     public static string Sync_RetryBootstrapButton => Get(nameof(Sync_RetryBootstrapButton));
     public static string Sync_RepairRequired => Get(nameof(Sync_RepairRequired));

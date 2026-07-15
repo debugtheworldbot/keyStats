@@ -244,6 +244,8 @@
   <data name="Sync_RecoverButton" xml:space="preserve"><value>恢復</value></data>
   <data name="Sync_StatusTitle" xml:space="preserve"><value>同步狀態</value></data>
   <data name="Sync_NowButton" xml:space="preserve"><value>立即同步</value></data>
+  <data name="Sync_InProgressStatus" xml:space="preserve"><value>正在同步加密數據…</value></data>
+  <data name="Sync_ProgressFormat" xml:space="preserve"><value>已同步 {0} / {1} 天，本地統計會繼續正常工作。</value></data>
   <data name="Sync_BootstrapPendingStatus" xml:space="preserve"><value>首次加密歷史上傳尚未完成。</value></data>
   <data name="Sync_RetryBootstrapButton" xml:space="preserve"><value>重試設定</value></data>
   <data name="Sync_RepairRequired" xml:space="preserve"><value>無法安全讀取本機同步設定，已禁止建立新的資料庫。請使用恢復碼或重新配對，也可以只清除本機同步設定。本機統計不會改變。</value></data>
