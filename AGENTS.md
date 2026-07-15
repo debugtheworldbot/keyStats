@@ -106,6 +106,12 @@ Issue type?
 - ✅ Do not automatically commit incomplete work, failed verification, or unrelated existing changes
 - ✅ Follow the repository's commit message and Git safety rules for every automatic commit
 
+### ☁️ Sync Worker Staging Deployment
+
+- ✅ After changing the staging sync service (`services/sync-worker/**`, `contracts/sync/v1/**`, or its staging workflow) and passing the relevant checks, deploy the staging Worker directly without waiting for additional confirmation
+- ✅ Apply pending staging D1 migrations before deploying, and always target the explicit `staging` Wrangler environment
+- ✅ Never deploy the production Worker without explicit user authorization in the current conversation
+
 ---
 
 ## Build & Development Commands
