@@ -97,6 +97,9 @@
 
 "history.total" = "總計: %@";
 "history.empty" = "無數據";
+"history.series.synced" = "同步彙總";
+"history.series.local" = "本機";
+"history.series.value" = "%@: %@";
 
 "button.reset" = "重置統計";
 "button.checkUpdates" = "立即更新";

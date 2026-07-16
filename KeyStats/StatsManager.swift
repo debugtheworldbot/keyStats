@@ -1368,6 +1368,13 @@ extension StatsManager {
         case scrollDistance
     }
 
+    typealias HistoryPoint = (date: Date, value: Double)
+
+    struct HistoryTrendSeries {
+        let display: [HistoryPoint]
+        let local: [HistoryPoint]?
+    }
+
     /// 键盘热力图可切换日期边界（按天连续切换）
     /// 起始日取「首次出现键盘数据」与今天之间的最早日期；若没有任何键盘数据则今天=起始日。
     func keyboardHeatmapDateBounds() -> (start: Date, end: Date) {
@@ -1409,12 +1416,43 @@ extension StatsManager {
         )
     }
     
-    func historySeries(range: HistoryRange, metric: HistoryMetric) -> [(date: Date, value: Double)] {
+    func historySeries(range: HistoryRange, metric: HistoryMetric) -> [HistoryPoint] {
+        historyTrendSeries(range: range, metric: metric).display
+    }
+
+    func historyTrendSeries(range: HistoryRange, metric: HistoryMetric) -> HistoryTrendSeries {
         let dates = datesInRange(range)
-        let displayHistory = displayHistorySnapshot()
+        let localHistory = localSyncHistorySnapshot()
+        let localSeries = makeHistorySeries(dates: dates, metric: metric, history: localHistory)
+        let syncState = SyncCoordinator.shared.state
+        guard syncState.isConfigured, !syncState.needsRepair else {
+            return HistoryTrendSeries(display: localSeries, local: nil)
+        }
+
+        let remote = RemoteShardCache.shared.snapshots(excludingDeviceId: syncState.deviceId)
+        guard !remote.isEmpty else {
+            return HistoryTrendSeries(display: localSeries, local: nil)
+        }
+
+        let displayHistory = DisplayStatsAggregator.aggregate(
+            local: localHistory,
+            remote: remote,
+            currentDeviceId: syncState.deviceId
+        )
+        return HistoryTrendSeries(
+            display: makeHistorySeries(dates: dates, metric: metric, history: displayHistory),
+            local: localSeries
+        )
+    }
+
+    private func makeHistorySeries(
+        dates: [Date],
+        metric: HistoryMetric,
+        history: [String: DailyStats]
+    ) -> [HistoryPoint] {
         return dates.map { date in
             let key = dateFormatter.string(from: date)
-            let stats = displayHistory[key] ?? DailyStats(date: date)
+            let stats = history[key] ?? DailyStats(date: date)
             return (date, metricValue(metric, for: stats))
         }
     }

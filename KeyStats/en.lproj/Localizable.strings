@@ -97,6 +97,9 @@
 
 "history.total" = "Total: %@";
 "history.empty" = "No Data";
+"history.series.synced" = "Synced total";
+"history.series.local" = "This Mac";
+"history.series.value" = "%@: %@";
 
 "button.reset" = "Reset Stats";
 "button.checkUpdates" = "Update Now";
