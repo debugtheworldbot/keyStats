@@ -7,7 +7,7 @@ English | [简体中文](./README_ZH.md)
 
 # KeyStats - macOS/Windows Keyboard & Mouse Statistics Menu Bar App
 
-KeyStats is a lightweight native menu bar application for macOS and Windows that tracks daily keyboard keystrokes, mouse clicks, mouse movement distance, and scroll distance.
+KeyStats is a lightweight native menu bar application for macOS and Windows that tracks daily keyboard keystrokes, mouse clicks, mouse movement distance, and scroll distance, with optional end-to-end encrypted multi-device sync.
 
 <img width="305" height="632" alt="image" src="https://github.com/user-attachments/assets/85c0b483-ad4a-458c-8bf4-c4f054b951bb" />
 
@@ -66,6 +66,7 @@ scoop install keystats
 - **Detailed Panel**: Click menu bar icon to view complete statistics
 - **Daily Auto-Reset**: Statistics automatically reset at midnight
 - **Data Persistence**: Data persists after application restart
+- **Multi-Device Sync**: End-to-end encrypted synchronization of supported daily keyboard and mouse-click statistics across paired devices
 
 ## System Requirements
 
@@ -108,12 +109,11 @@ The Windows version **requires no additional permission setup**. The app will au
 
 ## Privacy Statement
 
-KeyStats only tracks the **count** of keystrokes and clicks, and **does NOT record**:
-- Which specific keys were pressed
-- Text content that was typed
-- Specific click locations or applications
+KeyStats stores aggregate statistics and **does NOT record**:
+- Typed text or the order of keystrokes
+- Specific cursor or click locations
 
-All data is stored locally only and is never uploaded to any server.
+Data stays on the local device by default. When you explicitly enable multi-device sync, supported daily key-press totals, per-key/key-combination counts, mouse-button click counts, and encrypted device information are encrypted locally before upload. Mouse movement distance, scroll distance, and per-app statistics are not currently synced, and the service cannot read the encrypted statistics.
 
 ## Star History
 
