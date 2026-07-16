@@ -242,6 +242,14 @@
 "sync.window.title" = "設備同步";
 "sync.title" = "端到端加密同步";
 "sync.privacy.message" = "按鍵次數和點擊總數會先在本機加密再上傳。服務端無法讀取日期、鍵位或統計數值。";
+"sync.help.button" = "如何使用設備同步";
+"sync.help.title" = "如何使用設備同步";
+"sync.help.instructions" = "1. 在第一台設備上點擊“創建同步組”，並妥善保存恢復碼。\n\n2. 在新設備上點擊“配對本設備”，再到同步組內已有設備輸入六位配對碼；確認兩端安全碼一致後完成授權。\n\n3. 配對至少兩台設備後，可點擊“立即同步”。KeyStats 也會每日自動同步加密數據。\n\n如果所有已配對設備都無法使用，可通過恢復碼重新加入同步組。";
+"sync.help.statusTitle" = "狀態說明";
+"sync.help.status.synced" = "綠色 — 已同步";
+"sync.help.status.inactive" = "灰色 — 未開啓或尚未完成同步";
+"sync.help.status.syncing" = "黃色 — 同步中";
+"sync.help.status.failed" = "紅色 — 同步失敗或需要處理";
 "sync.action.manage" = "管理…";
 "sync.action.create" = "創建同步組";
 "sync.action.pairNewDevice" = "配對本設備";
@@ -263,6 +271,7 @@
 "sync.status.syncing" = "正在同步加密數據…";
 "sync.status.syncing.detail" = "同步期間本地統計會繼續正常工作。";
 "sync.status.syncing.progress" = "已同步 %d / %d 天，本地統計會繼續正常工作。";
+"sync.status.failed" = "同步失敗";
 "sync.status.off" = "同步未啓用";
 "sync.status.off.detail" = "可以創建同步組、恢復同步組或配對本設備。只有一台設備時不會發起普通同步請求。";
 "sync.status.singleDevice" = "只有一台設備，無需同步";

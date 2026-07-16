@@ -32,6 +32,7 @@ private final class SyncSettingsViewController: NSViewController {
     private let coordinator = SyncCoordinator.shared
     private var observer: NSObjectProtocol?
     private var contentStack: NSStackView!
+    private var statusIndicator: NSTextField!
     private var statusLabel: NSTextField!
     private var detailLabel: NSTextField!
     private var primaryActions: NSStackView!
@@ -45,6 +46,7 @@ private final class SyncSettingsViewController: NSViewController {
     private var manualSyncButton: NSButton!
     private var pairCodeField: NSTextField!
     private var refreshTimer: Timer?
+    private var helpPopover: NSPopover?
     private var isRunningOperation = false
 
     deinit {
@@ -92,7 +94,12 @@ private final class SyncSettingsViewController: NSViewController {
 
         let title = NSTextField(labelWithString: NSLocalizedString("sync.title", comment: ""))
         title.font = NSFont.systemFont(ofSize: 24, weight: .bold)
-        contentStack.addArrangedSubview(title)
+        let helpButton = makeHelpButton()
+        let titleRow = NSStackView(views: [title, helpButton])
+        titleRow.orientation = .horizontal
+        titleRow.alignment = .centerY
+        titleRow.spacing = 8
+        contentStack.addArrangedSubview(titleRow)
 
         let privacy = wrappingLabel("sync.privacy.message", color: .secondaryLabelColor)
         contentStack.addArrangedSubview(privacy)
@@ -100,10 +107,17 @@ private final class SyncSettingsViewController: NSViewController {
 
         let statusCard = makeCard()
         let statusStack = verticalStack(spacing: 6)
+        statusIndicator = NSTextField(labelWithString: "●")
+        statusIndicator.font = NSFont.systemFont(ofSize: 12, weight: .semibold)
+        statusIndicator.setAccessibilityElement(false)
         statusLabel = NSTextField(labelWithString: "")
         statusLabel.font = NSFont.systemFont(ofSize: 15, weight: .semibold)
+        let statusRow = NSStackView(views: [statusIndicator, statusLabel])
+        statusRow.orientation = .horizontal
+        statusRow.alignment = .centerY
+        statusRow.spacing = 8
         detailLabel = wrappingLabel(nil, color: .secondaryLabelColor)
-        statusStack.addArrangedSubview(statusLabel)
+        statusStack.addArrangedSubview(statusRow)
         statusStack.addArrangedSubview(detailLabel)
         pin(statusStack, in: statusCard)
         contentStack.addArrangedSubview(statusCard)
@@ -209,6 +223,7 @@ private final class SyncSettingsViewController: NSViewController {
 
     private func refreshStatusOnly() {
         if !coordinator.isServiceConfigured {
+            statusIndicator.textColor = .systemGray
             statusLabel.stringValue = NSLocalizedString("sync.status.serviceNotConfigured", comment: "")
             detailLabel.stringValue = NSLocalizedString("sync.status.serviceNotConfigured.detail", comment: "")
             primaryActions.isHidden = false
@@ -220,9 +235,11 @@ private final class SyncSettingsViewController: NSViewController {
         let state = coordinator.state
         forgetLocalButton.isHidden = !state.needsRepair
         if state.needsRepair {
+            statusIndicator.textColor = .systemRed
             statusLabel.stringValue = NSLocalizedString("sync.status.needsRepair", comment: "")
             detailLabel.stringValue = NSLocalizedString("sync.status.needsRepair.detail", comment: "")
         } else if coordinator.isSyncing {
+            statusIndicator.textColor = .systemYellow
             statusLabel.stringValue = NSLocalizedString("sync.status.syncing", comment: "")
             if let progress = coordinator.syncProgress, progress.totalDays > 0 {
                 detailLabel.stringValue = String(
@@ -233,17 +250,26 @@ private final class SyncSettingsViewController: NSViewController {
             } else {
                 detailLabel.stringValue = NSLocalizedString("sync.status.syncing.detail", comment: "")
             }
+        } else if coordinator.lastError != nil &&
+                    (coordinator.canRetryBootstrap || state.activeDeviceCount >= 2) {
+            statusIndicator.textColor = .systemRed
+            statusLabel.stringValue = NSLocalizedString("sync.status.failed", comment: "")
+            detailLabel.stringValue = coordinator.lastError?.localizedDescription ?? ""
         } else if !state.isConfigured {
+            statusIndicator.textColor = .systemGray
             statusLabel.stringValue = NSLocalizedString("sync.status.off", comment: "")
             detailLabel.stringValue = NSLocalizedString("sync.status.off.detail", comment: "")
         } else if state.activeDeviceCount < 2 {
+            statusIndicator.textColor = .systemGray
             statusLabel.stringValue = NSLocalizedString("sync.status.singleDevice", comment: "")
             detailLabel.stringValue = NSLocalizedString("sync.status.singleDevice.detail", comment: "")
         } else {
             statusLabel.stringValue = NSLocalizedString("sync.status.on", comment: "")
             if let last = state.lastSuccessfulSyncAt {
+                statusIndicator.textColor = .systemGreen
                 detailLabel.stringValue = String(format: NSLocalizedString("sync.status.lastSync", comment: ""), Self.relativeFormatter.localizedString(for: last, relativeTo: Date()))
             } else {
+                statusIndicator.textColor = .systemGray
                 detailLabel.stringValue = NSLocalizedString("sync.status.notYetSynced", comment: "")
             }
         }
@@ -573,7 +599,91 @@ private final class SyncSettingsViewController: NSViewController {
         alert.runModal()
     }
 
+    @objc private func showSyncHelp(_ sender: NSButton) {
+        if helpPopover?.isShown == true {
+            helpPopover?.close()
+            return
+        }
+
+        AppDelegate.trackClick("sync_help")
+        let popover = helpPopover ?? makeHelpPopover()
+        helpPopover = popover
+        popover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .maxY)
+        AppDelegate.trackPageView("sync_help")
+    }
+
     // MARK: - UI helpers
+
+    private func makeHelpButton() -> NSButton {
+        let description = NSLocalizedString("sync.help.button", comment: "")
+        let button: NSButton
+        if let image = NSImage(systemSymbolName: "questionmark.circle", accessibilityDescription: description) {
+            let configuration = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+            button = NSButton(image: image.withSymbolConfiguration(configuration) ?? image, target: self, action: #selector(showSyncHelp(_:)))
+            button.isBordered = false
+            button.imagePosition = .imageOnly
+            button.contentTintColor = .secondaryLabelColor
+        } else {
+            button = NSButton(title: "?", target: self, action: #selector(showSyncHelp(_:)))
+            button.bezelStyle = .circular
+        }
+        button.toolTip = description
+        button.setAccessibilityLabel(description)
+        return button
+    }
+
+    private func makeHelpPopover() -> NSPopover {
+        let contentView = NSView()
+        let stack = verticalStack(spacing: 12)
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(stack)
+
+        let title = NSTextField(labelWithString: NSLocalizedString("sync.help.title", comment: ""))
+        title.font = NSFont.systemFont(ofSize: 16, weight: .semibold)
+        stack.addArrangedSubview(title)
+
+        let instructions = wrappingLabel("sync.help.instructions", color: .labelColor)
+        instructions.font = NSFont.systemFont(ofSize: 13)
+        stack.addArrangedSubview(instructions)
+        instructions.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+
+        let statusTitle = NSTextField(labelWithString: NSLocalizedString("sync.help.statusTitle", comment: ""))
+        statusTitle.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
+        stack.addArrangedSubview(statusTitle)
+        stack.addArrangedSubview(statusLegendRow(color: .systemGreen, key: "sync.help.status.synced"))
+        stack.addArrangedSubview(statusLegendRow(color: .systemGray, key: "sync.help.status.inactive"))
+        stack.addArrangedSubview(statusLegendRow(color: .systemYellow, key: "sync.help.status.syncing"))
+        stack.addArrangedSubview(statusLegendRow(color: .systemRed, key: "sync.help.status.failed"))
+
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 18),
+            stack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 18),
+            stack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -18),
+            stack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -18)
+        ])
+
+        let controller = NSViewController()
+        controller.view = contentView
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.animates = true
+        popover.contentViewController = controller
+        popover.contentSize = NSSize(width: 400, height: 390)
+        return popover
+    }
+
+    private func statusLegendRow(color: NSColor, key: String) -> NSView {
+        let indicator = NSTextField(labelWithString: "●")
+        indicator.font = NSFont.systemFont(ofSize: 11, weight: .semibold)
+        indicator.textColor = color
+        indicator.setAccessibilityElement(false)
+        let label = NSTextField(labelWithString: NSLocalizedString(key, comment: ""))
+        let row = NSStackView(views: [indicator, label])
+        row.orientation = .horizontal
+        row.alignment = .centerY
+        row.spacing = 8
+        return row
+    }
 
     private func verticalStack(spacing: CGFloat) -> NSStackView {
         let stack = NSStackView()

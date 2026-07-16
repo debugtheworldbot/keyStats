@@ -242,6 +242,14 @@
 "sync.window.title" = "Device Sync";
 "sync.title" = "End-to-End Encrypted Sync";
 "sync.privacy.message" = "Key counts and click totals are encrypted on this Mac before upload. The service cannot read your dates, keys, or statistics.";
+"sync.help.button" = "How to use device sync";
+"sync.help.title" = "How to Use Device Sync";
+"sync.help.instructions" = "1. On the first device, click “Create Sync Group” and store the recovery code safely.\n\n2. On the new device, click “Pair This Device.” Enter its six-digit code on a device already in the group, then confirm the matching security code on both devices.\n\n3. After at least two devices are paired, click “Sync Now” when needed. KeyStats also syncs encrypted data daily.\n\nIf no paired device is available, use the recovery code to rejoin the sync group.";
+"sync.help.statusTitle" = "Status indicators";
+"sync.help.status.synced" = "Green — synced";
+"sync.help.status.inactive" = "Gray — sync is off or not completed yet";
+"sync.help.status.syncing" = "Yellow — syncing";
+"sync.help.status.failed" = "Red — sync failed or needs attention";
 "sync.action.manage" = "Manage…";
 "sync.action.create" = "Create Sync Group";
 "sync.action.pairNewDevice" = "Pair This Device";
@@ -263,6 +271,7 @@
 "sync.status.syncing" = "Syncing encrypted data…";
 "sync.status.syncing.detail" = "Local tracking continues while sync is in progress.";
 "sync.status.syncing.progress" = "Synced %d of %d days. Local tracking continues normally.";
+"sync.status.failed" = "Sync failed";
 "sync.status.off" = "Sync is off";
 "sync.status.off.detail" = "Create a group, recover one, or pair this device. A single device never makes ordinary sync requests.";
 "sync.status.singleDevice" = "Only one device — no sync needed";
