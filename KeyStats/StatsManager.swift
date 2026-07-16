@@ -1424,6 +1424,13 @@ extension StatsManager {
         let dates = datesInRange(range)
         let localHistory = localSyncHistorySnapshot()
         let localSeries = makeHistorySeries(dates: dates, metric: metric, history: localHistory)
+        switch metric {
+        case .mouseDistance, .scrollDistance:
+            return HistoryTrendSeries(display: localSeries, local: nil)
+        case .keyPresses, .clicks:
+            break
+        }
+
         let syncState = SyncCoordinator.shared.state
         guard syncState.isConfigured, !syncState.needsRepair else {
             return HistoryTrendSeries(display: localSeries, local: nil)
