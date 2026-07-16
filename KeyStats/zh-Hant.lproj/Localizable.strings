@@ -245,6 +245,9 @@
 "sync.help.button" = "如何使用設備同步";
 "sync.help.title" = "如何使用設備同步";
 "sync.help.instructions" = "1. 在第一台設備上點擊“創建同步組”，並妥善保存恢復碼。\n\n2. 在新設備上點擊“配對本設備”，再到同步組內已有設備輸入六位配對碼；確認兩端安全碼一致後完成授權。\n\n3. 配對至少兩台設備後，可點擊“立即同步”。KeyStats 也會每日自動同步加密數據。\n\n如果所有已配對設備都無法使用，可通過恢復碼重新加入同步組。";
+"sync.help.dataTitle" = "當前會同步的數據";
+"sync.help.dataIncluded" = "• 按天統計的按鍵總次數，以及各按鍵或組合鍵的累計次數\n• 按天統計的滑鼠左鍵、右鍵、中鍵、後退鍵和前進鍵點擊次數\n• 設備列表所需的加密設備名稱和平台";
+"sync.help.dataExcluded" = "不會同步：輸入內容或按鍵順序、滑鼠位置或移動距離、滾動距離、分應用統計。";
 "sync.help.statusTitle" = "狀態說明";
 "sync.help.status.synced" = "綠色 — 已同步";
 "sync.help.status.inactive" = "灰色 — 未開啓或尚未完成同步";

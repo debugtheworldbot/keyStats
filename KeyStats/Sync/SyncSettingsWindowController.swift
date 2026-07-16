@@ -647,6 +647,20 @@ private final class SyncSettingsViewController: NSViewController {
         stack.addArrangedSubview(instructions)
         instructions.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
 
+        let dataTitle = NSTextField(labelWithString: NSLocalizedString("sync.help.dataTitle", comment: ""))
+        dataTitle.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
+        stack.addArrangedSubview(dataTitle)
+
+        let includedData = wrappingLabel("sync.help.dataIncluded", color: .labelColor)
+        includedData.font = NSFont.systemFont(ofSize: 12.5)
+        stack.addArrangedSubview(includedData)
+        includedData.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+
+        let excludedData = wrappingLabel("sync.help.dataExcluded", color: .secondaryLabelColor)
+        excludedData.font = NSFont.systemFont(ofSize: 12.5)
+        stack.addArrangedSubview(excludedData)
+        excludedData.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+
         let statusTitle = NSTextField(labelWithString: NSLocalizedString("sync.help.statusTitle", comment: ""))
         statusTitle.font = NSFont.systemFont(ofSize: 13, weight: .semibold)
         stack.addArrangedSubview(statusTitle)
@@ -668,7 +682,7 @@ private final class SyncSettingsViewController: NSViewController {
         popover.behavior = .transient
         popover.animates = true
         popover.contentViewController = controller
-        popover.contentSize = NSSize(width: 400, height: 390)
+        popover.contentSize = NSSize(width: 400, height: 520)
         return popover
     }
 

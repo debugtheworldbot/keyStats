@@ -245,6 +245,9 @@
 "sync.help.button" = "如何使用设备同步";
 "sync.help.title" = "如何使用设备同步";
 "sync.help.instructions" = "1. 在第一台设备上点击“创建同步组”，并妥善保存恢复码。\n\n2. 在新设备上点击“配对本设备”，再到同步组内已有设备输入六位配对码；确认两端安全码一致后完成授权。\n\n3. 配对至少两台设备后，可点击“立即同步”。KeyStats 也会每日自动同步加密数据。\n\n如果所有已配对设备都无法使用，可通过恢复码重新加入同步组。";
+"sync.help.dataTitle" = "当前会同步的数据";
+"sync.help.dataIncluded" = "• 按天统计的按键总次数，以及各按键或组合键的累计次数\n• 按天统计的鼠标左键、右键、中键、后退键和前进键点击次数\n• 设备列表所需的加密设备名称和平台";
+"sync.help.dataExcluded" = "不会同步：输入内容或按键顺序、鼠标位置或移动距离、滚动距离、分应用统计。";
 "sync.help.statusTitle" = "状态说明";
 "sync.help.status.synced" = "绿色 — 已同步";
 "sync.help.status.inactive" = "灰色 — 未开启或尚未完成同步";

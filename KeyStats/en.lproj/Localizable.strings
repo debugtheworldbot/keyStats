@@ -245,6 +245,9 @@
 "sync.help.button" = "How to use device sync";
 "sync.help.title" = "How to Use Device Sync";
 "sync.help.instructions" = "1. On the first device, click “Create Sync Group” and store the recovery code safely.\n\n2. On the new device, click “Pair This Device.” Enter its six-digit code on a device already in the group, then confirm the matching security code on both devices.\n\n3. After at least two devices are paired, click “Sync Now” when needed. KeyStats also syncs encrypted data daily.\n\nIf no paired device is available, use the recovery code to rejoin the sync group.";
+"sync.help.dataTitle" = "What syncs now";
+"sync.help.dataIncluded" = "• Daily key-press totals and cumulative counts for each key or key combination\n• Daily left, right, middle, back, and forward mouse-button clicks\n• Encrypted device name and platform for the device list";
+"sync.help.dataExcluded" = "Not synced: typed content or key order, mouse position or movement distance, scroll distance, and per-app statistics.";
 "sync.help.statusTitle" = "Status indicators";
 "sync.help.status.synced" = "Green — synced";
 "sync.help.status.inactive" = "Gray — sync is off or not completed yet";
