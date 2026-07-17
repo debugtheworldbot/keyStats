@@ -682,7 +682,7 @@ private final class SyncSettingsViewController: NSViewController {
         popover.behavior = .transient
         popover.animates = true
         popover.contentViewController = controller
-        popover.contentSize = NSSize(width: 400, height: 520)
+        popover.contentSize = NSSize(width: 500, height: 520)
         return popover
     }
 
