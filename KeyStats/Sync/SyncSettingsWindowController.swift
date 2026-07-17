@@ -633,7 +633,9 @@ private final class SyncSettingsViewController: NSViewController {
     }
 
     private func makeHelpPopover() -> NSPopover {
+        let contentSize = NSSize(width: 500, height: 520)
         let contentView = NSView()
+        contentView.frame = NSRect(origin: .zero, size: contentSize)
         let stack = verticalStack(spacing: 12)
         stack.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(stack)
@@ -678,11 +680,12 @@ private final class SyncSettingsViewController: NSViewController {
 
         let controller = NSViewController()
         controller.view = contentView
+        controller.preferredContentSize = contentSize
         let popover = NSPopover()
         popover.behavior = .transient
         popover.animates = true
         popover.contentViewController = controller
-        popover.contentSize = NSSize(width: 500, height: 520)
+        popover.contentSize = contentSize
         return popover
     }
 
