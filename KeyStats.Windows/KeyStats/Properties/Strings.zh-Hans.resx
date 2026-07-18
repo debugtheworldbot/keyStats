@@ -246,6 +246,20 @@
   <data name="Sync_NowButton" xml:space="preserve"><value>立即同步</value></data>
   <data name="Sync_InProgressStatus" xml:space="preserve"><value>正在同步加密数据…</value></data>
   <data name="Sync_ProgressFormat" xml:space="preserve"><value>已同步 {0} / {1} 天，本地统计会继续正常工作。</value></data>
+  <data name="Sync_StatusServiceNotConfigured" xml:space="preserve"><value>同步服务尚未配置</value></data>
+  <data name="Sync_StatusServiceNotConfiguredDetail" xml:space="preserve"><value>当前构建未写入生产 workers.dev 地址，本地统计不受影响。</value></data>
+  <data name="Sync_StatusNeedsRepair" xml:space="preserve"><value>需要重新配对</value></data>
+  <data name="Sync_StatusNeedsRepairDetail" xml:space="preserve"><value>本地统计仍然安全。请使用恢复码或重新配对本设备。</value></data>
+  <data name="Sync_StatusSyncingDetail" xml:space="preserve"><value>同步期间本地统计会继续正常工作。</value></data>
+  <data name="Sync_StatusFailed" xml:space="preserve"><value>同步失败</value></data>
+  <data name="Sync_StatusOff" xml:space="preserve"><value>同步未启用</value></data>
+  <data name="Sync_StatusOffDetail" xml:space="preserve"><value>可以创建同步组、恢复同步组或配对本设备。只有一台设备时不会发起普通同步请求。</value></data>
+  <data name="Sync_StatusSingleDevice" xml:space="preserve"><value>只有一台设备，无需同步</value></data>
+  <data name="Sync_StatusSingleDeviceDetail" xml:space="preserve"><value>添加另一台设备后才会启用手动和每日同步。</value></data>
+  <data name="Sync_StatusOn" xml:space="preserve"><value>设备同步已开启</value></data>
+  <data name="Sync_StatusLastSyncFormat" xml:space="preserve"><value>上次同步于 {0}</value></data>
+  <data name="Sync_StatusNotYetSynced" xml:space="preserve"><value>尚未同步</value></data>
+  <data name="Sync_CooldownFormat" xml:space="preserve"><value>{0} 分钟</value></data>
   <data name="Sync_BootstrapPendingStatus" xml:space="preserve"><value>首次加密历史上传尚未完成。</value></data>
   <data name="Sync_RetryBootstrapButton" xml:space="preserve"><value>重试设置</value></data>
   <data name="Sync_RepairRequired" xml:space="preserve"><value>无法安全读取本机同步配置，已禁止创建新的资料库。请使用恢复码或重新配对，也可以只清除本机同步配置。本机统计不会改变。</value></data>

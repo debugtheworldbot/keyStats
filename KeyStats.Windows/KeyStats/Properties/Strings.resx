@@ -246,6 +246,20 @@
   <data name="Sync_NowButton" xml:space="preserve"><value>Sync now</value></data>
   <data name="Sync_InProgressStatus" xml:space="preserve"><value>Syncing encrypted data…</value></data>
   <data name="Sync_ProgressFormat" xml:space="preserve"><value>Synced {0} of {1} days. Local tracking continues normally.</value></data>
+  <data name="Sync_StatusServiceNotConfigured" xml:space="preserve"><value>Sync service is not configured</value></data>
+  <data name="Sync_StatusServiceNotConfiguredDetail" xml:space="preserve"><value>This build does not contain a production workers.dev endpoint. Local tracking continues normally.</value></data>
+  <data name="Sync_StatusNeedsRepair" xml:space="preserve"><value>Re-pairing required</value></data>
+  <data name="Sync_StatusNeedsRepairDetail" xml:space="preserve"><value>Local statistics are safe. Use your recovery code or pair this device again.</value></data>
+  <data name="Sync_StatusSyncingDetail" xml:space="preserve"><value>Local tracking continues while sync is in progress.</value></data>
+  <data name="Sync_StatusFailed" xml:space="preserve"><value>Sync failed</value></data>
+  <data name="Sync_StatusOff" xml:space="preserve"><value>Sync is off</value></data>
+  <data name="Sync_StatusOffDetail" xml:space="preserve"><value>Create a group, recover one, or pair this device. A single device never makes ordinary sync requests.</value></data>
+  <data name="Sync_StatusSingleDevice" xml:space="preserve"><value>Only one device — no sync needed</value></data>
+  <data name="Sync_StatusSingleDeviceDetail" xml:space="preserve"><value>Add another device to enable manual and daily sync.</value></data>
+  <data name="Sync_StatusOn" xml:space="preserve"><value>Device sync is on</value></data>
+  <data name="Sync_StatusLastSyncFormat" xml:space="preserve"><value>Last synced {0}</value></data>
+  <data name="Sync_StatusNotYetSynced" xml:space="preserve"><value>Not synced yet</value></data>
+  <data name="Sync_CooldownFormat" xml:space="preserve"><value>{0} min</value></data>
   <data name="Sync_BootstrapPendingStatus" xml:space="preserve"><value>The initial encrypted history upload is incomplete.</value></data>
   <data name="Sync_RetryBootstrapButton" xml:space="preserve"><value>Retry setup</value></data>
   <data name="Sync_RepairRequired" xml:space="preserve"><value>The local sync configuration could not be opened safely. Creating a new vault is blocked. Recover or pair this device again, or clear only the local sync configuration. Local statistics are unchanged.</value></data>

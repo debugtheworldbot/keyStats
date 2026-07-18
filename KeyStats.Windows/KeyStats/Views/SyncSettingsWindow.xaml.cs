@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using KeyStats.Helpers;
 using KeyStats.Models;
 using KeyStats.Services;
@@ -16,6 +17,10 @@ public partial class SyncSettingsWindow : Window
     private PairingSessionContext? _pairingContext;
     private bool _uiActionInFlight;
     private SyncCoordinator? Coordinator => App.CurrentApp?.SyncCoordinator;
+    private static readonly Brush StatusGrayBrush = new SolidColorBrush(Color.FromRgb(0x8A, 0x8A, 0x8A));
+    private static readonly Brush StatusGreenBrush = new SolidColorBrush(Color.FromRgb(0x1E, 0x9E, 0x4A));
+    private static readonly Brush StatusYellowBrush = new SolidColorBrush(Color.FromRgb(0xF9, 0xA8, 0x25));
+    private static readonly Brush StatusRedBrush = new SolidColorBrush(Color.FromRgb(0xC4, 0x2B, 0x1C));
 
     public SyncSettingsWindow()
     {
@@ -56,17 +61,22 @@ public partial class SyncSettingsWindow : Window
         {
             SetupPanel.Visibility = Visibility.Collapsed;
             EnabledPanel.Visibility = Visibility.Collapsed;
-            ServiceUnavailableCard.Visibility = Visibility.Visible;
+            RepairActionCard.Visibility = Visibility.Collapsed;
+            SyncNowButton.Visibility = Visibility.Collapsed;
+            SetStatus(
+                StatusGrayBrush,
+                KeyStats.Properties.Strings.Sync_StatusServiceNotConfigured,
+                KeyStats.Properties.Strings.Sync_StatusServiceNotConfiguredDetail);
             return;
         }
 
         var status = coordinator.GetStatus();
         var pendingSetup = status.NeedsBootstrap && (!status.IsEnabled || status.NeedsRepair);
         IsEnabled = !_uiActionInFlight && !status.IsBusy;
-        ServiceUnavailableCard.Visibility = status.IsServiceConfigured ? Visibility.Collapsed : Visibility.Visible;
-        RepairCard.Visibility = status.NeedsRepair ? Visibility.Visible : Visibility.Collapsed;
-        SetupRetryCard.Visibility = pendingSetup ? Visibility.Visible : Visibility.Collapsed;
-        SetupRetryButton.IsEnabled = status.CanRetryBootstrap;
+        RefreshStatusCard(status);
+        RepairActionCard.Visibility = status.IsServiceConfigured && (status.NeedsRepair || pendingSetup)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
         SetupPanel.Visibility = status.IsServiceConfigured && (!status.IsEnabled || status.NeedsRepair) &&
                                 !pendingSetup
             ? Visibility.Visible
@@ -75,37 +85,127 @@ public partial class SyncSettingsWindow : Window
         EnabledPanel.Visibility = status.IsEnabled && !status.NeedsRepair
             ? Visibility.Visible
             : Visibility.Collapsed;
-        SyncNowButton.IsEnabled = status.CanManualSync || status.CanRetryBootstrap;
-        SyncNowButton.Visibility = status.CanSync || status.CanRetryBootstrap
-            ? Visibility.Visible
-            : Visibility.Collapsed;
-        SyncNowButton.Content = status.CanRetryBootstrap
-            ? KeyStats.Properties.Strings.Sync_RetryBootstrapButton
-            : KeyStats.Properties.Strings.Sync_NowButton;
 
         if (status.IsEnabled && !status.NeedsRepair)
         {
-            StatusTextBlock.Text = status.SyncTotalDays.HasValue
-                ? status.SyncTotalDays.Value > 0
-                    ? string.Format(
-                        KeyStats.Properties.Strings.Sync_ProgressFormat,
-                        status.SyncCompletedDays.GetValueOrDefault(),
-                        status.SyncTotalDays.Value)
-                    : KeyStats.Properties.Strings.Sync_InProgressStatus
-                : status.NeedsBootstrap
-                ? KeyStats.Properties.Strings.Sync_BootstrapPendingStatus
-                : status.ActiveDeviceCount < 2
-                    ? KeyStats.Properties.Strings.Sync_SingleDeviceStatus
-                    : string.Format(KeyStats.Properties.Strings.Sync_DeviceCountFormat, status.ActiveDeviceCount);
-            LastSyncTextBlock.Text = status.LastSuccessfulSyncAtUtc.HasValue
-                ? string.Format(
-                    KeyStats.Properties.Strings.Sync_LastSuccessFormat,
-                    status.LastSuccessfulSyncAtUtc.Value.ToLocalTime().ToString("g", CultureInfo.CurrentCulture))
-                : KeyStats.Properties.Strings.Sync_NeverSynced;
             RebuildDeviceList(coordinator);
         }
 
         ErrorTextBlock.Text = status.LastError ?? string.Empty;
+    }
+
+    private void RefreshStatusCard(SyncStatusSnapshot status)
+    {
+        if (!status.IsServiceConfigured)
+        {
+            SetStatus(
+                StatusGrayBrush,
+                KeyStats.Properties.Strings.Sync_StatusServiceNotConfigured,
+                KeyStats.Properties.Strings.Sync_StatusServiceNotConfiguredDetail);
+        }
+        else if (status.NeedsRepair)
+        {
+            SetStatus(
+                StatusRedBrush,
+                KeyStats.Properties.Strings.Sync_StatusNeedsRepair,
+                KeyStats.Properties.Strings.Sync_StatusNeedsRepairDetail);
+        }
+        else if (status.IsBusy)
+        {
+            SetStatus(
+                StatusYellowBrush,
+                KeyStats.Properties.Strings.Sync_InProgressStatus,
+                BuildSyncingDetail(status));
+        }
+        else if (!string.IsNullOrWhiteSpace(status.LastError) &&
+                 (status.CanRetryBootstrap || status.ActiveDeviceCount >= 2))
+        {
+            SetStatus(
+                StatusRedBrush,
+                KeyStats.Properties.Strings.Sync_StatusFailed,
+                status.LastError ?? string.Empty);
+        }
+        else if (!status.IsEnabled)
+        {
+            SetStatus(
+                StatusGrayBrush,
+                KeyStats.Properties.Strings.Sync_StatusOff,
+                KeyStats.Properties.Strings.Sync_StatusOffDetail);
+        }
+        else if (status.ActiveDeviceCount < 2)
+        {
+            SetStatus(
+                StatusGrayBrush,
+                KeyStats.Properties.Strings.Sync_StatusSingleDevice,
+                KeyStats.Properties.Strings.Sync_StatusSingleDeviceDetail);
+        }
+        else if (status.LastSuccessfulSyncAtUtc.HasValue)
+        {
+            SetStatus(
+                StatusGreenBrush,
+                KeyStats.Properties.Strings.Sync_StatusOn,
+                string.Format(
+                    KeyStats.Properties.Strings.Sync_StatusLastSyncFormat,
+                    status.LastSuccessfulSyncAtUtc.Value.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)));
+        }
+        else
+        {
+            SetStatus(
+                StatusGrayBrush,
+                KeyStats.Properties.Strings.Sync_StatusOn,
+                KeyStats.Properties.Strings.Sync_StatusNotYetSynced);
+        }
+
+        RefreshManualSyncButton(status);
+    }
+
+    private void SetStatus(Brush indicatorBrush, string heading, string detail)
+    {
+        StatusIndicatorTextBlock.Foreground = indicatorBrush;
+        StatusHeadingTextBlock.Text = heading;
+        StatusDetailTextBlock.Text = detail;
+    }
+
+    private static string BuildSyncingDetail(SyncStatusSnapshot status)
+    {
+        if (status.SyncTotalDays.GetValueOrDefault() > 0)
+        {
+            return string.Format(
+                KeyStats.Properties.Strings.Sync_ProgressFormat,
+                status.SyncCompletedDays.GetValueOrDefault(),
+                status.SyncTotalDays.GetValueOrDefault());
+        }
+
+        return KeyStats.Properties.Strings.Sync_StatusSyncingDetail;
+    }
+
+    private void RefreshManualSyncButton(SyncStatusSnapshot status)
+    {
+        var shouldShow = status.IsServiceConfigured &&
+                         ((status.IsEnabled && !status.NeedsRepair) || status.CanRetryBootstrap);
+        SyncNowButton.Visibility = shouldShow ? Visibility.Visible : Visibility.Collapsed;
+        SyncNowButton.IsEnabled = !_uiActionInFlight &&
+                                  !status.IsBusy &&
+                                  (status.CanManualSync || status.CanRetryBootstrap);
+
+        if (status.CanRetryBootstrap)
+        {
+            SyncNowButton.Content = KeyStats.Properties.Strings.Sync_RetryBootstrapButton;
+        }
+        else if (status.CanSync &&
+                 !status.CanManualSync &&
+                 status.NextAllowedSyncAtUtc.HasValue &&
+                 status.NextAllowedSyncAtUtc.Value > DateTime.UtcNow)
+        {
+            var remaining = status.NextAllowedSyncAtUtc.Value - DateTime.UtcNow;
+            SyncNowButton.Content = string.Format(
+                KeyStats.Properties.Strings.Sync_CooldownFormat,
+                Math.Max(0, (int)Math.Ceiling(remaining.TotalMinutes)));
+        }
+        else
+        {
+            SyncNowButton.Content = KeyStats.Properties.Strings.Sync_NowButton;
+        }
     }
 
     private void RestorePendingPairingContext()
