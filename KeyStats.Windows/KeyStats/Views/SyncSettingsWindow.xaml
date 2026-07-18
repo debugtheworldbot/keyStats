@@ -132,11 +132,11 @@
                     </StackPanel>
                 </Border>
 
-                <StackPanel>
+                <StackPanel Orientation="Horizontal">
                     <Button Content="{x:Static p:Strings.Sync_LeaveButton}" Click="LeaveSync_Click"
                             Style="{DynamicResource DangerGhostButton}" HorizontalAlignment="Left"/>
                     <Button Content="{x:Static p:Strings.Sync_DeleteVaultButton}" Click="DeleteVault_Click"
-                            Style="{DynamicResource DangerGhostButton}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+                            Style="{DynamicResource DangerGhostButton}" HorizontalAlignment="Left" Margin="8,0,0,0"/>
                 </StackPanel>
             </StackPanel>
 
