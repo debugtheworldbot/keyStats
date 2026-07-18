@@ -92,6 +92,10 @@ public sealed class ThemeManager : IDisposable
         SetColor(res, "DividerColor", "#E5E5E5");
         SetColor(res, "SubtleFillColor", "#A8FFFFFF");
         SetColor(res, "SubtleHoverColor", "#12000000");
+        SetColor(res, "SuccessColor", "#1E9E4A");
+        SetColor(res, "WarningColor", "#F9A825");
+        SetColor(res, "DangerColor", "#C42B1C");
+        SetColor(res, "StatusNeutralColor", "#8A8A8A");
 
         SetBrush(res, "AccentBrush", "#0067C0");
         SetBrush(res, "AccentLightBrush", "#60CDFF");
@@ -106,6 +110,10 @@ public sealed class ThemeManager : IDisposable
         SetBrush(res, "DividerBrush", "#E5E5E5");
         SetBrush(res, "SubtleFillBrush", "#A8FFFFFF");
         SetBrush(res, "SubtleHoverBrush", "#12000000");
+        SetBrush(res, "SuccessBrush", "#1E9E4A");
+        SetBrush(res, "WarningBrush", "#F9A825");
+        SetBrush(res, "DangerBrush", "#C42B1C");
+        SetBrush(res, "StatusNeutralBrush", "#8A8A8A");
         SetBrush(res, "ChartLineBrush", "#0067C0");
         SetBrush(res, "ChartFillBrush", "#200067C0");
         SetBrush(res, "AppStatsKeysBrush", "#0067C0");
@@ -132,6 +140,10 @@ public sealed class ThemeManager : IDisposable
         SetColor(res, "DividerColor", "#3D3D3D");
         SetColor(res, "SubtleFillColor", "#90161616");
         SetColor(res, "SubtleHoverColor", "#15FFFFFF");
+        SetColor(res, "SuccessColor", "#49C779");
+        SetColor(res, "WarningColor", "#FFB24A");
+        SetColor(res, "DangerColor", "#FF6B5F");
+        SetColor(res, "StatusNeutralColor", "#8A8A8A");
 
         SetBrush(res, "AccentBrush", "#0078D4");
         SetBrush(res, "AccentLightBrush", "#60CDFF");
@@ -146,6 +158,10 @@ public sealed class ThemeManager : IDisposable
         SetBrush(res, "DividerBrush", "#3D3D3D");
         SetBrush(res, "SubtleFillBrush", "#90161616");
         SetBrush(res, "SubtleHoverBrush", "#15FFFFFF");
+        SetBrush(res, "SuccessBrush", "#49C779");
+        SetBrush(res, "WarningBrush", "#FFB24A");
+        SetBrush(res, "DangerBrush", "#FF6B5F");
+        SetBrush(res, "StatusNeutralBrush", "#8A8A8A");
         SetBrush(res, "ChartLineBrush", "#0078D4");
         SetBrush(res, "ChartFillBrush", "#200078D4");
         SetBrush(res, "AppStatsKeysBrush", "#2AA3FF");

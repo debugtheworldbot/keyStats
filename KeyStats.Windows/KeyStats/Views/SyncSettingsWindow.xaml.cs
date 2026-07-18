@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using KeyStats.Helpers;
 using KeyStats.Models;
 using KeyStats.Services;
@@ -17,10 +16,6 @@ public partial class SyncSettingsWindow : Window
     private PairingSessionContext? _pairingContext;
     private bool _uiActionInFlight;
     private SyncCoordinator? Coordinator => App.CurrentApp?.SyncCoordinator;
-    private static readonly Brush StatusGrayBrush = new SolidColorBrush(Color.FromRgb(0x8A, 0x8A, 0x8A));
-    private static readonly Brush StatusGreenBrush = new SolidColorBrush(Color.FromRgb(0x1E, 0x9E, 0x4A));
-    private static readonly Brush StatusYellowBrush = new SolidColorBrush(Color.FromRgb(0xF9, 0xA8, 0x25));
-    private static readonly Brush StatusRedBrush = new SolidColorBrush(Color.FromRgb(0xC4, 0x2B, 0x1C));
 
     public SyncSettingsWindow()
     {
@@ -64,7 +59,7 @@ public partial class SyncSettingsWindow : Window
             RepairActionCard.Visibility = Visibility.Collapsed;
             SyncNowButton.Visibility = Visibility.Collapsed;
             SetStatus(
-                StatusGrayBrush,
+                "StatusNeutralBrush",
                 KeyStats.Properties.Strings.Sync_StatusServiceNotConfigured,
                 KeyStats.Properties.Strings.Sync_StatusServiceNotConfiguredDetail);
             return;
@@ -99,21 +94,21 @@ public partial class SyncSettingsWindow : Window
         if (!status.IsServiceConfigured)
         {
             SetStatus(
-                StatusGrayBrush,
+                "StatusNeutralBrush",
                 KeyStats.Properties.Strings.Sync_StatusServiceNotConfigured,
                 KeyStats.Properties.Strings.Sync_StatusServiceNotConfiguredDetail);
         }
         else if (status.NeedsRepair)
         {
             SetStatus(
-                StatusRedBrush,
+                "DangerBrush",
                 KeyStats.Properties.Strings.Sync_StatusNeedsRepair,
                 KeyStats.Properties.Strings.Sync_StatusNeedsRepairDetail);
         }
         else if (status.IsBusy)
         {
             SetStatus(
-                StatusYellowBrush,
+                "WarningBrush",
                 KeyStats.Properties.Strings.Sync_InProgressStatus,
                 BuildSyncingDetail(status));
         }
@@ -121,28 +116,28 @@ public partial class SyncSettingsWindow : Window
                  (status.CanRetryBootstrap || status.ActiveDeviceCount >= 2))
         {
             SetStatus(
-                StatusRedBrush,
+                "DangerBrush",
                 KeyStats.Properties.Strings.Sync_StatusFailed,
                 status.LastError ?? string.Empty);
         }
         else if (!status.IsEnabled)
         {
             SetStatus(
-                StatusGrayBrush,
+                "StatusNeutralBrush",
                 KeyStats.Properties.Strings.Sync_StatusOff,
                 KeyStats.Properties.Strings.Sync_StatusOffDetail);
         }
         else if (status.ActiveDeviceCount < 2)
         {
             SetStatus(
-                StatusGrayBrush,
+                "StatusNeutralBrush",
                 KeyStats.Properties.Strings.Sync_StatusSingleDevice,
                 KeyStats.Properties.Strings.Sync_StatusSingleDeviceDetail);
         }
         else if (status.LastSuccessfulSyncAtUtc.HasValue)
         {
             SetStatus(
-                StatusGreenBrush,
+                "SuccessBrush",
                 KeyStats.Properties.Strings.Sync_StatusOn,
                 string.Format(
                     KeyStats.Properties.Strings.Sync_StatusLastSyncFormat,
@@ -151,7 +146,7 @@ public partial class SyncSettingsWindow : Window
         else
         {
             SetStatus(
-                StatusGrayBrush,
+                "StatusNeutralBrush",
                 KeyStats.Properties.Strings.Sync_StatusOn,
                 KeyStats.Properties.Strings.Sync_StatusNotYetSynced);
         }
@@ -159,9 +154,9 @@ public partial class SyncSettingsWindow : Window
         RefreshManualSyncButton(status);
     }
 
-    private void SetStatus(Brush indicatorBrush, string heading, string detail)
+    private void SetStatus(string indicatorBrushKey, string heading, string detail)
     {
-        StatusIndicatorTextBlock.Foreground = indicatorBrush;
+        StatusIndicatorTextBlock.SetResourceReference(TextBlock.ForegroundProperty, indicatorBrushKey);
         StatusHeadingTextBlock.Text = heading;
         StatusDetailTextBlock.Text = detail;
     }
@@ -253,6 +248,7 @@ public partial class SyncSettingsWindow : Window
                     Margin = new Thickness(8, 0, 0, 0),
                     MinWidth = 68
                 };
+                revokeButton.Style = TryFindResource("DangerGhostButton") as Style;
                 revokeButton.Click += RevokeDevice_Click;
                 Grid.SetColumn(revokeButton, 1);
                 row.Children.Add(revokeButton);
