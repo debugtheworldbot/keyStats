@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Shapes;
 using KeyStats.Helpers;
 using KeyStats.Models;
 using KeyStats.Services;
@@ -156,7 +157,7 @@ public partial class SyncSettingsWindow : Window
 
     private void SetStatus(string indicatorBrushKey, string heading, string detail)
     {
-        StatusIndicatorTextBlock.SetResourceReference(TextBlock.ForegroundProperty, indicatorBrushKey);
+        StatusIndicatorEllipse.SetResourceReference(Ellipse.FillProperty, indicatorBrushKey);
         StatusHeadingTextBlock.Text = heading;
         StatusDetailTextBlock.Text = detail;
     }

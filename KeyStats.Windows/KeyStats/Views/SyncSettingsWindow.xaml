@@ -26,14 +26,11 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <Border Grid.Column="0"
-                            Width="28" Height="28" CornerRadius="6"
-                            Background="{DynamicResource SubtleFillBrush}"
-                            Margin="0,0,10,0" VerticalAlignment="Top">
-                        <TextBlock x:Name="StatusIndicatorTextBlock"
-                                   Text="&#x25CF;" FontSize="12" FontWeight="SemiBold"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
+                    <Ellipse x:Name="StatusIndicatorEllipse"
+                             Grid.Column="0"
+                             Width="18" Height="18"
+                             Margin="0,3,12,0"
+                             VerticalAlignment="Top"/>
                     <StackPanel Grid.Column="1">
                         <TextBlock x:Name="StatusHeadingTextBlock" Style="{DynamicResource CardTitleText}"
                                    TextWrapping="Wrap"/>
