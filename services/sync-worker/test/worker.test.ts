@@ -5,6 +5,7 @@ import { CLEANUP_SUBREQUEST_BUDGET, runCleanup } from "../src/cleanup";
 import { validateEnvelope } from "../src/crypto";
 import { hourlyRateLimitsEnabled, limits, type Env } from "../src/env";
 import { ApiError, readJson } from "../src/http";
+import { remainingDailySyncs } from "../src/sync";
 import type { EncryptedEnvelope, EncryptedRecord } from "../src/types";
 import { RequestValidationError, validator } from "../src/validation";
 
@@ -63,6 +64,8 @@ describe("sync Worker", () => {
     expect(hourlyRateLimitsEnabled(stagingEnv)).toBe(false);
     expect(serviceLimits.minimumSyncIntervalSeconds).toBe(0);
     expect(serviceLimits.dailySyncLimit).toBe(0);
+    expect(remainingDailySyncs(serviceLimits, 0)).toBe(8);
+    expect(remainingDailySyncs(serviceLimits, 20)).toBe(8);
     await expect(enforceHourlyLimit(
       new Request("https://sync.test/v1/pairing-sessions"),
       stagingEnv,

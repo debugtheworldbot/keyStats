@@ -23,6 +23,15 @@ import {
 
 export const MAX_ARCHIVES_PER_SYNC = 16;
 export const MAX_EXEMPT_SYNC_PAGES = 256;
+export const MAX_REPORTED_DAILY_SYNCS = 8;
+
+export function remainingDailySyncs(serviceLimits: ServiceLimits, used: number): number {
+  if (serviceLimits.dailySyncLimit === 0) return MAX_REPORTED_DAILY_SYNCS;
+  return Math.min(
+    MAX_REPORTED_DAILY_SYNCS,
+    Math.max(0, serviceLimits.dailySyncLimit - used),
+  );
+}
 
 interface ParsedSyncRequest {
   reason: "manual" | "automatic" | "bootstrap" | "pairing" | "recovery";
@@ -402,9 +411,7 @@ async function buildSyncResponse(
   return {
     serverTime: isoTime(now),
     nextAllowedSyncAt: isoTime(nextAllowed),
-    remainingDailySyncs: serviceLimits.dailySyncLimit > 0
-      ? Math.max(0, serviceLimits.dailySyncLimit - used)
-      : 0,
+    remainingDailySyncs: remainingDailySyncs(serviceLimits, used),
     activeDeviceCount: devices.results.length,
     currentSnapshots,
     historyChanges: history.changes,
