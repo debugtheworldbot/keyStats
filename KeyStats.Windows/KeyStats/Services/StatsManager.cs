@@ -1454,20 +1454,22 @@ public class StatsManager : IDisposable
 
     private DailyStats GetDailyStats(DateTime date)
     {
-        DailyStats local;
-        if (date.Date == CurrentStats.Date.Date)
-        {
-            local = CurrentStats;
-        }
-        else
-        {
-            var key = date.ToString("yyyy-MM-dd");
-            local = History.TryGetValue(key, out var stats) ? stats : new DailyStats(date);
-        }
+        var local = GetLocalDailyStats(date);
 
         return _displayStatsAggregator != null && _isSyncEnabledProvider?.Invoke() == true
             ? _displayStatsAggregator.Aggregate(date.Date, local)
             : local;
+    }
+
+    private DailyStats GetLocalDailyStats(DateTime date)
+    {
+        if (date.Date == CurrentStats.Date.Date)
+        {
+            return CurrentStats;
+        }
+
+        var key = date.ToString("yyyy-MM-dd");
+        return History.TryGetValue(key, out var stats) ? stats : new DailyStats(date);
     }
 
     private static Dictionary<string, int> AggregateKeyboardHeatmapCounts(Dictionary<string, int> keyPressCounts)
@@ -1737,16 +1739,55 @@ public class StatsManager : IDisposable
     public enum HistoryMetric { KeyPresses, Clicks, MouseDistance, ScrollDistance }
     public enum KeyHistoryRange { Today, Week, Month, All }
 
+    public sealed class HistoryTrendSeries
+    {
+        public HistoryTrendSeries(
+            List<(DateTime Date, double Value)> display,
+            List<(DateTime Date, double Value)>? local)
+        {
+            Display = display;
+            Local = local;
+        }
+
+        public List<(DateTime Date, double Value)> Display { get; }
+        public List<(DateTime Date, double Value)>? Local { get; }
+    }
+
     public List<(DateTime Date, double Value)> GetHistorySeries(HistoryRange range, HistoryMetric metric)
+    {
+        return GetHistoryTrendSeries(range, metric).Display;
+    }
+
+    public HistoryTrendSeries GetHistoryTrendSeries(HistoryRange range, HistoryMetric metric)
     {
         var dates = GetDatesInRange(range);
         lock (_lock)
         {
-            return dates.Select(date =>
+            var localSeries = dates
+                .Select(date =>
+                {
+                    var stats = GetLocalDailyStats(date);
+                    return (date, GetMetricValue(metric, stats));
+                })
+                .ToList();
+
+            if (metric is HistoryMetric.MouseDistance or HistoryMetric.ScrollDistance ||
+                _displayStatsAggregator == null ||
+                _isSyncEnabledProvider?.Invoke() != true ||
+                !_displayStatsAggregator.GetRemoteDays().Any())
             {
-                var stats = GetDailyStats(date);
-                return (date, GetMetricValue(metric, stats));
-            }).ToList();
+                return new HistoryTrendSeries(localSeries, null);
+            }
+
+            var displaySeries = dates
+                .Select(date =>
+                {
+                    var stats = GetDailyStats(date);
+                    return (date, GetMetricValue(metric, stats));
+                })
+                .ToList();
+
+            return new HistoryTrendSeries(displaySeries, localSeries);
         }
     }
 

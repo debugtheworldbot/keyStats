@@ -180,6 +180,7 @@ public static class Strings
     public static string AppStats_Empty => Get(nameof(AppStats_Empty));
     public static string AppStats_UnknownApp => Get(nameof(AppStats_UnknownApp));
     public static string History_TotalFormat => Get(nameof(History_TotalFormat));
+    public static string History_SeriesSynced => Get(nameof(History_SeriesSynced));
     public static string KeyHistory_Empty => Get(nameof(KeyHistory_Empty));
     public static string KeyHistory_SummaryFormat => Get(nameof(KeyHistory_SummaryFormat));
     public static string PieChart_Empty => Get(nameof(PieChart_Empty));

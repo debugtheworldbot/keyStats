@@ -153,6 +153,7 @@
   <data name="AppStats_Empty" xml:space="preserve"><value>暂无应用数据</value></data>
   <data name="AppStats_UnknownApp" xml:space="preserve"><value>未知应用</value></data>
   <data name="History_TotalFormat" xml:space="preserve"><value>总计: {0}</value></data>
+  <data name="History_SeriesSynced" xml:space="preserve"><value>同步汇总</value></data>
   <data name="KeyHistory_Empty" xml:space="preserve"><value>暂无历史按键数据</value></data>
   <data name="KeyHistory_SummaryFormat" xml:space="preserve"><value>总按键: {0} · 按键种类: {1}</value></data>
   <data name="PieChart_Empty" xml:space="preserve"><value>暂无数据</value></data>

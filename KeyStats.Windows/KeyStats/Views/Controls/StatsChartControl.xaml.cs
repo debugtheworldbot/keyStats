@@ -20,6 +20,10 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
         DependencyProperty.Register(nameof(ChartData), typeof(IEnumerable), typeof(StatsChartControl),
             new PropertyMetadata(null, OnChartDataChanged));
 
+    public static readonly DependencyProperty LocalChartDataProperty =
+        DependencyProperty.Register(nameof(LocalChartData), typeof(IEnumerable), typeof(StatsChartControl),
+            new PropertyMetadata(null, OnChartDataChanged));
+
     public static readonly DependencyProperty ChartStyleProperty =
         DependencyProperty.Register(nameof(ChartStyle), typeof(int), typeof(StatsChartControl),
             new PropertyMetadata(0, OnPropertyChanged));
@@ -32,6 +36,12 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
     {
         get => (IEnumerable?)GetValue(ChartDataProperty);
         set => SetValue(ChartDataProperty, value);
+    }
+
+    public IEnumerable? LocalChartData
+    {
+        get => (IEnumerable?)GetValue(LocalChartDataProperty);
+        set => SetValue(LocalChartDataProperty, value);
     }
 
     public int ChartStyle
@@ -52,14 +62,18 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
     private SolidColorBrush _axisBrush = new(Color.FromArgb(100, 128, 128, 128));
     private SolidColorBrush _textBrush = new(SystemColors.GrayTextColor);
     private SolidColorBrush _highlightBrush = new(Color.FromRgb(255, 100, 50));
+    private SolidColorBrush _localLineBrush = new(Color.FromRgb(249, 168, 37));
 
     // Stores data point positions for mouse hover hit-testing
     private List<PointData> _dataPoints = new();
+    private List<ChartDataPoint>? _localDataPoints;
 
     // Hover labels (wrapped in Border to occlude the static axis labels)
     private Border? _hoverYContainer;
     private Border? _hoverXContainer;
     private SolidColorBrush _hoverBgBrush = new(Color.FromArgb(230, 248, 248, 248));
+    private readonly List<UIElement> _hoverMarkerElements = new();
+    private readonly List<UIElement> _legendElements = new();
 
     // Plot area parameters (used for hover hit-testing)
     private double _plotLeft;
@@ -111,6 +125,7 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
             : new SolidColorBrush(SystemColors.GrayTextColor);
 
         _highlightBrush = new SolidColorBrush(Color.FromRgb(255, 100, 50));
+        _localLineBrush = new SolidColorBrush(Color.FromRgb(249, 168, 37));
 
         _hoverBgBrush = isDark
             ? new SolidColorBrush(Color.FromArgb(230, 45, 45, 45))
@@ -160,6 +175,9 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
     {
         ChartCanvas.Children.Clear();
         _dataPoints.Clear();
+        _localDataPoints = null;
+        _hoverMarkerElements.Clear();
+        _legendElements.Clear();
         _hoverYContainer = null;
         _hoverXContainer = null;
 
@@ -175,7 +193,12 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
 
         if (width <= 0 || height <= 0) return;
 
-        var maxValue = data.Max(d => d.Value);
+        var localData = GetLocalData(data);
+        _localDataPoints = localData;
+
+        var maxValue = Math.Max(
+            data.Max(d => d.Value),
+            localData?.Max(d => d.Value) ?? 0);
         if (maxValue <= 0) maxValue = 1;
 
         // Calculate left padding dynamically based on the widest Y-axis label
@@ -184,7 +207,7 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
         var leftPadding = Math.Max(36, maxLabel.DesiredSize.Width + 8);
 
         const double rightPadding = 10;
-        const double topPadding = 10;
+        var topPadding = localData == null ? 10 : 26;
         const double bottomPadding = 20;
 
         _plotLeft = leftPadding;
@@ -206,12 +229,14 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
         // Draw chart
         if (ChartStyle == 0)
         {
-            DrawLineChart(data, _plotLeft, _plotTop, _plotWidth, _plotHeight, maxValue);
+            DrawLineChart(data, localData, _plotLeft, _plotTop, _plotWidth, _plotHeight, maxValue);
         }
         else
         {
-            DrawBarChart(data, _plotLeft, _plotTop, _plotWidth, _plotHeight, maxValue);
+            DrawBarChart(data, localData, _plotLeft, _plotTop, _plotWidth, _plotHeight, maxValue);
         }
+
+        DrawLegend(localData, null);
     }
 
     private void DrawEmptyState()
@@ -326,38 +351,92 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
         }
     }
 
-    private void DrawLineChart(List<ChartDataPoint> data, double left, double top, double width, double height, double maxValue)
+    private List<ChartDataPoint>? GetLocalData(List<ChartDataPoint> displayData)
     {
-        if (data.Count < 2) return;
+        var localData = LocalChartData?.Cast<ChartDataPoint>().ToList();
+        return localData != null && localData.Count == displayData.Count ? localData : null;
+    }
+
+    private void DrawLineChart(
+        List<ChartDataPoint> data,
+        List<ChartDataPoint>? localData,
+        double left,
+        double top,
+        double width,
+        double height,
+        double maxValue)
+    {
+        DrawLineSeries(data, left, top, width, height, maxValue, _lineBrush, 2, null, 2.5, recordHoverPoints: true);
+
+        if (localData != null)
+        {
+            DrawLineSeries(
+                localData,
+                left,
+                top,
+                width,
+                height,
+                maxValue,
+                _localLineBrush,
+                1.75,
+                new DoubleCollection { 5, 3 },
+                2,
+                recordHoverPoints: false);
+        }
+    }
+
+    private void DrawLineSeries(
+        List<ChartDataPoint> data,
+        double left,
+        double top,
+        double width,
+        double height,
+        double maxValue,
+        System.Windows.Media.Brush brush,
+        double strokeThickness,
+        DoubleCollection? dashPattern,
+        double dotRadius,
+        bool recordHoverPoints)
+    {
+        if (data.Count == 0) return;
 
         var points = new PointCollection();
         var pointList = new List<Point>();
         
         for (int i = 0; i < data.Count; i++)
         {
-            var x = left + (width * i / (data.Count - 1));
+            var x = data.Count == 1
+                ? left + width / 2
+                : left + (width * i / (data.Count - 1));
             var y = top + height - (height * data[i].Value / maxValue);
             var point = new Point(x, y);
             points.Add(point);
             pointList.Add(point);
 
-            // Record the data point for later hover hit-testing
-            _dataPoints.Add(new PointData
+            if (recordHoverPoints)
             {
-                DataPoint = data[i],
-                Position = point,
-                Index = i
-            });
+                // Record the data point for later hover hit-testing
+                _dataPoints.Add(new PointData
+                {
+                    DataPoint = data[i],
+                    Position = point,
+                    Index = i
+                });
+            }
         }
 
         // Draw line
         var polyline = new Polyline
         {
             Points = points,
-            Stroke = _lineBrush,
-            StrokeThickness = 2,
+            Stroke = brush,
+            StrokeThickness = strokeThickness,
             StrokeLineJoin = PenLineJoin.Round
         };
+        if (dashPattern != null)
+        {
+            polyline.StrokeDashArray = dashPattern;
+        }
         ChartCanvas.Children.Add(polyline);
 
         // Draw dots
@@ -365,25 +444,36 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
         {
             var dot = new Ellipse
             {
-                Width = 5,
-                Height = 5,
-                Fill = _lineBrush
+                Width = dotRadius * 2,
+                Height = dotRadius * 2,
+                Fill = brush
             };
-            Canvas.SetLeft(dot, point.X - 2.5);
-            Canvas.SetTop(dot, point.Y - 2.5);
+            Canvas.SetLeft(dot, point.X - dotRadius);
+            Canvas.SetTop(dot, point.Y - dotRadius);
             ChartCanvas.Children.Add(dot);
         }
     }
 
-    private void DrawBarChart(List<ChartDataPoint> data, double left, double top, double width, double height, double maxValue)
+    private void DrawBarChart(
+        List<ChartDataPoint> data,
+        List<ChartDataPoint>? localData,
+        double left,
+        double top,
+        double width,
+        double height,
+        double maxValue)
     {
-        var barWidth = Math.Min(width * 0.6 / data.Count, 22);
+        var hasLocalData = localData != null;
         var stepX = width / data.Count;
+        var groupWidth = Math.Min(stepX * 0.72, 26);
+        var barSpacing = hasLocalData ? 2 : 0;
+        var barWidth = hasLocalData ? (groupWidth - barSpacing) / 2 : Math.Min(width * 0.6 / data.Count, 22);
 
         for (int i = 0; i < data.Count; i++)
         {
             var barHeight = height * data[i].Value / maxValue;
-            var x = left + (i * stepX) + (stepX - barWidth) / 2;
+            var groupX = left + (i * stepX) + (stepX - groupWidth) / 2;
+            var x = hasLocalData ? groupX : left + (i * stepX) + (stepX - barWidth) / 2;
             var y = top + height - barHeight;
 
             var bar = new Rectangle
@@ -398,6 +488,24 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
             Canvas.SetTop(bar, y);
             ChartCanvas.Children.Add(bar);
 
+            if (hasLocalData && localData != null)
+            {
+                var localBarHeight = height * localData[i].Value / maxValue;
+                var localX = groupX + barWidth + barSpacing;
+                var localY = top + height - localBarHeight;
+                var localBar = new Rectangle
+                {
+                    Width = barWidth,
+                    Height = Math.Max(0, localBarHeight),
+                    Fill = _localLineBrush,
+                    RadiusX = 2,
+                    RadiusY = 2
+                };
+                Canvas.SetLeft(localBar, localX);
+                Canvas.SetTop(localBar, localY);
+                ChartCanvas.Children.Add(localBar);
+            }
+
             // Record the data point at the bar center for hover hit-testing
             var centerX = x + barWidth / 2;
             var centerY = y;
@@ -408,6 +516,102 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
                 Index = i
             });
         }
+    }
+
+    private void DrawLegend(List<ChartDataPoint>? localData, PointData? hoverPoint)
+    {
+        RemoveLegend();
+
+        if (localData == null || localData.Count != _dataPoints.Count || _dataPoints.Count == 0)
+        {
+            return;
+        }
+
+        var syncedLabel = KeyStats.Properties.Strings.History_SeriesSynced;
+        var localLabel = KeyStats.Properties.Strings.Sync_ThisDevice;
+        if (hoverPoint != null && hoverPoint.Index >= 0 && hoverPoint.Index < localData.Count)
+        {
+            syncedLabel = $"{syncedLabel}: {FormatValue(hoverPoint.DataPoint.Value)}";
+            localLabel = $"{localLabel}: {FormatValue(localData[hoverPoint.Index].Value)}";
+        }
+
+        var items = new[]
+        {
+            (Text: syncedLabel, Brush: (System.Windows.Media.Brush)_lineBrush, Dashed: false),
+            (Text: localLabel, Brush: (System.Windows.Media.Brush)_localLineBrush, Dashed: true)
+        };
+
+        const double sampleWidth = 14;
+        const double sampleSpacing = 4;
+        const double itemSpacing = 12;
+        const double fontSize = 10;
+        var itemWidths = new List<double>();
+        var textBlocks = new List<TextBlock>();
+
+        foreach (var item in items)
+        {
+            var label = CreateLabel(item.Text, _textBrush, fontSize);
+            label.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            textBlocks.Add(label);
+            itemWidths.Add(sampleWidth + sampleSpacing + label.DesiredSize.Width);
+        }
+
+        var totalWidth = itemWidths.Sum() + itemSpacing;
+        var x = Math.Max(_plotLeft + 8, _plotLeft + _plotWidth - totalWidth - 8);
+        var textHeight = textBlocks.Max(label => label.DesiredSize.Height);
+        var textY = Math.Max(4, _plotTop - textHeight - 7);
+        var sampleY = textY + textHeight / 2;
+
+        for (var i = 0; i < items.Length; i++)
+        {
+            UIElement sample;
+            if (ChartStyle == 0)
+            {
+                var line = new Line
+                {
+                    X1 = x,
+                    Y1 = sampleY,
+                    X2 = x + sampleWidth,
+                    Y2 = sampleY,
+                    Stroke = items[i].Brush,
+                    StrokeThickness = 2,
+                    StrokeDashArray = items[i].Dashed ? new DoubleCollection { 4, 2 } : null
+                };
+                sample = line;
+            }
+            else
+            {
+                var rect = new Rectangle
+                {
+                    Width = sampleWidth,
+                    Height = 6,
+                    Fill = items[i].Brush,
+                    RadiusX = 1.5,
+                    RadiusY = 1.5
+                };
+                Canvas.SetLeft(rect, x);
+                Canvas.SetTop(rect, sampleY - 3);
+                sample = rect;
+            }
+
+            var label = textBlocks[i];
+            Canvas.SetLeft(label, x + sampleWidth + sampleSpacing);
+            Canvas.SetTop(label, textY);
+            ChartCanvas.Children.Add(sample);
+            ChartCanvas.Children.Add(label);
+            _legendElements.Add(sample);
+            _legendElements.Add(label);
+            x += itemWidths[i] + itemSpacing;
+        }
+    }
+
+    private void RemoveLegend()
+    {
+        foreach (var element in _legendElements)
+        {
+            ChartCanvas.Children.Remove(element);
+        }
+        _legendElements.Clear();
     }
 
     private TextBlock CreateLabel(string text, System.Windows.Media.Brush foreground, double fontSize)
@@ -488,6 +692,9 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
             ChartCanvas.Children.Remove(_hoverYContainer);
         if (_hoverXContainer != null)
             ChartCanvas.Children.Remove(_hoverXContainer);
+        RemoveHoverMarkers();
+        DrawHoverMarkers(pointData);
+        DrawLegend(_localDataPoints, pointData);
 
         // Build the Y-axis hover label (value) with a background that covers the static label
         var yLabel = CreateLabel(FormatValue(pointData.DataPoint.Value), _highlightBrush, 10);
@@ -532,6 +739,86 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
             ChartCanvas.Children.Remove(_hoverXContainer);
             _hoverXContainer = null;
         }
+        RemoveHoverMarkers();
+        DrawLegend(_localDataPoints, null);
+    }
+
+    private void DrawHoverMarkers(PointData pointData)
+    {
+        var x = pointData.Position.X;
+        var y = pointData.Position.Y;
+
+        var verticalLine = new Line
+        {
+            X1 = x,
+            Y1 = _plotTop,
+            X2 = x,
+            Y2 = _plotTop + _plotHeight,
+            Stroke = new SolidColorBrush(Color.FromArgb(55, _lineBrush.Color.R, _lineBrush.Color.G, _lineBrush.Color.B)),
+            StrokeThickness = 1
+        };
+        var horizontalLine = new Line
+        {
+            X1 = _plotLeft,
+            Y1 = y,
+            X2 = _plotLeft + _plotWidth,
+            Y2 = y,
+            Stroke = new SolidColorBrush(Color.FromArgb(55, _lineBrush.Color.R, _lineBrush.Color.G, _lineBrush.Color.B)),
+            StrokeThickness = 1
+        };
+        AddHoverMarker(verticalLine);
+        AddHoverMarker(horizontalLine);
+
+        AddHoverDot(x, y, _lineBrush, 5, 2);
+
+        if (_localDataPoints != null && pointData.Index >= 0 && pointData.Index < _localDataPoints.Count)
+        {
+            var localValue = _localDataPoints[pointData.Index].Value;
+            var localY = _plotTop + _plotHeight - (_plotHeight * localValue / GetCurrentMaxValue());
+            var localRadius = Math.Abs(localY - y) < 1 ? 6 : 5;
+            AddHoverDot(x, localY, _localLineBrush, localRadius, 1.5);
+            if (Math.Abs(localY - y) < 1)
+            {
+                AddHoverDot(x, y, _lineBrush, 3, 0);
+            }
+        }
+    }
+
+    private double GetCurrentMaxValue()
+    {
+        var displayMax = ChartData?.Cast<ChartDataPoint>().Select(point => point.Value).DefaultIfEmpty(0).Max() ?? 0;
+        var localMax = _localDataPoints?.Select(point => point.Value).DefaultIfEmpty(0).Max() ?? 0;
+        return Math.Max(Math.Max(displayMax, localMax), 1);
+    }
+
+    private void AddHoverDot(double x, double y, System.Windows.Media.Brush fill, double radius, double strokeThickness)
+    {
+        var dot = new Ellipse
+        {
+            Width = radius * 2,
+            Height = radius * 2,
+            Fill = fill,
+            Stroke = strokeThickness > 0 ? Brushes.White : null,
+            StrokeThickness = strokeThickness
+        };
+        Canvas.SetLeft(dot, x - radius);
+        Canvas.SetTop(dot, y - radius);
+        AddHoverMarker(dot);
+    }
+
+    private void AddHoverMarker(UIElement element)
+    {
+        ChartCanvas.Children.Add(element);
+        _hoverMarkerElements.Add(element);
+    }
+
+    private void RemoveHoverMarkers()
+    {
+        foreach (var element in _hoverMarkerElements)
+        {
+            ChartCanvas.Children.Remove(element);
+        }
+        _hoverMarkerElements.Clear();
     }
 
     private class PointData

@@ -153,6 +153,7 @@
   <data name="AppStats_Empty" xml:space="preserve"><value>No app data yet</value></data>
   <data name="AppStats_UnknownApp" xml:space="preserve"><value>Unknown app</value></data>
   <data name="History_TotalFormat" xml:space="preserve"><value>Total: {0}</value></data>
+  <data name="History_SeriesSynced" xml:space="preserve"><value>Synced total</value></data>
   <data name="KeyHistory_Empty" xml:space="preserve"><value>No key history data yet</value></data>
   <data name="KeyHistory_SummaryFormat" xml:space="preserve"><value>Total keys: {0} · Distinct keys: {1}</value></data>
   <data name="PieChart_Empty" xml:space="preserve"><value>No data</value></data>

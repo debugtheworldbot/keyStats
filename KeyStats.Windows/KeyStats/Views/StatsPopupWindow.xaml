@@ -437,6 +437,7 @@
             <Border Style="{DynamicResource CardBorder}" Padding="6" Margin="0,0,0,4">
                 <controls:StatsChartControl
                     ChartData="{Binding ChartData}"
+                    LocalChartData="{Binding LocalChartData}"
                     ChartStyle="{Binding SelectedChartStyleIndex}"
                     SelectedMetricIndex="{Binding SelectedMetricIndex}"
                     Height="120"/>

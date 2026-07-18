@@ -53,6 +53,7 @@ public class StatsPopupViewModel : ViewModelBase
     private int _selectedChartStyleIndex;
     private string _historySummary = string.Format(KeyStats.Properties.Strings.History_TotalFormat, "0");
     private ObservableCollection<ChartDataPoint> _chartData = new();
+    private ObservableCollection<ChartDataPoint>? _localChartData;
 
     public string KeyPresses
     {
@@ -205,6 +206,12 @@ public class StatsPopupViewModel : ViewModelBase
         set => SetProperty(ref _chartData, value);
     }
 
+    public ObservableCollection<ChartDataPoint>? LocalChartData
+    {
+        get => _localChartData;
+        set => SetProperty(ref _localChartData, value);
+    }
+
     public ICommand QuitCommand { get; }
 
     public StatsPopupViewModel()
@@ -336,12 +343,16 @@ public class StatsPopupViewModel : ViewModelBase
             _ => StatsManager.HistoryMetric.Clicks
         };
 
-        var series = StatsManager.Instance.GetHistorySeries(range, metric);
+        var trendSeries = StatsManager.Instance.GetHistoryTrendSeries(range, metric);
 
         ChartData = new ObservableCollection<ChartDataPoint>(
-            series.Select(point => new ChartDataPoint { Date = point.Date, Value = point.Value }));
+            trendSeries.Display.Select(point => new ChartDataPoint { Date = point.Date, Value = point.Value }));
+        LocalChartData = trendSeries.Local == null
+            ? null
+            : new ObservableCollection<ChartDataPoint>(
+                trendSeries.Local.Select(point => new ChartDataPoint { Date = point.Date, Value = point.Value }));
 
-        var total = series.Sum(x => x.Value);
+        var total = trendSeries.Display.Sum(x => x.Value);
         var formatted = StatsManager.Instance.FormatHistoryValue(metric, total);
         HistorySummary = string.Format(KeyStats.Properties.Strings.History_TotalFormat, formatted);
     }
