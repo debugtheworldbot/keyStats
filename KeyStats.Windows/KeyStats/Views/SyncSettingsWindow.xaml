@@ -28,8 +28,8 @@
                     </Grid.ColumnDefinitions>
                     <Ellipse x:Name="StatusIndicatorEllipse"
                              Grid.Column="0"
-                             Width="18" Height="18"
-                             Margin="0,3,12,0"
+                             Width="12" Height="12"
+                             Margin="0,5,12,0"
                              VerticalAlignment="Top"/>
                     <StackPanel Grid.Column="1">
                         <TextBlock x:Name="StatusHeadingTextBlock" Style="{DynamicResource CardTitleText}"
