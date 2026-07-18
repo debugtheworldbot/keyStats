@@ -1036,10 +1036,12 @@ public sealed class SyncCoordinator : IDisposable
         var grant = JsonSerializer.Deserialize<PairingProvisioningPayload>(plaintext, _wireJsonOptions)
                     ?? throw new CryptographicException("Pairing grant is invalid.");
         var seed = Convert.FromBase64String(grant.RecoverySeed);
+        var deviceToken = grant.DeviceToken;
         if (seed.Length != 16 ||
             string.IsNullOrWhiteSpace(grant.VaultId) ||
-            string.IsNullOrWhiteSpace(grant.DeviceToken) ||
-            !grant.DeviceToken.StartsWith(preview.Context.ProposedDeviceId + ".", StringComparison.Ordinal))
+            deviceToken == null ||
+            string.IsNullOrWhiteSpace(deviceToken) ||
+            !deviceToken.StartsWith(preview.Context.ProposedDeviceId + ".", StringComparison.Ordinal))
         {
             throw new CryptographicException("Pairing grant does not match this device.");
         }
@@ -1084,7 +1086,7 @@ public sealed class SyncCoordinator : IDisposable
             VaultId = grant.VaultId,
             DeviceId = preview.Context.ProposedDeviceId,
             VaultSeed = seed,
-            DeviceToken = grant.DeviceToken,
+            DeviceToken = deviceToken,
             PairingPrivateKey = preview.Context.PrivateKey,
             PairingPublicKey = preview.Context.PublicKey,
             PairingSessionId = preview.Context.SessionId,
@@ -1360,9 +1362,10 @@ public sealed class SyncCoordinator : IDisposable
             SetBusy(false);
             _operationGate.Release();
         }
-        if (!string.IsNullOrWhiteSpace(followupReason))
+        var reason = followupReason;
+        if (reason != null && !string.IsNullOrWhiteSpace(reason))
         {
-            await SyncCoreAsync(followupReason, bypassClientRateLimit: true, cancellationToken)
+            await SyncCoreAsync(reason, bypassClientRateLimit: true, cancellationToken)
                 .ConfigureAwait(false);
         }
     }
@@ -1790,6 +1793,11 @@ public sealed class SyncCoordinator : IDisposable
                     _state.LocalRecords[localDay] = recordState;
                 }
 
+                if (recordState == null)
+                {
+                    throw new InvalidDataException("Local sync record state is incomplete.");
+                }
+
                 var isArchive = !string.Equals(localDay, today, StringComparison.Ordinal);
                 if (isArchive && !recordState.UploadedAsArchive)
                 {
@@ -1797,8 +1805,10 @@ public sealed class SyncCoordinator : IDisposable
                 }
 
                 if (!recordState.IsPending) continue;
-                if (isArchive) request.Archives.Add(recordState.Envelope);
-                else request.CurrentSnapshot = recordState.Envelope;
+                var envelope = recordState.Envelope
+                               ?? throw new InvalidDataException("Local sync record envelope is incomplete.");
+                if (isArchive) request.Archives.Add(envelope);
+                else request.CurrentSnapshot = envelope;
             }
 
             _stateStore.Save(_state);

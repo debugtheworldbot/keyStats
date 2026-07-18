@@ -335,7 +335,7 @@ public sealed class CloudflareSyncTransport : ISyncTransport
             }
 
             var candidateCode = codeElement.GetString();
-            if (string.IsNullOrWhiteSpace(candidateCode) || candidateCode.Length > 64) return;
+            if (candidateCode == null || string.IsNullOrWhiteSpace(candidateCode) || candidateCode.Length > 64) return;
             foreach (var character in candidateCode)
             {
                 if (!(char.IsLetterOrDigit(character) || character == '_' || character == '-')) return;

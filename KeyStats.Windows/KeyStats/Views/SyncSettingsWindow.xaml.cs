@@ -313,8 +313,7 @@ public partial class SyncSettingsWindow : Window
 
     private async void RevokeDevice_Click(object sender, RoutedEventArgs e)
     {
-        var deviceId = (sender as Button)?.Tag as string;
-        if (string.IsNullOrWhiteSpace(deviceId)) return;
+        if ((sender as Button)?.Tag is not string deviceId || string.IsNullOrWhiteSpace(deviceId)) return;
         var device = Coordinator?.GetDevices().FirstOrDefault(item =>
             string.Equals(item.DeviceId, deviceId, StringComparison.Ordinal));
         var confirmed = MessageBox.Show(
