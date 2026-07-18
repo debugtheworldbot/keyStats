@@ -21,6 +21,7 @@
     <Product>KeyStats</Product>
     <Description>Keyboard and mouse statistics tracker for Windows</Description>
     <LangVersion>10.0</LangVersion>
+    <SyncServiceBaseUrl Condition="'$(SyncServiceBaseUrl)' == '' and '$(Configuration)' == 'Debug'">https://keystats-sync-staging.istiancz.workers.dev</SyncServiceBaseUrl>
     <SyncServiceBaseUrl Condition="'$(SyncServiceBaseUrl)' == ''"></SyncServiceBaseUrl>
   </PropertyGroup>
 
