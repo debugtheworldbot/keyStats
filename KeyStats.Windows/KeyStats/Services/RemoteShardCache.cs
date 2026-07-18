@@ -21,6 +21,7 @@ public sealed class RemoteShardCache
     private CachePayload _payload = new();
 
     public bool NeedsRepair { get; private set; }
+    public bool RecoveredFromBackup { get; private set; }
     public event Action? Changed;
 
     public RemoteShardCache(string dataFolder)
@@ -162,6 +163,7 @@ public sealed class RemoteShardCache
         lock (_lock)
         {
             NeedsRepair = false;
+            RecoveredFromBackup = false;
             var backupPath = _path + ".bak";
             if (TryLoad(_path, out var payload, out _))
             {
@@ -176,6 +178,7 @@ public sealed class RemoteShardCache
                 {
                     SyncStateStore.WriteDurable(_path, backupBytes);
                     _payload = payload;
+                    RecoveredFromBackup = true;
                     return;
                 }
                 catch (Exception ex)

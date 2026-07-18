@@ -189,6 +189,13 @@ public sealed class SyncCoordinator : IDisposable
             }
         }
 
+        if (_remoteCache.RecoveredFromBackup && _state.IsEnabled && !_state.NeedsRepair)
+        {
+            _state.HistoryCursor = 0;
+            _state.NeedsHistoryBootstrap = true;
+            _stateStore.Save(_state);
+        }
+
         if (_remoteCache.NeedsRepair && _state.IsEnabled && !_state.NeedsRepair)
         {
             _state.NeedsRepair = true;

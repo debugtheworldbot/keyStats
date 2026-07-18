@@ -63,6 +63,7 @@ public sealed class RemoteShardCacheTests
 
         var reloaded = new RemoteShardCache(directory.Path);
         Assert.IsFalse(reloaded.NeedsRepair);
+        Assert.IsFalse(reloaded.RecoveredFromBackup);
         var record = reloaded.GetAll().Single();
         Assert.AreEqual(2L, record.Revision);
         Assert.AreEqual("hash-2", record.CiphertextHash);
@@ -71,6 +72,7 @@ public sealed class RemoteShardCacheTests
         File.WriteAllText(path, "damaged");
         var recovered = new RemoteShardCache(directory.Path);
         Assert.IsFalse(recovered.NeedsRepair);
+        Assert.IsTrue(recovered.RecoveredFromBackup);
         Assert.AreEqual(1L, recovered.GetAll().Single().Revision);
     }
 
