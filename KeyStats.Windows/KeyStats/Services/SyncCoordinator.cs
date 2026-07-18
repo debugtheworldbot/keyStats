@@ -26,6 +26,11 @@ public sealed class SyncCoordinator : IDisposable
         TimeSpan.FromSeconds(60)
     };
     private static readonly TimeSpan StateRefreshInterval = TimeSpan.FromHours(24);
+#if DEBUG
+    private const bool ManualSyncBypassesClientRateLimit = true;
+#else
+    private const bool ManualSyncBypassesClientRateLimit = false;
+#endif
 
     private readonly StatsManager _statsManager;
     private readonly SyncStateStore _stateStore;
@@ -379,7 +384,8 @@ public sealed class SyncCoordinator : IDisposable
                 IsBusy = _isBusy,
                 CanSync = canSync,
                 CanManualSync = IsServiceConfigured && canSync && !_isBusy &&
-                                _state.RemainingDailySyncs > 0 && now >= allowedAt,
+                                (ManualSyncBypassesClientRateLimit ||
+                                 (_state.RemainingDailySyncs > 0 && now >= allowedAt)),
                 CanRetryBootstrap = canRetryBootstrap,
                 ActiveDeviceCount = _state.ActiveDeviceCount,
                 LastSuccessfulSyncAtUtc = _state.LastSuccessfulSyncAtUtc,
@@ -1557,8 +1563,13 @@ public sealed class SyncCoordinator : IDisposable
                 {
                     var now = DateTime.UtcNow;
                     var allowedAt = GetEffectiveAllowedAtLocked();
-                    if (now < allowedAt) throw new SyncRateLimitedException(allowedAt);
-                    if (_state.RemainingDailySyncs <= 0) throw new SyncRateLimitedException(NextUtcMidnight(now));
+                    var bypassManualRateLimit = ManualSyncBypassesClientRateLimit &&
+                                                string.Equals(reason, "manual", StringComparison.Ordinal);
+                    if (!bypassManualRateLimit)
+                    {
+                        if (now < allowedAt) throw new SyncRateLimitedException(allowedAt);
+                        if (_state.RemainingDailySyncs <= 0) throw new SyncRateLimitedException(NextUtcMidnight(now));
+                    }
                 }
             }
             credentials = RequireCredentials();
