@@ -1307,11 +1307,11 @@ public class StatsManager : IDisposable
                 .Take(KeyFatigueTopCount);
 
             _fatigueThresholds.Clear();
-            foreach (var (key, total) in topKeys)
+            foreach (var pair in topKeys)
             {
-                var dailyAvg = total / 7.0;
+                var dailyAvg = pair.Value / 7.0;
                 var threshold = (int)Math.Floor(dailyAvg * KeyFatigueRatio);
-                _fatigueThresholds[key] = Math.Max(1, threshold);
+                _fatigueThresholds[pair.Key] = Math.Max(1, threshold);
             }
 
             _fatigueNotifiedKeys.Clear();
