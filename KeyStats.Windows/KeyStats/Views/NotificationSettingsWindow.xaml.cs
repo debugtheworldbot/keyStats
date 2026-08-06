@@ -64,6 +64,7 @@ public partial class NotificationSettingsWindow : Window
         EnableCheckBox.IsChecked = settings.NotificationsEnabled;
         KeyPressThresholdBox.Text = settings.KeyPressNotifyThreshold.ToString();
         ClickThresholdBox.Text = settings.ClickNotifyThreshold.ToString();
+        FatigueCheckBox.IsChecked = settings.KeyFatigueNotifyEnabled;
         UpdateFieldsEnabled();
     }
 
@@ -106,6 +107,8 @@ public partial class NotificationSettingsWindow : Window
         {
             settings.ClickNotifyThreshold = clickThreshold;
         }
+
+        settings.KeyFatigueNotifyEnabled = FatigueCheckBox.IsChecked == true;
 
         StatsManager.Instance.SaveSettings();
     }

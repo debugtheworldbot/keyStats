@@ -38,6 +38,23 @@ public class NotificationService
         }
     }
 
+    public void SendKeyFatigueNotification(string keyName, int threshold)
+    {
+        var body = string.Format(KeyStats.Properties.Strings.Notif_KeyFatigueBodyFormat, keyName, threshold);
+
+        try
+        {
+            new ToastContentBuilder()
+                .AddText(KeyStats.Properties.Strings.Notif_ThresholdTitle)
+                .AddText(body)
+                .Show();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error showing notification: {ex.Message}");
+        }
+    }
+
     public void ClearNotifications()
     {
         try

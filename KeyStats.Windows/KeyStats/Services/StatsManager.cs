@@ -57,6 +57,11 @@ public class StatsManager : IDisposable
     private int _lastNotifiedKeyPresses;
     private int _lastNotifiedClicks;
 
+    private const int KeyFatigueTopCount = 4;
+    private const double KeyFatigueRatio = 1.0 / 3.0;
+    private readonly Dictionary<string, int> _fatigueThresholds = new(StringComparer.Ordinal);   // Top4 键 -> 阈值
+    private readonly HashSet<string> _fatigueNotifiedKeys = new(StringComparer.Ordinal);          // 当日已提醒的键
+
     public DailyStats CurrentStats { get; private set; }
     public AppSettings Settings { get; private set; }
     public Dictionary<string, DailyStats> History { get; private set; } = new();
@@ -197,6 +202,7 @@ public class StatsManager : IDisposable
         RecordKeyForPeakKPS();
         NotifyStatsUpdate();
         NotifyKeyPressThresholdIfNeeded();
+        NotifyKeyFatigueIfNeeded(keyName);
         ScheduleSave();
     }
 
@@ -1238,6 +1244,7 @@ public class StatsManager : IDisposable
     {
         _lastNotifiedKeyPresses = NormalizedBaseline(CurrentStats.KeyPresses, Settings.KeyPressNotifyThreshold);
         _lastNotifiedClicks = NormalizedBaseline(CurrentStats.TotalClicks, Settings.ClickNotifyThreshold);
+        UpdateKeyFatigueBaseline();
     }
 
     private int NormalizedBaseline(int count, int threshold)
@@ -1280,6 +1287,54 @@ public class StatsManager : IDisposable
             _lastNotifiedClicks = currentThreshold;
             NotificationService.Instance.SendThresholdNotification(NotificationService.Metric.Clicks, currentThreshold);
         }
+    }
+
+    private void UpdateKeyFatigueBaseline()
+    {
+        lock (_lock)
+        {
+            var today = DateTime.Today;
+            var totals = new Dictionary<string, int>(StringComparer.Ordinal);
+            for (var date = today.AddDays(-7); date < today; date = date.AddDays(1))
+            {
+                MergeKeyCounts(GetDailyStats(date).KeyPressCounts, totals);
+            }
+
+            var topKeys = totals
+                .Where(x => x.Value > 0)
+                .OrderByDescending(x => x.Value)
+                .ThenBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
+                .Take(KeyFatigueTopCount);
+
+            _fatigueThresholds.Clear();
+            foreach (var (key, total) in topKeys)
+            {
+                var dailyAvg = total / 7.0;
+                var threshold = (int)Math.Floor(dailyAvg * KeyFatigueRatio);
+                _fatigueThresholds[key] = Math.Max(1, threshold);
+            }
+
+            _fatigueNotifiedKeys.Clear();
+        }
+    }
+
+    private void NotifyKeyFatigueIfNeeded(string keyName)
+    {
+        if (!Settings.KeyFatigueNotifyEnabled) return;
+        if (string.IsNullOrWhiteSpace(keyName)) return;
+        if (_fatigueNotifiedKeys.Contains(keyName)) return;
+
+        int threshold;
+        lock (_lock)
+        {
+            if (_fatigueNotifiedKeys.Contains(keyName)) return;
+            if (!_fatigueThresholds.TryGetValue(keyName, out threshold)) return;
+            var todayCount = CurrentStats.KeyPressCounts.TryGetValue(keyName, out var count) ? count : 0;
+            if (todayCount <= threshold) return;
+            _fatigueNotifiedKeys.Add(keyName);
+        }
+
+        NotificationService.Instance.SendKeyFatigueNotification(keyName, threshold);
     }
 
     #endregion

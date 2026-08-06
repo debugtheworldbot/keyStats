@@ -63,6 +63,20 @@
             </StackPanel>
         </Border>
 
+        <!-- Key fatigue reminder -->
+        <Border Style="{DynamicResource CardBorder}" Margin="0,0,0,8" Padding="14,12">
+            <StackPanel>
+                <CheckBox x:Name="FatigueCheckBox"
+                          Content="{x:Static p:Strings.NotifSettings_FatigueTitle}"
+                          FontSize="13" Margin="0,0,0,6"
+                          Foreground="{DynamicResource TextPrimaryBrush}"
+                          Checked="OnSettingChanged" Unchecked="OnSettingChanged"/>
+                <TextBlock Text="{x:Static p:Strings.NotifSettings_FatigueHint}"
+                           Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+
         <!-- Hint -->
         <TextBlock Text="{x:Static p:Strings.NotifSettings_Hint}"
                    Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11"

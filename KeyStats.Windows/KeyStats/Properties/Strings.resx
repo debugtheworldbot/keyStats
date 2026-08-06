@@ -66,6 +66,9 @@
   <data name="Notif_ThresholdTitle" xml:space="preserve"><value>KeyStats Reminder</value></data>
   <data name="Notif_KeyThresholdReachedFormat" xml:space="preserve"><value>Today's key presses reached {0:N0}.</value></data>
   <data name="Notif_ClickThresholdReachedFormat" xml:space="preserve"><value>Today's clicks reached {0:N0}.</value></data>
+  <data name="Notif_KeyFatigueBodyFormat" xml:space="preserve"><value>Key {0} today has exceeded 1/3 of its 7-day average ({1:N0} presses).</value></data>
+  <data name="NotifSettings_FatigueTitle" xml:space="preserve"><value>Key Fatigue Reminder (Top 4 Keys)</value></data>
+  <data name="NotifSettings_FatigueHint" xml:space="preserve"><value>Ranks keys by total presses over the last 7 days. If any of the top 4 keys exceeds 1/3 of its own daily average today, you'll be reminded once.</value></data>
 
   <data name="Tray_OpenMainWindow" xml:space="preserve"><value>Open Main Window</value></data>
   <data name="Tray_Settings" xml:space="preserve"><value>Settings</value></data>

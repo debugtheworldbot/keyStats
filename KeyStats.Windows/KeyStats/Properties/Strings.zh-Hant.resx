@@ -66,6 +66,9 @@
   <data name="Notif_ThresholdTitle" xml:space="preserve"><value>KeyStats 提醒</value></data>
   <data name="Notif_KeyThresholdReachedFormat" xml:space="preserve"><value>今日按鍵數已達 {0:N0} 次。</value></data>
   <data name="Notif_ClickThresholdReachedFormat" xml:space="preserve"><value>今日點擊數已達 {0:N0} 次。</value></data>
+  <data name="Notif_KeyFatigueBodyFormat" xml:space="preserve"><value>按鍵 {0} 今日已達 {1:N0} 次，超過其近 7 日均值的 1/3，注意用指疲勞</value></data>
+  <data name="NotifSettings_FatigueTitle" xml:space="preserve"><value>按鍵疲勞提醒（Top 4 按鍵）</value></data>
+  <data name="NotifSettings_FatigueHint" xml:space="preserve"><value>按近 7 天按鍵總數排名取前 4 個按鍵，任一鍵當日次數超過其自身日均值的 1/3 時，當天提醒一次。</value></data>
 
   <data name="Tray_OpenMainWindow" xml:space="preserve"><value>開啟主視窗</value></data>
   <data name="Tray_Settings" xml:space="preserve"><value>設定</value></data>

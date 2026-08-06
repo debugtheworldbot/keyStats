@@ -16,6 +16,9 @@ public class AppSettings
     [JsonPropertyName("clickNotifyThreshold")]
     public int ClickNotifyThreshold { get; set; } = 1000;
 
+    [JsonPropertyName("keyFatigueNotifyEnabled")]
+    public bool KeyFatigueNotifyEnabled { get; set; }
+
     [JsonPropertyName("launchAtStartup")]
     public bool LaunchAtStartup { get; set; }
 

@@ -27,6 +27,9 @@ public static class Strings
     public static string Notif_ThresholdTitle => Get(nameof(Notif_ThresholdTitle));
     public static string Notif_KeyThresholdReachedFormat => Get(nameof(Notif_KeyThresholdReachedFormat));
     public static string Notif_ClickThresholdReachedFormat => Get(nameof(Notif_ClickThresholdReachedFormat));
+    public static string Notif_KeyFatigueBodyFormat => Get(nameof(Notif_KeyFatigueBodyFormat));
+    public static string NotifSettings_FatigueTitle => Get(nameof(NotifSettings_FatigueTitle));
+    public static string NotifSettings_FatigueHint => Get(nameof(NotifSettings_FatigueHint));
 
     public static string Tray_OpenMainWindow => Get(nameof(Tray_OpenMainWindow));
     public static string Tray_Settings => Get(nameof(Tray_Settings));
