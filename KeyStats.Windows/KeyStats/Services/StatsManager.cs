@@ -59,6 +59,7 @@ public class StatsManager : IDisposable
 
     private const int KeyFatigueTopCount = 4;
     private const double KeyFatigueRatio = 1.0 / 3.0;
+    private static readonly HashSet<string> KeyFatigueExcludedKeys = new(StringComparer.Ordinal) { "Enter", "Space" }; // 排除回车/空格，避免干扰疲劳判断
     private readonly Dictionary<string, int> _fatigueThresholds = new(StringComparer.Ordinal);   // Top4 键 -> 阈值
     private readonly HashSet<string> _fatigueNotifiedKeys = new(StringComparer.Ordinal);          // 当日已提醒的键
 
@@ -1301,7 +1302,7 @@ public class StatsManager : IDisposable
             }
 
             var topKeys = totals
-                .Where(x => x.Value > 0)
+                .Where(x => x.Value > 0 && !KeyFatigueExcludedKeys.Contains(x.Key))
                 .OrderByDescending(x => x.Value)
                 .ThenBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
                 .Take(KeyFatigueTopCount);
@@ -1332,6 +1333,8 @@ public class StatsManager : IDisposable
             var todayCount = CurrentStats.KeyPressCounts.TryGetValue(keyName, out var count) ? count : 0;
             if (todayCount <= threshold) return;
             _fatigueNotifiedKeys.Add(keyName);
+
+            Console.WriteLine($"Key fatigue reminder: key '{keyName}' exceeded threshold today ({todayCount} presses > {threshold}), notification sent.");
         }
 
         NotificationService.Instance.SendKeyFatigueNotification(keyName, threshold);
