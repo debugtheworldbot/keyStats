@@ -115,6 +115,16 @@ KeyStats stores aggregate statistics and **does NOT record**:
 
 Data stays on the local device by default. When you explicitly enable multi-device sync, supported daily key-press totals, per-key/key-combination counts, mouse-button click counts, and encrypted device information are encrypted locally before upload. Mouse movement distance, scroll distance, and per-app statistics are not currently synced, and the service cannot read the encrypted statistics.
 
+## Star History
+
+<a href="https://star-history.dera.page/#debugtheworldbot/keyStats&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=debugtheworldbot/keyStats&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://star-history.dera.page/svg?repos=debugtheworldbot/keyStats&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://star-history.dera.page/svg?repos=debugtheworldbot/keyStats&type=date&legend=top-left" />
+ </picture>
+</a>
+
 ## License
 
 MIT License
