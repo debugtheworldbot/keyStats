@@ -117,6 +117,10 @@ KeyStats 仅保存聚合统计，**不会记录**：
 
 默认情况下，数据只保存在本机。只有用户主动开启多设备同步后，支持的每日按键总次数、各按键/组合键累计次数、鼠标按键点击次数和加密设备信息才会在本机加密后上传。目前不会同步鼠标移动距离、滚动距离和分应用统计，服务端也无法读取加密后的统计数据。
 
+## Star History
+
+[![Star History Chart](https://star-history.dera.page/svg?repos=debugtheworldbot/keyStats&type=date&legend=top-left)](https://star-history.dera.page/#debugtheworldbot/keyStats&type=date&legend=top-left)
+
 ## 许可证
 
 MIT License
