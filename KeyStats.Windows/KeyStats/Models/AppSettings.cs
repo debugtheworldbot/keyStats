@@ -8,7 +8,8 @@ public class AppSettings
     public const double DefaultMouseMetersPerPixel = 0.00005;
     public const string FloatingStatsSingleRowLayoutMode = "singleRow";
     public const string FloatingStatsDoubleRowLayoutMode = "doubleRow";
-    public const int DefaultFloatingStatsFontSize = 11;
+    public const int FloatingStatsLayoutBaseFontSize = 11;
+    public const int DefaultFloatingStatsFontSize = 12;
     public const int MinimumFloatingStatsFontSize = 9;
     public const int MaximumFloatingStatsFontSize = 22;
     private int _floatingStatsFontSize = DefaultFloatingStatsFontSize;
@@ -74,7 +75,7 @@ public class AppSettings
     public string FloatingStatsSecondaryMetric { get; set; } = "totalClicks";
 
     [JsonPropertyName("floatingStatsLayoutMode")]
-    public string FloatingStatsLayoutMode { get; set; } = FloatingStatsSingleRowLayoutMode;
+    public string FloatingStatsLayoutMode { get; set; } = FloatingStatsDoubleRowLayoutMode;
 
     [JsonPropertyName("floatingStatsFontSize")]
     public int FloatingStatsFontSize

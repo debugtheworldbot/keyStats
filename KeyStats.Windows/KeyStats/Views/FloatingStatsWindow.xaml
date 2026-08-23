@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:p="clr-namespace:KeyStats.Properties"
         Title="{x:Static p:Strings.FloatingStats_WindowTitle}"
-        Width="72"
-        Height="28"
+        Width="35"
+        Height="41"
         WindowStyle="None"
         AllowsTransparency="False"
         Background="Transparent"
@@ -23,7 +23,7 @@
             SnapsToDevicePixels="True"
             MouseLeftButtonDown="RootBorder_MouseLeftButtonDown">
         <Grid>
-            <Grid x:Name="SingleRowLayout" Margin="2,1">
+            <Grid x:Name="SingleRowLayout" Margin="2,1" Visibility="Collapsed">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="3"/>
@@ -33,7 +33,7 @@
                 <TextBlock x:Name="SinglePrimaryValueTextBlock"
                            Grid.Column="0"
                            Text="{Binding PrimaryValue}"
-                           FontSize="11"
+                           FontSize="12"
                            FontWeight="Medium"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            TextAlignment="Center"
@@ -52,7 +52,7 @@
                 <TextBlock x:Name="SingleSecondaryValueTextBlock"
                            Grid.Column="2"
                            Text="{Binding SecondaryValue}"
-                           FontSize="11"
+                           FontSize="12"
                            FontWeight="Medium"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            TextAlignment="Center"
@@ -62,7 +62,7 @@
                            ToolTip="{Binding SecondaryFullValue}"/>
             </Grid>
 
-            <Grid x:Name="DoubleRowLayout" Margin="0,1" Visibility="Collapsed">
+            <Grid x:Name="DoubleRowLayout" Margin="0,1">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="3"/>
@@ -72,7 +72,7 @@
                 <TextBlock x:Name="DoublePrimaryValueTextBlock"
                            Grid.Row="0"
                            Text="{Binding PrimaryValue}"
-                           FontSize="11"
+                           FontSize="12"
                            FontWeight="Medium"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            TextAlignment="Center"
@@ -91,7 +91,7 @@
                 <TextBlock x:Name="DoubleSecondaryValueTextBlock"
                            Grid.Row="2"
                            Text="{Binding SecondaryValue}"
-                           FontSize="11"
+                           FontSize="12"
                            FontWeight="Medium"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            TextAlignment="Center"

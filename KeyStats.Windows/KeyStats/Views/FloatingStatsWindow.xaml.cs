@@ -229,7 +229,7 @@ public partial class FloatingStatsWindow : Window
             settings.FloatingStatsLayoutMode,
             AppSettings.FloatingStatsDoubleRowLayoutMode,
             StringComparison.Ordinal);
-        var layoutScale = settings.FloatingStatsFontSize / (double)AppSettings.DefaultFloatingStatsFontSize;
+        var layoutScale = settings.FloatingStatsFontSize / (double)AppSettings.FloatingStatsLayoutBaseFontSize;
         var baseWidth = useDoubleRow ? DoubleRowWidth : SingleRowWidth;
         var baseHeight = useDoubleRow ? DoubleRowHeight : SingleRowHeight;
         var targetWidth = Math.Round(baseWidth * layoutScale, MidpointRounding.AwayFromZero);
