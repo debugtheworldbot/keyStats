@@ -1,14 +1,11 @@
 using System;
-using System.Windows;
-using System.Windows.Interop;
-using System.Windows.Media;
 using System.Windows.Threading;
 using KeyStats.Views;
 
 namespace KeyStats.Helpers;
 
 /// <summary>
-/// Hosts the compact statistics view as its own HWND beside the notification area.
+/// Hosts the compact statistics control as a native child of the primary taskbar.
 /// </summary>
 public sealed class TaskbarStatsHost : IDisposable
 {
@@ -16,14 +13,10 @@ public sealed class TaskbarStatsHost : IDisposable
     private const int BaseHeight = 40;
     private const int BaseEdgeInset = 2;
     private const int BaseFallbackNotificationWidth = 96;
-    private const int WM_MOUSEACTIVATE = 0x0021;
-    private const int MA_NOACTIVATE = 3;
 
     private readonly DispatcherTimer _positionTimer;
-    private HwndSource? _source;
-    private TaskbarStatsView? _view;
+    private TaskbarStatsNativeControl? _control;
     private IntPtr _taskbarHandle;
-    private bool _isEmbedded;
     private bool _enabled;
     private bool _isDisposed;
 
@@ -36,7 +29,6 @@ public sealed class TaskbarStatsHost : IDisposable
             Interval = TimeSpan.FromSeconds(1)
         };
         _positionTimer.Tick += OnPositionTimerTick;
-        ThemeManager.Instance.ThemeChanged += OnThemeChanged;
     }
 
     public void SetEnabled(bool enabled)
@@ -50,7 +42,7 @@ public sealed class TaskbarStatsHost : IDisposable
         if (!enabled)
         {
             _positionTimer.Stop();
-            DestroySource();
+            DestroyControl();
             return;
         }
 
@@ -65,7 +57,7 @@ public sealed class TaskbarStatsHost : IDisposable
             return;
         }
 
-        DestroySource();
+        DestroyControl();
         EnsureHost();
     }
 
@@ -79,27 +71,12 @@ public sealed class TaskbarStatsHost : IDisposable
         _isDisposed = true;
         _positionTimer.Stop();
         _positionTimer.Tick -= OnPositionTimerTick;
-        ThemeManager.Instance.ThemeChanged -= OnThemeChanged;
-        DestroySource();
+        DestroyControl();
     }
 
     private void OnPositionTimerTick(object? sender, EventArgs e)
     {
         EnsureHost();
-    }
-
-    private void OnThemeChanged()
-    {
-        if (_isDisposed)
-        {
-            return;
-        }
-
-        Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-        {
-            ApplyCompositionBackground();
-            _view?.InvalidateVisual();
-        }));
     }
 
     private void EnsureHost()
@@ -112,19 +89,18 @@ public sealed class TaskbarStatsHost : IDisposable
         var taskbar = NativeInterop.FindWindow("Shell_TrayWnd", null);
         if (taskbar == IntPtr.Zero || !NativeInterop.IsWindow(taskbar))
         {
-            DestroySource();
+            DestroyControl();
             return;
         }
 
-        var sourceHandle = GetSourceHandle();
+        var controlHandle = GetControlHandle();
         var parentChanged = _taskbarHandle != IntPtr.Zero && _taskbarHandle != taskbar;
-        var embeddedParentChanged = _isEmbedded &&
-                                    sourceHandle != IntPtr.Zero &&
-                                    NativeInterop.GetParent(sourceHandle) != taskbar;
-        if (sourceHandle == IntPtr.Zero || parentChanged || embeddedParentChanged)
+        var nativeParentChanged = controlHandle != IntPtr.Zero &&
+                                  NativeInterop.GetParent(controlHandle) != taskbar;
+        if (controlHandle == IntPtr.Zero || parentChanged || nativeParentChanged)
         {
-            DestroySource();
-            TryCreateHost(taskbar);
+            DestroyControl();
+            TryCreateControl(taskbar);
             return;
         }
 
@@ -134,132 +110,48 @@ public sealed class TaskbarStatsHost : IDisposable
         }
     }
 
-    private void TryCreateHost(IntPtr taskbar)
+    private void TryCreateControl(IntPtr taskbar)
     {
         if (!TryGetPlacement(taskbar, out var placement))
         {
             return;
         }
 
-        _taskbarHandle = taskbar;
+        TaskbarStatsNativeControl? control = null;
         try
         {
-            CreateSource(placement, embedded: true);
-            return;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Taskbar stats embedding failed, using overlay fallback: {ex.Message}");
-            DestroySource();
+            control = new TaskbarStatsNativeControl();
+            control.CreateInTaskbar(taskbar);
             _taskbarHandle = taskbar;
-        }
-
-        try
-        {
-            CreateSource(placement, embedded: false);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Taskbar stats overlay fallback failed: {ex.Message}");
-            DestroySource();
-        }
-    }
-
-    private void CreateSource(Placement placement, bool embedded)
-    {
-        var parameters = new HwndSourceParameters("KeyStatsTaskbarStatsWindow")
-        {
-            ParentWindow = embedded ? _taskbarHandle : IntPtr.Zero,
-            PositionX = embedded ? placement.RelativeX : placement.ScreenX,
-            PositionY = embedded ? placement.RelativeY : placement.ScreenY,
-            Width = placement.Width,
-            Height = placement.Height,
-            WindowStyle = embedded
-                ? NativeInterop.WS_CHILD |
-                  NativeInterop.WS_VISIBLE |
-                  NativeInterop.WS_CLIPSIBLINGS |
-                  NativeInterop.WS_CLIPCHILDREN
-                : NativeInterop.WS_POPUP | NativeInterop.WS_VISIBLE,
-            ExtendedWindowStyle = NativeInterop.WS_EX_TOOLWINDOW |
-                                  NativeInterop.WS_EX_NOACTIVATE |
-                                  NativeInterop.WS_EX_NOPARENTNOTIFY
-        };
-
-        HwndSource? source = null;
-        TaskbarStatsView? view = null;
-        try
-        {
-            source = new HwndSource(parameters);
-            if (source.Handle == IntPtr.Zero)
-            {
-                throw new InvalidOperationException("The taskbar statistics HWND was not created.");
-            }
-
-            view = new TaskbarStatsView();
-            view.SetCompactMode(placement.Compact);
-            source.RootVisual = view;
-            source.AddHook(WindowHook);
-
-            _source = source;
-            _view = view;
-            _isEmbedded = embedded;
-            ApplyCompositionBackground();
+            _control = control;
             ApplyPlacement(placement);
         }
-        catch
+        catch (Exception ex)
         {
-            view?.Cleanup();
-            source?.Dispose();
-            throw;
+            Console.WriteLine($"Taskbar stats native window creation failed: {ex.Message}");
+            control?.Dispose();
+            _control = null;
+            _taskbarHandle = IntPtr.Zero;
         }
-    }
-
-    private IntPtr WindowHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-    {
-        if (msg == WM_MOUSEACTIVATE)
-        {
-            handled = true;
-            return new IntPtr(MA_NOACTIVATE);
-        }
-
-        return IntPtr.Zero;
     }
 
     private void ApplyPlacement(Placement placement)
     {
-        var handle = GetSourceHandle();
+        var handle = GetControlHandle();
         if (handle == IntPtr.Zero)
         {
             return;
         }
 
-        _view?.SetCompactMode(placement.Compact);
-        var x = _isEmbedded ? placement.RelativeX : placement.ScreenX;
-        var y = _isEmbedded ? placement.RelativeY : placement.ScreenY;
+        _control?.SetCompactMode(placement.Compact);
         NativeInterop.SetWindowPos(
             handle,
-            _isEmbedded ? NativeInterop.HWND_TOP : NativeInterop.HWND_TOPMOST,
-            x,
-            y,
+            NativeInterop.HWND_TOP,
+            placement.RelativeX,
+            placement.RelativeY,
             placement.Width,
             placement.Height,
             NativeInterop.SWP_NOACTIVATE | NativeInterop.SWP_SHOWWINDOW);
-    }
-
-    private void ApplyCompositionBackground()
-    {
-        if (_source?.CompositionTarget == null)
-        {
-            return;
-        }
-
-        var color = Colors.Transparent;
-        if (Application.Current?.Resources["SurfaceColor"] is Color surfaceColor)
-        {
-            color = surfaceColor;
-        }
-
-        _source.CompositionTarget.BackgroundColor = color;
     }
 
     private static bool TryGetPlacement(IntPtr taskbar, out Placement placement)
@@ -314,14 +206,7 @@ public sealed class TaskbarStatsHost : IDisposable
             compact = true;
         }
 
-        placement = new Placement(
-            relativeX,
-            relativeY,
-            taskbarRect.Left + relativeX,
-            taskbarRect.Top + relativeY,
-            width,
-            height,
-            compact);
+        placement = new Placement(relativeX, relativeY, width, height, compact);
         return true;
     }
 
@@ -330,65 +215,41 @@ public sealed class TaskbarStatsHost : IDisposable
         return Math.Max(1, (int)Math.Round(value * scale, MidpointRounding.AwayFromZero));
     }
 
-    private IntPtr GetSourceHandle()
+    private IntPtr GetControlHandle()
     {
-        try
-        {
-            var handle = _source?.Handle ?? IntPtr.Zero;
-            return handle != IntPtr.Zero && NativeInterop.IsWindow(handle) ? handle : IntPtr.Zero;
-        }
-        catch (ObjectDisposedException)
+        if (_control == null || !_control.IsHandleCreated)
         {
             return IntPtr.Zero;
         }
+
+        var handle = _control.Handle;
+        return handle != IntPtr.Zero && NativeInterop.IsWindow(handle) ? handle : IntPtr.Zero;
     }
 
-    private void DestroySource()
+    private void DestroyControl()
     {
-        _view?.Cleanup();
-        _view = null;
-
-        if (_source != null)
+        if (_control != null)
         {
             try
             {
-                _source.RemoveHook(WindowHook);
+                _control.Dispose();
             }
             catch (InvalidOperationException)
             {
-                // Explorer may have already destroyed the child HWND.
+                // Explorer may have already destroyed the cross-process child HWND.
             }
-
-            try
-            {
-                _source.Dispose();
-            }
-            catch (ObjectDisposedException)
-            {
-                // The source was disposed as part of taskbar recreation.
-            }
-            _source = null;
+            _control = null;
         }
 
         _taskbarHandle = IntPtr.Zero;
-        _isEmbedded = false;
     }
 
     private readonly struct Placement
     {
-        public Placement(
-            int relativeX,
-            int relativeY,
-            int screenX,
-            int screenY,
-            int width,
-            int height,
-            bool compact)
+        public Placement(int relativeX, int relativeY, int width, int height, bool compact)
         {
             RelativeX = relativeX;
             RelativeY = relativeY;
-            ScreenX = screenX;
-            ScreenY = screenY;
             Width = width;
             Height = height;
             Compact = compact;
@@ -396,8 +257,6 @@ public sealed class TaskbarStatsHost : IDisposable
 
         public int RelativeX { get; }
         public int RelativeY { get; }
-        public int ScreenX { get; }
-        public int ScreenY { get; }
         public int Width { get; }
         public int Height { get; }
         public bool Compact { get; }
