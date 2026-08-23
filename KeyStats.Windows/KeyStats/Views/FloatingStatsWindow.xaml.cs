@@ -146,6 +146,10 @@ public partial class FloatingStatsWindow : Window
         {
             // The mouse may be released before WPF enters the native drag loop.
         }
+        finally
+        {
+            EnsureVisiblePosition();
+        }
     }
 
     private ContextMenu BuildContextMenu()
@@ -196,6 +200,7 @@ public partial class FloatingStatsWindow : Window
             return;
         }
 
+        ClampCurrentPositionToWorkingArea();
         _positionSaveTimer.Stop();
         _positionSaveTimer.Start();
     }
@@ -203,6 +208,11 @@ public partial class FloatingStatsWindow : Window
     private void PositionSaveTimer_Tick(object? sender, EventArgs e)
     {
         _positionSaveTimer.Stop();
+        SaveCurrentPosition();
+    }
+
+    private void SaveCurrentPosition()
+    {
         var settings = StatsManager.Instance.Settings;
         settings.FloatingStatsLeft = Left;
         settings.FloatingStatsTop = Top;
@@ -246,6 +256,13 @@ public partial class FloatingStatsWindow : Window
             return;
         }
 
+        ClampCurrentPositionToWorkingArea();
+        _positionSaveTimer.Stop();
+        SaveCurrentPosition();
+    }
+
+    private void ClampCurrentPositionToWorkingArea()
+    {
         var workingAreas = GetWorkingAreasInDips();
         var preferredArea = workingAreas.Count > 0
             ? workingAreas[0]
@@ -264,11 +281,6 @@ public partial class FloatingStatsWindow : Window
         {
             _isRestoringPosition = false;
         }
-
-        var settings = StatsManager.Instance.Settings;
-        settings.FloatingStatsLeft = Left;
-        settings.FloatingStatsTop = Top;
-        StatsManager.Instance.SaveSettings();
     }
 
     private List<Rect> GetWorkingAreasInDips()
