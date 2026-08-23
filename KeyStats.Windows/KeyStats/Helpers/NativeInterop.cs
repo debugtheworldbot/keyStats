@@ -194,9 +194,47 @@ public static class NativeInterop
     [DllImport("user32.dll")]
     public static extern IntPtr MonitorFromWindow(IntPtr hWnd, uint dwFlags);
 
+    [DllImport("user32.dll")]
+    public static extern IntPtr MonitorFromPoint(POINT pt, uint dwFlags);
+
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+
+    [DllImport("Shcore.dll")]
+    private static extern int GetScaleFactorForMonitor(IntPtr hMon, out int pScale);
+
+    /// <summary>
+    /// Gets the user-selected scale factor for a specific monitor when the API is available.
+    /// </summary>
+    public static bool TryGetMonitorScaleFactor(IntPtr hMonitor, out double scaleFactor)
+    {
+        scaleFactor = 1;
+        if (hMonitor == IntPtr.Zero)
+        {
+            return false;
+        }
+
+        try
+        {
+            var result = GetScaleFactorForMonitor(hMonitor, out var scalePercentage);
+            if (result != 0 || scalePercentage <= 0)
+            {
+                return false;
+            }
+
+            scaleFactor = scalePercentage / 100.0;
+            return true;
+        }
+        catch (DllNotFoundException)
+        {
+            return false;
+        }
+        catch (EntryPointNotFoundException)
+        {
+            return false;
+        }
+    }
 
     [DllImport("user32.dll", SetLastError = true)]
     public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);

@@ -3,29 +3,36 @@ using System.Linq;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Interop;
+using System.Windows.Media;
 using KeyStats.Helpers;
 using KeyStats.Models;
 using KeyStats.Services;
 using KeyStats.ViewModels;
+using Forms = System.Windows.Forms;
 
 namespace KeyStats.Views;
 
 public partial class SettingsWindow : Window
 {
     private const string GitHubUrl = "https://github.com/debugtheworldbot/keyStats";
+    private const double WindowEdgeMargin = 16;
     private bool _isLoadingFloatingStats = true;
 
     public SettingsWindow()
     {
         InitializeComponent();
+        MaxHeight = System.Math.Max(1, SystemParameters.WorkArea.Height - WindowEdgeMargin * 2);
         VersionTextBlock.Text = string.Format(KeyStats.Properties.Strings.Settings_VersionFormat, GetDisplayVersion());
         Loaded += OnLoaded;
         Closed += OnClosed;
+        LocationChanged += OnLocationChanged;
         ThemeManager.Instance.ThemeChanged += OnThemeChanged;
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        UpdateMaximumHeight();
         ApplyWindowBackdrop();
         LoadFloatingStatsControls();
         if (App.CurrentApp?.SyncCoordinator != null)
@@ -39,6 +46,7 @@ public partial class SettingsWindow : Window
     private void OnClosed(object? sender, System.EventArgs e)
     {
         ThemeManager.Instance.ThemeChanged -= OnThemeChanged;
+        LocationChanged -= OnLocationChanged;
         if (App.CurrentApp?.SyncCoordinator != null)
         {
             App.CurrentApp.SyncCoordinator.StatusChanged -= OnSyncStatusChanged;
@@ -53,6 +61,26 @@ public partial class SettingsWindow : Window
     private void ApplyWindowBackdrop()
     {
         WindowBackdropHelper.Apply(this, NativeInterop.DwmSystemBackdropType.TransientWindow);
+    }
+
+    private void OnLocationChanged(object? sender, System.EventArgs e)
+    {
+        UpdateMaximumHeight();
+    }
+
+    private void UpdateMaximumHeight()
+    {
+        var handle = new WindowInteropHelper(this).Handle;
+        if (handle == System.IntPtr.Zero)
+        {
+            return;
+        }
+
+        var source = PresentationSource.FromVisual(this);
+        var fallbackTransform = source?.CompositionTarget?.TransformFromDevice ?? Matrix.Identity;
+        var screen = Forms.Screen.FromHandle(handle);
+        var workingArea = MonitorGeometryHelper.GetWorkingAreaInDips(screen, fallbackTransform);
+        MaxHeight = System.Math.Max(1, workingArea.Height - WindowEdgeMargin * 2);
     }
 
     private static string GetDisplayVersion()

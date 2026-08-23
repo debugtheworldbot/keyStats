@@ -92,6 +92,9 @@ public class AppSettings
     [JsonPropertyName("floatingStatsTop")]
     public double? FloatingStatsTop { get; set; }
 
+    [JsonPropertyName("floatingStatsMonitorDeviceName")]
+    public string? FloatingStatsMonitorDeviceName { get; set; }
+
     [JsonPropertyName("floatingStatsTopmost")]
     public bool FloatingStatsTopmost { get; set; } = true;
 

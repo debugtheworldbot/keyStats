@@ -9,7 +9,9 @@
         Background="{DynamicResource WindowSurfaceBrush}"
         ShowInTaskbar="True">
 
-    <StackPanel Margin="24,20">
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="24,20">
         <Grid Margin="0,0,0,4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -236,5 +238,6 @@
                    FontSize="11"
                    Foreground="{DynamicResource TextSecondaryBrush}"/>
 
-    </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
 </Window>

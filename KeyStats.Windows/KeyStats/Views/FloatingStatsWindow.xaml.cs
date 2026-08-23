@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 using KeyStats.Helpers;
@@ -266,26 +267,35 @@ public partial class FloatingStatsWindow : Window
         var settings = StatsManager.Instance.Settings;
         settings.FloatingStatsLeft = Left;
         settings.FloatingStatsTop = Top;
+        var monitorDeviceName = GetCurrentMonitorDeviceName();
+        if (!string.IsNullOrWhiteSpace(monitorDeviceName))
+        {
+            settings.FloatingStatsMonitorDeviceName = monitorDeviceName;
+        }
         StatsManager.Instance.SaveSettings();
     }
 
     private void RestorePosition()
     {
         var workingAreas = GetWorkingAreasInDips();
-        var preferredArea = workingAreas.Count > 0
+        var primaryArea = workingAreas.Count > 0
             ? workingAreas[0]
-            : SystemParameters.WorkArea;
+            : new WorkingAreaInfo(string.Empty, SystemParameters.WorkArea);
         var settings = StatsManager.Instance.Settings;
+        var savedArea = FindWorkingAreaByDeviceName(
+            settings.FloatingStatsMonitorDeviceName,
+            workingAreas);
+        var preferredArea = savedArea ?? primaryArea;
         var requestedBounds = settings.FloatingStatsLeft.HasValue && settings.FloatingStatsTop.HasValue
             ? new Rect(settings.FloatingStatsLeft.Value, settings.FloatingStatsTop.Value, Width, Height)
             : new Rect(
-                preferredArea.Right - Width - EdgeMargin,
-                preferredArea.Top + EdgeMargin,
+                preferredArea.Bounds.Right - Width - EdgeMargin,
+                preferredArea.Bounds.Top + EdgeMargin,
                 Width,
                 Height);
 
-        var targetArea = FindBestWorkingArea(requestedBounds, workingAreas) ?? preferredArea;
-        var clamped = ClampToArea(requestedBounds, targetArea);
+        var targetArea = savedArea ?? FindBestWorkingArea(requestedBounds, workingAreas) ?? preferredArea;
+        var clamped = ClampToArea(requestedBounds, targetArea.Bounds);
 
         _isRestoringPosition = true;
         try
@@ -316,10 +326,11 @@ public partial class FloatingStatsWindow : Window
         var workingAreas = GetWorkingAreasInDips();
         var preferredArea = workingAreas.Count > 0
             ? workingAreas[0]
-            : SystemParameters.WorkArea;
+            : new WorkingAreaInfo(string.Empty, SystemParameters.WorkArea);
         var bounds = new Rect(Left, Top, Width, Height);
-        var targetArea = FindBestWorkingArea(bounds, workingAreas) ?? preferredArea;
-        var clamped = ClampToArea(bounds, targetArea);
+        var currentArea = FindWorkingAreaByDeviceName(GetCurrentMonitorDeviceName(), workingAreas);
+        var targetArea = currentArea ?? FindBestWorkingArea(bounds, workingAreas) ?? preferredArea;
+        var clamped = ClampToArea(bounds, targetArea.Bounds);
 
         _isRestoringPosition = true;
         try
@@ -333,17 +344,17 @@ public partial class FloatingStatsWindow : Window
         }
     }
 
-    private List<Rect> GetWorkingAreasInDips()
+    private List<WorkingAreaInfo> GetWorkingAreasInDips()
     {
-        var areas = new List<Rect>();
+        var areas = new List<WorkingAreaInfo>();
         var source = PresentationSource.FromVisual(this);
-        var fromDevice = source?.CompositionTarget?.TransformFromDevice ?? Matrix.Identity;
+        var fallbackTransform = source?.CompositionTarget?.TransformFromDevice ?? Matrix.Identity;
 
         foreach (var screen in Forms.Screen.AllScreens)
         {
-            var topLeft = fromDevice.Transform(new Point(screen.WorkingArea.Left, screen.WorkingArea.Top));
-            var bottomRight = fromDevice.Transform(new Point(screen.WorkingArea.Right, screen.WorkingArea.Bottom));
-            var area = new Rect(topLeft, bottomRight);
+            var area = new WorkingAreaInfo(
+                screen.DeviceName,
+                MonitorGeometryHelper.GetWorkingAreaInDips(screen, fallbackTransform));
             if (screen.Primary)
             {
                 areas.Insert(0, area);
@@ -357,13 +368,43 @@ public partial class FloatingStatsWindow : Window
         return areas;
     }
 
-    private static Rect? FindBestWorkingArea(Rect bounds, IReadOnlyList<Rect> workingAreas)
+    private string? GetCurrentMonitorDeviceName()
     {
-        Rect? bestArea = null;
+        var handle = new WindowInteropHelper(this).Handle;
+        return handle == IntPtr.Zero
+            ? null
+            : Forms.Screen.FromHandle(handle).DeviceName;
+    }
+
+    private static WorkingAreaInfo? FindWorkingAreaByDeviceName(
+        string? deviceName,
+        IReadOnlyList<WorkingAreaInfo> workingAreas)
+    {
+        if (string.IsNullOrWhiteSpace(deviceName))
+        {
+            return null;
+        }
+
+        foreach (var area in workingAreas)
+        {
+            if (string.Equals(area.DeviceName, deviceName, StringComparison.OrdinalIgnoreCase))
+            {
+                return area;
+            }
+        }
+
+        return null;
+    }
+
+    private static WorkingAreaInfo? FindBestWorkingArea(
+        Rect bounds,
+        IReadOnlyList<WorkingAreaInfo> workingAreas)
+    {
+        WorkingAreaInfo? bestArea = null;
         var bestIntersection = 0.0;
         foreach (var area in workingAreas)
         {
-            var intersection = Rect.Intersect(bounds, area);
+            var intersection = Rect.Intersect(bounds, area.Bounds);
             var intersectionSize = intersection.IsEmpty ? 0 : intersection.Width * intersection.Height;
             if (intersectionSize <= bestIntersection)
             {
@@ -382,5 +423,18 @@ public partial class FloatingStatsWindow : Window
         var left = Math.Max(workingArea.Left, Math.Min(bounds.Left, workingArea.Right - bounds.Width));
         var top = Math.Max(workingArea.Top, Math.Min(bounds.Top, workingArea.Bottom - bounds.Height));
         return new Rect(left, top, bounds.Width, bounds.Height);
+    }
+
+    private sealed class WorkingAreaInfo
+    {
+        public WorkingAreaInfo(string deviceName, Rect bounds)
+        {
+            DeviceName = deviceName;
+            Bounds = bounds;
+        }
+
+        public string DeviceName { get; }
+
+        public Rect Bounds { get; }
     }
 }
