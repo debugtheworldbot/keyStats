@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
+using System.Windows.Threading;
 using KeyStats.Helpers;
 using KeyStats.Services;
 using KeyStats.ViewModels;
@@ -38,11 +39,13 @@ public partial class App : System.Windows.Application
     private SyncSettingsWindow? _syncSettingsWindow;
     private FloatingStatsWindow? _floatingStatsWindow;
     private MenuItem? _floatingStatsMenuItem;
+    private DispatcherTimer? _floatingStatsVisibilityTimer;
     private System.Threading.Mutex? _singleInstanceMutex;
     private string? _appVersion;
     private IPostHogAnalytics? _postHogClient;
     private SyncCoordinator? _syncCoordinator;
     private long _lastResumeRecoveryTicks;
+    private bool _isFloatingStatsHiddenForFullscreen;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -303,6 +306,16 @@ public partial class App : System.Windows.Application
             return;
         }
 
+        StartFloatingStatsVisibilityMonitor();
+        if (FullscreenWindowDetector.IsForegroundWindowFullscreen())
+        {
+            _isFloatingStatsHiddenForFullscreen = true;
+            _floatingStatsWindow?.Hide();
+            return;
+        }
+
+        _isFloatingStatsHiddenForFullscreen = false;
+
         if (_floatingStatsWindow != null)
         {
             _floatingStatsWindow.ShowWindow();
@@ -340,8 +353,66 @@ public partial class App : System.Windows.Application
             return;
         }
 
+        StopFloatingStatsVisibilityMonitor();
+        _isFloatingStatsHiddenForFullscreen = false;
         _floatingStatsWindow?.Close();
         _floatingStatsWindow = null;
+    }
+
+    private void StartFloatingStatsVisibilityMonitor()
+    {
+        if (_floatingStatsVisibilityTimer == null)
+        {
+            _floatingStatsVisibilityTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(500)
+            };
+            _floatingStatsVisibilityTimer.Tick += OnFloatingStatsVisibilityTimerTick;
+        }
+
+        _floatingStatsVisibilityTimer.Start();
+    }
+
+    private void StopFloatingStatsVisibilityMonitor()
+    {
+        if (_floatingStatsVisibilityTimer == null)
+        {
+            return;
+        }
+
+        _floatingStatsVisibilityTimer.Stop();
+        _floatingStatsVisibilityTimer.Tick -= OnFloatingStatsVisibilityTimerTick;
+        _floatingStatsVisibilityTimer = null;
+    }
+
+    private void OnFloatingStatsVisibilityTimerTick(object? sender, EventArgs e)
+    {
+        if (!StatsManager.Instance.Settings.FloatingStatsEnabled)
+        {
+            StopFloatingStatsVisibilityMonitor();
+            return;
+        }
+
+        var shouldHideForFullscreen = FullscreenWindowDetector.IsForegroundWindowFullscreen();
+        if (shouldHideForFullscreen)
+        {
+            if (_isFloatingStatsHiddenForFullscreen)
+            {
+                return;
+            }
+
+            _isFloatingStatsHiddenForFullscreen = true;
+            _floatingStatsWindow?.Hide();
+            return;
+        }
+
+        if (!_isFloatingStatsHiddenForFullscreen)
+        {
+            return;
+        }
+
+        _isFloatingStatsHiddenForFullscreen = false;
+        ShowFloatingStatsWindow();
     }
 
     public void ApplyFloatingStatsBehaviorSettings()
@@ -554,6 +625,7 @@ public partial class App : System.Windows.Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        StopFloatingStatsVisibilityMonitor();
         UnregisterSystemEventHandlers();
         if (_trayIconViewModel != null)
         {

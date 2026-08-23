@@ -70,6 +70,15 @@ public static class NativeInterop
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct MONITORINFO
+    {
+        public uint cbSize;
+        public RECT rcMonitor;
+        public RECT rcWork;
+        public uint dwFlags;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct MARGINS
     {
         public int cxLeftWidth;
@@ -143,6 +152,37 @@ public static class NativeInterop
 
     [DllImport("user32.dll")]
     public static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetDesktopWindow();
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetShellWindow();
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool IsIconic(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool IsZoomed(IntPtr hWnd);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+    public const uint MONITOR_DEFAULTTONEAREST = 0x00000002;
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr MonitorFromWindow(IntPtr hWnd, uint dwFlags);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
 
     [DllImport("user32.dll", SetLastError = true)]
     public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
