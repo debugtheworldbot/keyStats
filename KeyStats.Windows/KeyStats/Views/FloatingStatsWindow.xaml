@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:p="clr-namespace:KeyStats.Properties"
         Title="{x:Static p:Strings.FloatingStats_WindowTitle}"
-        Width="104"
-        Height="36"
+        Width="72"
+        Height="28"
         WindowStyle="None"
         AllowsTransparency="False"
         Background="Transparent"
@@ -19,15 +19,15 @@
             Background="{DynamicResource TrayBackdropTintBrush}"
             BorderBrush="{DynamicResource TrayPopupBorderBrush}"
             BorderThickness="1"
-            CornerRadius="7"
+            CornerRadius="6"
             Cursor="SizeAll"
             SnapsToDevicePixels="True"
             MouseLeftButtonDown="RootBorder_MouseLeftButtonDown">
         <Grid>
-            <Grid x:Name="SingleRowLayout" Margin="4,2">
+            <Grid x:Name="SingleRowLayout" Margin="2,1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="7"/>
+                    <ColumnDefinition Width="3"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
@@ -44,7 +44,7 @@
 
                 <Border Grid.Column="1"
                         Width="0.5"
-                        Height="18"
+                        Height="14"
                         Background="{DynamicResource DividerBrush}"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"/>
@@ -61,10 +61,10 @@
                            ToolTip="{Binding SecondaryFullValue}"/>
             </Grid>
 
-            <Grid x:Name="DoubleRowLayout" Margin="4,3" Visibility="Collapsed">
+            <Grid x:Name="DoubleRowLayout" Margin="2,1" Visibility="Collapsed">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
-                    <RowDefinition Height="7"/>
+                    <RowDefinition Height="3"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
@@ -80,7 +80,7 @@
                            ToolTip="{Binding PrimaryFullValue}"/>
 
                 <Border Grid.Row="1"
-                        Width="42"
+                        Width="28"
                         Height="0.5"
                         Background="{DynamicResource DividerBrush}"
                         HorizontalAlignment="Center"
