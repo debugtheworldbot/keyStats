@@ -155,6 +155,38 @@ public partial class FloatingStatsWindow : Window
     private ContextMenu BuildContextMenu()
     {
         var menu = new ContextMenu();
+        var lockPositionItem = new MenuItem
+        {
+            Header = KeyStats.Properties.Strings.FloatingStats_LockPosition,
+            IsCheckable = true,
+            IsChecked = StatsManager.Instance.Settings.FloatingStatsPositionLocked
+        };
+        lockPositionItem.Click += (_, _) =>
+        {
+            var isLocked = lockPositionItem.IsChecked;
+            var settings = StatsManager.Instance.Settings;
+            settings.FloatingStatsPositionLocked = isLocked;
+            StatsManager.Instance.SaveSettings();
+            ApplyBehaviorSettings();
+            App.CurrentApp?.TrackClick("floating_stats_position_lock", new Dictionary<string, object?>
+            {
+                ["enabled"] = isLocked
+            });
+        };
+        menu.Items.Add(lockPositionItem);
+
+        var hideItem = new MenuItem
+        {
+            Header = KeyStats.Properties.Strings.FloatingStats_Hide
+        };
+        hideItem.Click += (_, _) =>
+        {
+            App.CurrentApp?.TrackClick("floating_stats_hide");
+            App.CurrentApp?.SetFloatingStatsVisible(false);
+        };
+        menu.Items.Add(hideItem);
+        menu.Items.Add(new Separator());
+
         var settingsItem = new MenuItem
         {
             Header = KeyStats.Properties.Strings.Tray_Settings
@@ -165,6 +197,10 @@ public partial class FloatingStatsWindow : Window
             App.CurrentApp?.ShowSettingsWindow();
         };
         menu.Items.Add(settingsItem);
+        menu.Opened += (_, _) =>
+        {
+            lockPositionItem.IsChecked = StatsManager.Instance.Settings.FloatingStatsPositionLocked;
+        };
 
         return menu;
     }
