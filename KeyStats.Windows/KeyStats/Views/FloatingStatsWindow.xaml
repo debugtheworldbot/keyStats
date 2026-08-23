@@ -6,7 +6,7 @@
         Width="35"
         Height="41"
         WindowStyle="None"
-        AllowsTransparency="False"
+        AllowsTransparency="True"
         Background="Transparent"
         ShowInTaskbar="False"
         ShowActivated="False"
@@ -17,7 +17,8 @@
         TextOptions.TextRenderingMode="ClearType">
     <Border x:Name="RootBorder"
             Background="{DynamicResource FloatingStatsSurfaceBrush}"
-            BorderThickness="0"
+            BorderBrush="{DynamicResource TrayPopupBorderBrush}"
+            BorderThickness="0.5"
             CornerRadius="8"
             Cursor="SizeAll"
             SnapsToDevicePixels="True"

@@ -26,7 +26,6 @@ public partial class FloatingStatsWindow : Window
     private readonly DispatcherTimer _positionSaveTimer;
     private bool _isLoaded;
     private bool _isRestoringPosition;
-    private bool _isBackdropEnabled;
 
     public FloatingStatsWindow()
     {
@@ -75,7 +74,7 @@ public partial class FloatingStatsWindow : Window
 
     private void OnSourceInitialized(object? sender, EventArgs e)
     {
-        ApplyBackdrop();
+        ApplySurface();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -102,7 +101,7 @@ public partial class FloatingStatsWindow : Window
 
     private void OnThemeChanged()
     {
-        Dispatcher.BeginInvoke(new Action(ApplyBackdrop));
+        Dispatcher.BeginInvoke(new Action(ApplySurface));
     }
 
     private void OnDisplaySettingsChanged(object? sender, EventArgs e)
@@ -110,14 +109,14 @@ public partial class FloatingStatsWindow : Window
         Dispatcher.BeginInvoke(new Action(EnsureVisiblePosition));
     }
 
-    private void ApplyBackdrop()
+    private void ApplySurface()
     {
-        _isBackdropEnabled = WindowBackdropHelper.Apply(
-            this,
-            NativeInterop.DwmSystemBackdropType.TransientWindow);
         RootBorder.SetResourceReference(
             Border.BackgroundProperty,
-            _isBackdropEnabled ? "FloatingStatsSurfaceBrush" : "SurfaceBrush");
+            "FloatingStatsSurfaceBrush");
+        RootBorder.SetResourceReference(
+            Border.BorderBrushProperty,
+            "TrayPopupBorderBrush");
     }
 
     private void RootBorder_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
