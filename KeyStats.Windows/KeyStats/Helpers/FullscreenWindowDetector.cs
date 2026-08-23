@@ -18,7 +18,6 @@ public static class FullscreenWindowDetector
             windowHandle == NativeInterop.GetShellWindow() ||
             !NativeInterop.IsWindowVisible(windowHandle) ||
             NativeInterop.IsIconic(windowHandle) ||
-            NativeInterop.IsZoomed(windowHandle) ||
             !NativeInterop.GetWindowRect(windowHandle, out var windowBounds))
         {
             return false;
@@ -41,7 +40,27 @@ public static class FullscreenWindowDetector
             return false;
         }
 
-        return CoversMonitor(windowBounds, monitorInfo.rcMonitor);
+        if (!CoversMonitor(windowBounds, monitorInfo.rcMonitor))
+        {
+            return false;
+        }
+
+        // Some video players keep WS_MAXIMIZE while Windows still reports fullscreen mode.
+        return !NativeInterop.IsZoomed(windowHandle) ||
+               IsSystemInFullscreenMode();
+    }
+
+    private static bool IsSystemInFullscreenMode()
+    {
+        var result = NativeInterop.SHQueryUserNotificationState(out var state);
+        if (result != 0)
+        {
+            return false;
+        }
+
+        return state == NativeInterop.UserNotificationState.Busy ||
+               state == NativeInterop.UserNotificationState.RunningDirect3DFullscreen ||
+               state == NativeInterop.UserNotificationState.PresentationMode;
     }
 
     internal static bool CoversMonitor(NativeInterop.RECT windowBounds, NativeInterop.RECT monitorBounds)

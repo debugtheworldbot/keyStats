@@ -122,6 +122,20 @@ public static class NativeInterop
     [DllImport("shell32.dll", SetLastError = true)]
     public static extern int Shell_NotifyIconGetRect(ref NOTIFYICONIDENTIFIER identifier, out RECT iconLocation);
 
+    public enum UserNotificationState
+    {
+        NotPresent = 1,
+        Busy = 2,
+        RunningDirect3DFullscreen = 3,
+        PresentationMode = 4,
+        AcceptsNotifications = 5,
+        QuietTime = 6,
+        App = 7
+    }
+
+    [DllImport("shell32.dll")]
+    public static extern int SHQueryUserNotificationState(out UserNotificationState state);
+
     [StructLayout(LayoutKind.Sequential)]
     public struct NOTIFYICONIDENTIFIER
     {
