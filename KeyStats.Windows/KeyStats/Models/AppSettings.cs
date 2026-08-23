@@ -10,7 +10,7 @@ public class AppSettings
     public const string FloatingStatsDoubleRowLayoutMode = "doubleRow";
     public const int DefaultFloatingStatsFontSize = 11;
     public const int MinimumFloatingStatsFontSize = 9;
-    public const int MaximumFloatingStatsFontSize = 13;
+    public const int MaximumFloatingStatsFontSize = 22;
     private int _floatingStatsFontSize = DefaultFloatingStatsFontSize;
 
     [JsonPropertyName("notificationsEnabled")]

@@ -225,12 +225,16 @@ public partial class FloatingStatsWindow : Window
 
     private bool ApplyLayoutSettings()
     {
+        var settings = StatsManager.Instance.Settings;
         var useDoubleRow = string.Equals(
-            StatsManager.Instance.Settings.FloatingStatsLayoutMode,
+            settings.FloatingStatsLayoutMode,
             AppSettings.FloatingStatsDoubleRowLayoutMode,
             StringComparison.Ordinal);
-        var targetWidth = useDoubleRow ? DoubleRowWidth : SingleRowWidth;
-        var targetHeight = useDoubleRow ? DoubleRowHeight : SingleRowHeight;
+        var layoutScale = settings.FloatingStatsFontSize / (double)AppSettings.DefaultFloatingStatsFontSize;
+        var baseWidth = useDoubleRow ? DoubleRowWidth : SingleRowWidth;
+        var baseHeight = useDoubleRow ? DoubleRowHeight : SingleRowHeight;
+        var targetWidth = Math.Round(baseWidth * layoutScale, MidpointRounding.AwayFromZero);
+        var targetHeight = Math.Round(baseHeight * layoutScale, MidpointRounding.AwayFromZero);
         var sizeChanged = !Width.Equals(targetWidth) || !Height.Equals(targetHeight);
 
         SingleRowLayout.Visibility = useDoubleRow ? Visibility.Collapsed : Visibility.Visible;
