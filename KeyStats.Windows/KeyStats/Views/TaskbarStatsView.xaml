@@ -1,0 +1,101 @@
+<UserControl x:Class="KeyStats.Views.TaskbarStatsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Focusable="False"
+             MouseLeftButtonDown="OnMouseLeftButtonDown"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType">
+    <Border x:Name="RootBorder" Padding="6,2" SnapsToDevicePixels="True">
+        <Border.Style>
+            <Style TargetType="Border">
+                <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource SubtleHoverBrush}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+        </Border.Style>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="1"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="15"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="{Binding PrimaryIcon}"
+                           FontFamily="Segoe MDL2 Assets"
+                           FontSize="10"
+                           Foreground="{DynamicResource AccentBrush}"
+                           VerticalAlignment="Center"/>
+                <TextBlock x:Name="PrimaryLabelBlock"
+                           Grid.Column="1"
+                           Text="{Binding PrimaryLabel}"
+                           FontSize="10"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           TextTrimming="CharacterEllipsis"
+                           VerticalAlignment="Center"
+                           Margin="0,0,5,0"/>
+                <TextBlock Grid.Column="2"
+                           Text="{Binding PrimaryValue}"
+                           FontSize="11"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           TextAlignment="Right"
+                           VerticalAlignment="Center"/>
+            </Grid>
+
+            <Border Grid.Row="1"
+                    Height="1"
+                    Background="{DynamicResource DividerBrush}"
+                    Opacity="0.55"
+                    SnapsToDevicePixels="True"/>
+
+            <Grid Grid.Row="2" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="15"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="{Binding SecondaryIcon}"
+                           FontFamily="Segoe MDL2 Assets"
+                           FontSize="10"
+                           Foreground="{DynamicResource AccentBrush}"
+                           VerticalAlignment="Center"/>
+                <TextBlock x:Name="SecondaryLabelBlock"
+                           Grid.Column="1"
+                           Text="{Binding SecondaryLabel}"
+                           FontSize="10"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           TextTrimming="CharacterEllipsis"
+                           VerticalAlignment="Center"
+                           Margin="0,0,5,0"/>
+                <TextBlock Grid.Column="2"
+                           Text="{Binding SecondaryValue}"
+                           FontSize="11"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           TextAlignment="Right"
+                           VerticalAlignment="Center"/>
+            </Grid>
+        </Grid>
+
+        <Border.ToolTip>
+            <ToolTip>
+                <StackPanel>
+                    <TextBlock Text="{Binding PrimaryFullValue}"/>
+                    <TextBlock Text="{Binding SecondaryFullValue}" Margin="0,3,0,0"/>
+                </StackPanel>
+            </ToolTip>
+        </Border.ToolTip>
+    </Border>
+</UserControl>

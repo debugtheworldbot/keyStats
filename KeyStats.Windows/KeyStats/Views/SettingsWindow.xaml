@@ -99,6 +99,27 @@
             </Grid>
         </Border>
 
+        <Border Style="{DynamicResource CardBorder}" Margin="0,0,0,8" Padding="14,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Margin="0,0,16,0">
+                    <TextBlock Text="{x:Static p:Strings.Settings_TaskbarStats}" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="{x:Static p:Strings.Settings_TaskbarStatsDesc}" FontSize="12"
+                               Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,4,0,0"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+                <CheckBox x:Name="TaskbarStatsCheckBox"
+                          Grid.Column="1"
+                          VerticalAlignment="Center"
+                          Checked="TaskbarStatsVisibility_Changed"
+                          Unchecked="TaskbarStatsVisibility_Changed"/>
+            </Grid>
+        </Border>
+
         <Border Style="{DynamicResource CardBorder}" Margin="0,0,0,4" Padding="14,12">
             <Grid>
                 <Grid.ColumnDefinitions>

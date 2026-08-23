@@ -11,6 +11,7 @@ namespace KeyStats.Views;
 public partial class SettingsWindow : Window
 {
     private const string GitHubUrl = "https://github.com/debugtheworldbot/keyStats";
+    private bool _isLoadingTaskbarStats = true;
 
     public SettingsWindow()
     {
@@ -24,6 +25,13 @@ public partial class SettingsWindow : Window
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         ApplyWindowBackdrop();
+        _isLoadingTaskbarStats = true;
+        TaskbarStatsCheckBox.IsChecked = StatsManager.Instance.Settings.TaskbarStatsEnabled;
+        _isLoadingTaskbarStats = false;
+        if (App.CurrentApp != null)
+        {
+            App.CurrentApp.TaskbarStatsVisibilityChanged += OnTaskbarStatsVisibilityChanged;
+        }
         if (App.CurrentApp?.SyncCoordinator != null)
         {
             App.CurrentApp.SyncCoordinator.StatusChanged += OnSyncStatusChanged;
@@ -35,6 +43,10 @@ public partial class SettingsWindow : Window
     private void OnClosed(object? sender, System.EventArgs e)
     {
         ThemeManager.Instance.ThemeChanged -= OnThemeChanged;
+        if (App.CurrentApp != null)
+        {
+            App.CurrentApp.TaskbarStatsVisibilityChanged -= OnTaskbarStatsVisibilityChanged;
+        }
         if (App.CurrentApp?.SyncCoordinator != null)
         {
             App.CurrentApp.SyncCoordinator.StatusChanged -= OnSyncStatusChanged;
@@ -143,6 +155,28 @@ public partial class SettingsWindow : Window
     {
         App.CurrentApp?.TrackClick("open_notification_settings");
         App.CurrentApp?.ShowNotificationSettings();
+    }
+
+    private void TaskbarStatsVisibility_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_isLoadingTaskbarStats)
+        {
+            return;
+        }
+
+        App.CurrentApp?.SetTaskbarStatsEnabled(
+            TaskbarStatsCheckBox.IsChecked == true,
+            "settings");
+    }
+
+    private void OnTaskbarStatsVisibilityChanged(bool enabled)
+    {
+        Dispatcher.BeginInvoke(new System.Action(() =>
+        {
+            _isLoadingTaskbarStats = true;
+            TaskbarStatsCheckBox.IsChecked = enabled;
+            _isLoadingTaskbarStats = false;
+        }));
     }
 
     private void MouseCalibration_Click(object sender, RoutedEventArgs e)

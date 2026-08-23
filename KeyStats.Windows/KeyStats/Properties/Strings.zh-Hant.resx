@@ -68,10 +68,27 @@
   <data name="Notif_ClickThresholdReachedFormat" xml:space="preserve"><value>今日點擊數已達 {0:N0} 次。</value></data>
 
   <data name="Tray_OpenMainWindow" xml:space="preserve"><value>開啟主視窗</value></data>
+  <data name="Tray_ShowFloatingStats" xml:space="preserve"><value>顯示今日統計浮窗</value></data>
+  <data name="Tray_TaskbarStats" xml:space="preserve"><value>顯示工作列雙排統計</value></data>
   <data name="Tray_Settings" xml:space="preserve"><value>設定</value></data>
   <data name="Tray_StartAtLogin" xml:space="preserve"><value>登入時啟動</value></data>
   <data name="Tray_KeyHistory" xml:space="preserve"><value>按鍵歷史</value></data>
   <data name="Tray_Quit" xml:space="preserve"><value>結束</value></data>
+
+  <data name="FloatingStats_WindowTitle" xml:space="preserve"><value>今日統計 - KeyStats</value></data>
+  <data name="FloatingStats_Today" xml:space="preserve"><value>今日</value></data>
+  <data name="FloatingStats_PrimaryMetric" xml:space="preserve"><value>第一項</value></data>
+  <data name="FloatingStats_SecondaryMetric" xml:space="preserve"><value>第二項</value></data>
+  <data name="FloatingStats_AlwaysOnTop" xml:space="preserve"><value>永遠置頂</value></data>
+  <data name="FloatingStats_LockPosition" xml:space="preserve"><value>鎖定位置</value></data>
+  <data name="FloatingStats_OpenDetails" xml:space="preserve"><value>開啟詳細統計</value></data>
+  <data name="FloatingStats_Hide" xml:space="preserve"><value>隱藏浮窗</value></data>
+  <data name="TaskbarStats_OpenDetails" xml:space="preserve"><value>開啟詳細統計</value></data>
+  <data name="TaskbarStats_PrimaryMetric" xml:space="preserve"><value>第一列</value></data>
+  <data name="TaskbarStats_SecondaryMetric" xml:space="preserve"><value>第二列</value></data>
+  <data name="TaskbarStats_Hide" xml:space="preserve"><value>隱藏工作列統計</value></data>
+  <data name="Settings_TaskbarStats" xml:space="preserve"><value>工作列統計</value></data>
+  <data name="Settings_TaskbarStatsDesc" xml:space="preserve"><value>在工作列中以獨立雙排元件顯示今日選取的兩項統計。</value></data>
 
   <data name="Toast_ExportSuccess_Title" xml:space="preserve"><value>匯出成功</value></data>
   <data name="Toast_ExportSuccess_BodyFormat" xml:space="preserve"><value>資料已儲存至 {0}</value></data>

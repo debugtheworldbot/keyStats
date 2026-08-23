@@ -68,10 +68,27 @@
   <data name="Notif_ClickThresholdReachedFormat" xml:space="preserve"><value>今日点击数已达到 {0:N0} 次</value></data>
 
   <data name="Tray_OpenMainWindow" xml:space="preserve"><value>打开主界面</value></data>
+  <data name="Tray_ShowFloatingStats" xml:space="preserve"><value>显示今日统计浮窗</value></data>
+  <data name="Tray_TaskbarStats" xml:space="preserve"><value>显示任务栏双排统计</value></data>
   <data name="Tray_Settings" xml:space="preserve"><value>设置</value></data>
   <data name="Tray_StartAtLogin" xml:space="preserve"><value>开机启动</value></data>
   <data name="Tray_KeyHistory" xml:space="preserve"><value>历史按键统计</value></data>
   <data name="Tray_Quit" xml:space="preserve"><value>退出</value></data>
+
+  <data name="FloatingStats_WindowTitle" xml:space="preserve"><value>今日统计 - KeyStats</value></data>
+  <data name="FloatingStats_Today" xml:space="preserve"><value>今日</value></data>
+  <data name="FloatingStats_PrimaryMetric" xml:space="preserve"><value>第一项</value></data>
+  <data name="FloatingStats_SecondaryMetric" xml:space="preserve"><value>第二项</value></data>
+  <data name="FloatingStats_AlwaysOnTop" xml:space="preserve"><value>始终置顶</value></data>
+  <data name="FloatingStats_LockPosition" xml:space="preserve"><value>锁定位置</value></data>
+  <data name="FloatingStats_OpenDetails" xml:space="preserve"><value>打开详细统计</value></data>
+  <data name="FloatingStats_Hide" xml:space="preserve"><value>隐藏浮窗</value></data>
+  <data name="TaskbarStats_OpenDetails" xml:space="preserve"><value>打开详细统计</value></data>
+  <data name="TaskbarStats_PrimaryMetric" xml:space="preserve"><value>第一行</value></data>
+  <data name="TaskbarStats_SecondaryMetric" xml:space="preserve"><value>第二行</value></data>
+  <data name="TaskbarStats_Hide" xml:space="preserve"><value>隐藏任务栏统计</value></data>
+  <data name="Settings_TaskbarStats" xml:space="preserve"><value>任务栏统计</value></data>
+  <data name="Settings_TaskbarStatsDesc" xml:space="preserve"><value>在任务栏中以独立双排组件显示今日选中的两项统计。</value></data>
 
   <data name="Toast_ExportSuccess_Title" xml:space="preserve"><value>导出成功</value></data>
   <data name="Toast_ExportSuccess_BodyFormat" xml:space="preserve"><value>数据已保存到 {0}</value></data>

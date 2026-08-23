@@ -13,6 +13,32 @@ namespace KeyStats.Services;
 
 public class StatsManager : IDisposable
 {
+    public readonly struct CurrentStatsSnapshot
+    {
+        public CurrentStatsSnapshot(DailyStats stats)
+        {
+            KeyPresses = stats.KeyPresses;
+            TotalClicks = stats.TotalClicks;
+            LeftClicks = stats.LeftClicks;
+            RightClicks = stats.RightClicks;
+            MiddleClicks = stats.MiddleClicks;
+            MouseDistance = stats.MouseDistance;
+            ScrollDistance = stats.ScrollDistance;
+            PeakKPS = stats.PeakKPS;
+            PeakCPS = stats.PeakCPS;
+        }
+
+        public int KeyPresses { get; }
+        public int TotalClicks { get; }
+        public int LeftClicks { get; }
+        public int RightClicks { get; }
+        public int MiddleClicks { get; }
+        public double MouseDistance { get; }
+        public double ScrollDistance { get; }
+        public double PeakKPS { get; }
+        public double PeakCPS { get; }
+    }
+
     public enum StatsUpdateKind
     {
         Full,
@@ -1295,6 +1321,17 @@ public class StatsManager : IDisposable
         return number.ToString("N0");
     }
 
+    /// <summary>
+    /// Returns a lock-protected snapshot of today's local statistics for UI projection.
+    /// </summary>
+    public CurrentStatsSnapshot GetCurrentStatsSnapshot()
+    {
+        lock (_lock)
+        {
+            return new CurrentStatsSnapshot(CurrentStats);
+        }
+    }
+
     public List<(string Key, int Count)> GetKeyPressBreakdownSorted()
     {
         lock (_lock)
@@ -1937,7 +1974,7 @@ public class StatsManager : IDisposable
         return $"{meters * 100:F1} cm";
     }
 
-    private string FormatScrollDistance(double distance)
+    public string FormatScrollDistance(double distance)
     {
         if (distance >= 10000)
             return $"{distance / 1000:F1} k";
