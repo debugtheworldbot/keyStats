@@ -87,6 +87,7 @@ public sealed class ThemeManager : IDisposable
         SetColor(res, "SurfaceColor", "#FAFAFA");
         SetColor(res, "WindowSurfaceColor", "#B8FAFAFA");
         SetColor(res, "CardColor", "#D9F2F2F2");
+        SetColor(res, "FloatingStatsSurfaceColor", "#A8FAFAFA");
         SetColor(res, "TrayPopupBorderColor", "#20000000");
         SetColor(res, "TrayBackdropTintColor", "#B8FAFAFA");
         SetColor(res, "DividerColor", "#E5E5E5");
@@ -105,6 +106,7 @@ public sealed class ThemeManager : IDisposable
         SetBrush(res, "SurfaceBrush", "#FAFAFA");
         SetBrush(res, "WindowSurfaceBrush", "#B8FAFAFA");
         SetBrush(res, "CardBrush", "#D9F2F2F2");
+        SetBrush(res, "FloatingStatsSurfaceBrush", "#A8FAFAFA");
         SetBrush(res, "TrayPopupBorderBrush", "#20000000");
         SetBrush(res, "TrayBackdropTintBrush", "#B8FAFAFA");
         SetBrush(res, "DividerBrush", "#E5E5E5");
@@ -135,6 +137,7 @@ public sealed class ThemeManager : IDisposable
         SetColor(res, "SurfaceColor", "#202020");
         SetColor(res, "WindowSurfaceColor", "#C8141414");
         SetColor(res, "CardColor", "#CC1A1A1A");
+        SetColor(res, "FloatingStatsSurfaceColor", "#A8141414");
         SetColor(res, "TrayPopupBorderColor", "#33FFFFFF");
         SetColor(res, "TrayBackdropTintColor", "#A8202020");
         SetColor(res, "DividerColor", "#3D3D3D");
@@ -153,6 +156,7 @@ public sealed class ThemeManager : IDisposable
         SetBrush(res, "SurfaceBrush", "#202020");
         SetBrush(res, "WindowSurfaceBrush", "#C8141414");
         SetBrush(res, "CardBrush", "#CC1A1A1A");
+        SetBrush(res, "FloatingStatsSurfaceBrush", "#A8141414");
         SetBrush(res, "TrayPopupBorderBrush", "#33FFFFFF");
         SetBrush(res, "TrayBackdropTintBrush", "#A8202020");
         SetBrush(res, "DividerBrush", "#3D3D3D");

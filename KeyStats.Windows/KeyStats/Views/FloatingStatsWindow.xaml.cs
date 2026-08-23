@@ -116,8 +116,7 @@ public partial class FloatingStatsWindow : Window
             NativeInterop.DwmSystemBackdropType.TransientWindow);
         RootBorder.SetResourceReference(
             Border.BackgroundProperty,
-            _isBackdropEnabled ? "TrayBackdropTintBrush" : "SurfaceBrush");
-        RootBorder.SetResourceReference(Border.BorderBrushProperty, "TrayPopupBorderBrush");
+            _isBackdropEnabled ? "FloatingStatsSurfaceBrush" : "SurfaceBrush");
     }
 
     private void RootBorder_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

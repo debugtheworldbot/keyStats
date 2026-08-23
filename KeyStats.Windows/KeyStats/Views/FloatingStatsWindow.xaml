@@ -16,10 +16,9 @@
         TextOptions.TextFormattingMode="Display"
         TextOptions.TextRenderingMode="ClearType">
     <Border x:Name="RootBorder"
-            Background="{DynamicResource TrayBackdropTintBrush}"
-            BorderBrush="{DynamicResource TrayPopupBorderBrush}"
-            BorderThickness="1"
-            CornerRadius="6"
+            Background="{DynamicResource FloatingStatsSurfaceBrush}"
+            BorderThickness="0"
+            CornerRadius="8"
             Cursor="SizeAll"
             SnapsToDevicePixels="True"
             MouseLeftButtonDown="RootBorder_MouseLeftButtonDown">

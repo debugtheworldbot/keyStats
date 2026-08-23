@@ -22,6 +22,7 @@
             <Color x:Key="SurfaceColor">#FAFAFA</Color>
             <Color x:Key="WindowSurfaceColor">#B8FAFAFA</Color>
             <Color x:Key="CardColor">#D9F2F2F2</Color>
+            <Color x:Key="FloatingStatsSurfaceColor">#A8FAFAFA</Color>
             <Color x:Key="TrayPopupBorderColor">#20000000</Color>
             <Color x:Key="TrayBackdropTintColor">#B8FAFAFA</Color>
             <Color x:Key="DividerColor">#E5E5E5</Color>
@@ -40,6 +41,7 @@
             <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}"/>
             <SolidColorBrush x:Key="WindowSurfaceBrush" Color="{StaticResource WindowSurfaceColor}"/>
             <SolidColorBrush x:Key="CardBrush" Color="{StaticResource CardColor}"/>
+            <SolidColorBrush x:Key="FloatingStatsSurfaceBrush" Color="{StaticResource FloatingStatsSurfaceColor}"/>
             <SolidColorBrush x:Key="TrayPopupBorderBrush" Color="{StaticResource TrayPopupBorderColor}"/>
             <SolidColorBrush x:Key="TrayBackdropTintBrush" Color="{StaticResource TrayBackdropTintColor}"/>
             <SolidColorBrush x:Key="DividerBrush" Color="{StaticResource DividerColor}"/>
