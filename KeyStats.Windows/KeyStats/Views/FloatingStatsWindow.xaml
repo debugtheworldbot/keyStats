@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:p="clr-namespace:KeyStats.Properties"
         Title="{x:Static p:Strings.FloatingStats_WindowTitle}"
-        Width="184"
-        Height="56"
+        Width="136"
+        Height="36"
         WindowStyle="None"
         AllowsTransparency="False"
         Background="Transparent"
@@ -12,24 +12,27 @@
         ShowActivated="False"
         Topmost="True"
         ResizeMode="NoResize"
-        WindowStartupLocation="Manual">
+        WindowStartupLocation="Manual"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
     <Border x:Name="RootBorder"
             Background="{DynamicResource TrayBackdropTintBrush}"
             BorderBrush="{DynamicResource TrayPopupBorderBrush}"
             BorderThickness="1"
-            CornerRadius="9"
+            CornerRadius="7"
             Cursor="SizeAll"
+            SnapsToDevicePixels="True"
             MouseLeftButtonDown="RootBorder_MouseLeftButtonDown">
-        <Grid Margin="9,6">
+        <Grid Margin="6,3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="13"/>
+                <ColumnDefinition Width="9"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <TextBlock Grid.Column="0"
                        Text="{Binding PrimaryValue}"
-                       FontSize="22"
+                       FontSize="11"
                        FontWeight="SemiBold"
                        Foreground="{DynamicResource TextPrimaryBrush}"
                        TextAlignment="Center"
@@ -40,14 +43,14 @@
 
             <Border Grid.Column="1"
                     Width="0.5"
-                    Height="28"
+                    Height="18"
                     Background="{DynamicResource DividerBrush}"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"/>
 
             <TextBlock Grid.Column="2"
                        Text="{Binding SecondaryValue}"
-                       FontSize="22"
+                       FontSize="11"
                        FontWeight="SemiBold"
                        Foreground="{DynamicResource TextPrimaryBrush}"
                        TextAlignment="Center"
