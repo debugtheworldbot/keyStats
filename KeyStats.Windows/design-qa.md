@@ -1,48 +1,48 @@
 # Floating Stats Design QA
 
-- Source visual truth: `C:\Users\t\AppData\Local\Temp\browser-use\assets\5c950f33-06aa-4851-b388-883f9b9d6750\d0011dafe24be0ae.png`
-- Rendered implementation: `C:\Users\t\.codex\visualizations\2026\08\23\01a02c9c-fa5e-7dc3-af63-d32cab43e2a6\floating-stats-implementation-taskbar-size.png`
-- Combined comparison: `C:\Users\t\.codex\visualizations\2026\08\23\01a02c9c-fa5e-7dc3-af63-d32cab43e2a6\floating-stats-comparison-taskbar-size.png`
-- Viewport: KeyStats floating surface at 136 × 36 device-independent pixels, rendered at 96 DPI / 1× density
-- Pixel dimensions: source 304 × 140; implementation 136 × 36; comparison canvas 478 × 98
-- State: Windows light theme, today's key presses and total mouse clicks, representative non-zero values
-- Normalization: the 278 × 54 TrafficMonitor floating-window region was cropped without density scaling; the KeyStats surface was rendered at its production XAML size. The source tooltip was excluded because it is a transient secondary state.
+- Source feedback capture: `C:\Users\t\AppData\Local\Temp\codex-clipboard-67a8ee63-df85-4c65-ab56-4e22ddc7dab7.png`
+- Single-row implementation: `C:\Users\t\.codex\visualizations\2026\08\23\01a02c9c-fa5e-7dc3-af63-d32cab43e2a6\floating-stats-single-row-tight.png`
+- Double-row implementation: `C:\Users\t\.codex\visualizations\2026\08\23\01a02c9c-fa5e-7dc3-af63-d32cab43e2a6\floating-stats-double-row.png`
+- Combined comparison: `C:\Users\t\.codex\visualizations\2026\08\23\01a02c9c-fa5e-7dc3-af63-d32cab43e2a6\floating-stats-layout-comparison.png`
+- Viewports: single row 104 × 36 DIPs; double row 72 × 52 DIPs; both rendered at 96 DPI / 1× density
+- Pixel dimensions: feedback capture 365 × 103; single-row implementation 104 × 36; double-row implementation 72 × 52; comparison canvas 790 × 150
+- State: Windows light theme, values 225 and 252
+- Normalization: the implementation captures are rendered at 1× and enlarged to 2× in the combined comparison to approximate the high-DPI scale of the supplied feedback screenshot.
 
 ## Full-view comparison evidence
 
-The comparison confirms a compact, bordered, two-column readout with a centered divider. The latest 136 × 36 frame deliberately follows KeyStats' taskbar-scale typography and density rather than TrafficMonitor's larger reference dimensions. Visible labels and icons remain omitted; metric identity is available through hover tooltips and the right-click configuration menu.
+The revised single-row surface materially reduces the wide outer and inter-value whitespace visible in the supplied screenshot while preserving two clearly separated values. The new double-row option uses a narrower vertical card with a horizontal divider and equal row heights. Both layouts retain the same typography, border, radius, material, and interaction affordances.
 
 ## Required fidelity surfaces
 
-- Fonts and typography: both values use the same Segoe UI 11 px semibold treatment as the taskbar statistic values, with display-mode formatting, ClearType rendering, consistent baseline, centering, and ellipsis behavior.
-- Spacing and layout rhythm: the two equal-width tracks use 6 px side padding, 3 px vertical padding, a 9 px divider gutter, and a centered 18 px hairline. The 136 × 36 frame remains readable while materially reducing empty space.
-- Colors and visual tokens: the surface retains KeyStats dynamic primary text, divider, translucent backdrop tint, and popup border resources. The light-state capture has clear contrast; dark mode continues through ThemeManager.
-- Image quality and asset fidelity: there are no visible raster images, icons, or decorative assets in the revised component.
-- Copy and content: only the two requested statistic values are visible. Metric names and exact expanded values remain accessible in native tooltips and menus rather than permanent chrome.
+- Fonts and typography: both layouts retain the taskbar-aligned Segoe UI 11 px semibold values with display-mode formatting and ClearType rendering.
+- Spacing and layout rhythm: single row is reduced from 136 × 36 to 104 × 36, with 4 px horizontal padding and a 7 px divider gutter. Double row is 72 × 52 with 4 px horizontal padding, 3 px vertical padding, and a centered 42 px divider.
+- Colors and visual tokens: both layouts continue using the KeyStats dynamic primary text, divider, translucent backdrop tint, and popup border resources.
+- Image quality and asset fidelity: neither layout contains raster imagery, icons, or decorative assets.
+- Copy and content: only the two selected statistic values are visible; labels and exact expanded values remain available through settings and tooltips.
 
 ## Focused-region comparison evidence
 
-No separate focused crop was required because both numbers, the divider, border, radius, padding, and alignment are legible at original 1× resolution in the combined comparison.
+No separate focused crop was needed because the values, separators, border, padding, and alignment are all legible in the combined comparison at the supplied high-DPI presentation scale.
 
 ## Findings
 
 - No actionable P0, P1, or P2 differences.
-- Accepted intentional difference: TrafficMonitor shows labels and four values, while KeyStats follows the user's explicit two-number-only requirement.
-- Accepted intentional difference: the latest KeyStats surface is smaller than TrafficMonitor to match the existing taskbar statistic size requested by the user.
-- Accepted intentional difference: KeyStats keeps its neutral translucent theme instead of copying TrafficMonitor's green skin.
+- Accepted intentional difference: the double-row layout is narrower and taller than the supplied single-row capture because it prioritizes vertical stacking.
+- P3: very long formatted distance values may truncate in the compact card; the full value remains available in the tooltip.
 
 ## Comparison history
 
-- Earlier implementation: 248 × 84 with “Today,” icons, labels, and values.
-- User-directed revision: removed all visible labels and icons, reduced the frame to 184 × 56, and centered the two values.
-- Latest user-directed revision: matched the taskbar's 11 px value typography, reduced the frame to 136 × 36, tightened the outer padding and divider gutter, and enabled the taskbar's display/ClearType text rendering.
-- Post-fix evidence: the latest taskbar-sized capture shows no clipping, overlap, or alignment issue.
+- Earlier state: 136 × 36 single-row surface with excess horizontal whitespace at the user's display scale.
+- Revision: reduced single-row width to 104 DIPs and added a 72 × 52 double-row layout selectable from Settings.
+- Post-fix evidence: both exact production-XAML renders show centered values with no overlap or clipping for representative counts.
 
 ## Implementation checklist
 
-- Production XAML rendered from the exact floating-window source file.
+- Single-row and double-row production XAML rendered and inspected.
+- Layout selection persists through the additive settings model and applies immediately.
+- Window size changes re-clamp the saved position to the visible work area.
 - Debug build completed with 0 warnings and 0 errors.
-- Two-value hover tooltips preserve metric identification and exact values.
-- Move, position persistence, metric selection, topmost, position lock, details, and hide paths remain intact.
+- English, Simplified Chinese, and Traditional Chinese resources remain in parity.
 
 final result: passed

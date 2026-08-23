@@ -6,6 +6,8 @@ namespace KeyStats.Models;
 public class AppSettings
 {
     public const double DefaultMouseMetersPerPixel = 0.00005;
+    public const string FloatingStatsSingleRowLayoutMode = "singleRow";
+    public const string FloatingStatsDoubleRowLayoutMode = "doubleRow";
 
     [JsonPropertyName("notificationsEnabled")]
     public bool NotificationsEnabled { get; set; }
@@ -66,6 +68,9 @@ public class AppSettings
 
     [JsonPropertyName("floatingStatsSecondaryMetric")]
     public string FloatingStatsSecondaryMetric { get; set; } = "totalClicks";
+
+    [JsonPropertyName("floatingStatsLayoutMode")]
+    public string FloatingStatsLayoutMode { get; set; } = FloatingStatsSingleRowLayoutMode;
 
     [JsonPropertyName("floatingStatsLeft")]
     public double? FloatingStatsLeft { get; set; }

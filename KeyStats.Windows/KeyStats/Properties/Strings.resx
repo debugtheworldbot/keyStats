@@ -79,6 +79,9 @@
   <data name="FloatingStats_Today" xml:space="preserve"><value>TODAY</value></data>
   <data name="FloatingStats_PrimaryMetric" xml:space="preserve"><value>First Metric</value></data>
   <data name="FloatingStats_SecondaryMetric" xml:space="preserve"><value>Second Metric</value></data>
+  <data name="FloatingStats_Layout" xml:space="preserve"><value>Display Layout</value></data>
+  <data name="FloatingStats_SingleRow" xml:space="preserve"><value>One Row</value></data>
+  <data name="FloatingStats_DoubleRow" xml:space="preserve"><value>Two Rows</value></data>
   <data name="FloatingStats_AlwaysOnTop" xml:space="preserve"><value>Always on Top</value></data>
   <data name="FloatingStats_LockPosition" xml:space="preserve"><value>Lock Position</value></data>
   <data name="FloatingStats_OpenDetails" xml:space="preserve"><value>Open Detailed Stats</value></data>

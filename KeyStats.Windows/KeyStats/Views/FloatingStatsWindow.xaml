@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:p="clr-namespace:KeyStats.Properties"
         Title="{x:Static p:Strings.FloatingStats_WindowTitle}"
-        Width="136"
+        Width="104"
         Height="36"
         WindowStyle="None"
         AllowsTransparency="False"
@@ -23,41 +23,80 @@
             Cursor="SizeAll"
             SnapsToDevicePixels="True"
             MouseLeftButtonDown="RootBorder_MouseLeftButtonDown">
-        <Grid Margin="6,3">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="9"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+        <Grid>
+            <Grid x:Name="SingleRowLayout" Margin="4,2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="7"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Column="0"
-                       Text="{Binding PrimaryValue}"
-                       FontSize="11"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextPrimaryBrush}"
-                       TextAlignment="Center"
-                       TextTrimming="CharacterEllipsis"
-                       HorizontalAlignment="Stretch"
-                       VerticalAlignment="Center"
-                       ToolTip="{Binding PrimaryFullValue}"/>
+                <TextBlock Grid.Column="0"
+                           Text="{Binding PrimaryValue}"
+                           FontSize="11"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           TextAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           HorizontalAlignment="Stretch"
+                           VerticalAlignment="Center"
+                           ToolTip="{Binding PrimaryFullValue}"/>
 
-            <Border Grid.Column="1"
-                    Width="0.5"
-                    Height="18"
-                    Background="{DynamicResource DividerBrush}"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"/>
+                <Border Grid.Column="1"
+                        Width="0.5"
+                        Height="18"
+                        Background="{DynamicResource DividerBrush}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"/>
 
-            <TextBlock Grid.Column="2"
-                       Text="{Binding SecondaryValue}"
-                       FontSize="11"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextPrimaryBrush}"
-                       TextAlignment="Center"
-                       TextTrimming="CharacterEllipsis"
-                       HorizontalAlignment="Stretch"
-                       VerticalAlignment="Center"
-                       ToolTip="{Binding SecondaryFullValue}"/>
+                <TextBlock Grid.Column="2"
+                           Text="{Binding SecondaryValue}"
+                           FontSize="11"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           TextAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           HorizontalAlignment="Stretch"
+                           VerticalAlignment="Center"
+                           ToolTip="{Binding SecondaryFullValue}"/>
+            </Grid>
+
+            <Grid x:Name="DoubleRowLayout" Margin="4,3" Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="7"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0"
+                           Text="{Binding PrimaryValue}"
+                           FontSize="11"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           TextAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           HorizontalAlignment="Stretch"
+                           VerticalAlignment="Center"
+                           ToolTip="{Binding PrimaryFullValue}"/>
+
+                <Border Grid.Row="1"
+                        Width="42"
+                        Height="0.5"
+                        Background="{DynamicResource DividerBrush}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"/>
+
+                <TextBlock Grid.Row="2"
+                           Text="{Binding SecondaryValue}"
+                           FontSize="11"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           TextAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           HorizontalAlignment="Stretch"
+                           VerticalAlignment="Center"
+                           ToolTip="{Binding SecondaryFullValue}"/>
+            </Grid>
         </Grid>
     </Border>
 </Window>

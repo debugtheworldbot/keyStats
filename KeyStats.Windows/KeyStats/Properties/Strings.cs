@@ -174,6 +174,9 @@ public static class Strings
     public static string FloatingStats_Today => Get(nameof(FloatingStats_Today));
     public static string FloatingStats_PrimaryMetric => Get(nameof(FloatingStats_PrimaryMetric));
     public static string FloatingStats_SecondaryMetric => Get(nameof(FloatingStats_SecondaryMetric));
+    public static string FloatingStats_Layout => Get(nameof(FloatingStats_Layout));
+    public static string FloatingStats_SingleRow => Get(nameof(FloatingStats_SingleRow));
+    public static string FloatingStats_DoubleRow => Get(nameof(FloatingStats_DoubleRow));
     public static string FloatingStats_AlwaysOnTop => Get(nameof(FloatingStats_AlwaysOnTop));
     public static string FloatingStats_LockPosition => Get(nameof(FloatingStats_LockPosition));
     public static string FloatingStats_OpenDetails => Get(nameof(FloatingStats_OpenDetails));

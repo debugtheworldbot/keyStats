@@ -79,6 +79,9 @@
   <data name="FloatingStats_Today" xml:space="preserve"><value>今日</value></data>
   <data name="FloatingStats_PrimaryMetric" xml:space="preserve"><value>第一项</value></data>
   <data name="FloatingStats_SecondaryMetric" xml:space="preserve"><value>第二项</value></data>
+  <data name="FloatingStats_Layout" xml:space="preserve"><value>展示方式</value></data>
+  <data name="FloatingStats_SingleRow" xml:space="preserve"><value>一排</value></data>
+  <data name="FloatingStats_DoubleRow" xml:space="preserve"><value>两排</value></data>
   <data name="FloatingStats_AlwaysOnTop" xml:space="preserve"><value>始终置顶</value></data>
   <data name="FloatingStats_LockPosition" xml:space="preserve"><value>锁定位置</value></data>
   <data name="FloatingStats_OpenDetails" xml:space="preserve"><value>打开详细统计</value></data>

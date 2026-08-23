@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using KeyStats.Helpers;
+using KeyStats.Models;
 using KeyStats.Services;
 using KeyStats.ViewModels;
 
@@ -179,6 +180,19 @@ public partial class SettingsWindow : Window
         var settings = StatsManager.Instance.Settings;
         FloatingPrimaryMetricComboBox.SelectedValue = settings.FloatingStatsPrimaryMetric;
         FloatingSecondaryMetricComboBox.SelectedValue = settings.FloatingStatsSecondaryMetric;
+        var layoutMode = string.Equals(
+            settings.FloatingStatsLayoutMode,
+            AppSettings.FloatingStatsDoubleRowLayoutMode,
+            System.StringComparison.Ordinal)
+            ? AppSettings.FloatingStatsDoubleRowLayoutMode
+            : AppSettings.FloatingStatsSingleRowLayoutMode;
+        FloatingLayoutComboBox.SelectedItem = FloatingLayoutComboBox.Items
+            .Cast<ComboBoxItem>()
+            .FirstOrDefault(item => string.Equals(
+                item.Tag as string,
+                layoutMode,
+                System.StringComparison.Ordinal))
+            ?? FloatingLayoutComboBox.Items[0];
         FloatingTopmostCheckBox.IsChecked = settings.FloatingStatsTopmost;
         FloatingLockPositionCheckBox.IsChecked = settings.FloatingStatsPositionLocked;
     }
@@ -208,6 +222,39 @@ public partial class SettingsWindow : Window
         {
             ["slot"] = isPrimary ? "primary" : "secondary",
             ["metric"] = metricId
+        });
+    }
+
+    private void FloatingLayout_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoadingFloatingStats || FloatingLayoutComboBox.SelectedItem is not ComboBoxItem selectedItem)
+        {
+            return;
+        }
+
+        if (selectedItem.Tag is not string layoutMode)
+        {
+            return;
+        }
+
+        if (!string.Equals(layoutMode, AppSettings.FloatingStatsSingleRowLayoutMode, System.StringComparison.Ordinal) &&
+            !string.Equals(layoutMode, AppSettings.FloatingStatsDoubleRowLayoutMode, System.StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var settings = StatsManager.Instance.Settings;
+        if (string.Equals(settings.FloatingStatsLayoutMode, layoutMode, System.StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        settings.FloatingStatsLayoutMode = layoutMode;
+        StatsManager.Instance.SaveSettings();
+        App.CurrentApp?.ApplyFloatingStatsBehaviorSettings();
+        App.CurrentApp?.TrackClick("settings_floating_stats_layout", new System.Collections.Generic.Dictionary<string, object?>
+        {
+            ["layout"] = layoutMode
         });
     }
 

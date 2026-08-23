@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using KeyStats.Helpers;
+using KeyStats.Models;
 using KeyStats.Services;
 using KeyStats.ViewModels;
 using Microsoft.Win32;
@@ -16,6 +17,10 @@ namespace KeyStats.Views;
 public partial class FloatingStatsWindow : Window
 {
     private const double EdgeMargin = 16;
+    private const double SingleRowWidth = 104;
+    private const double SingleRowHeight = 36;
+    private const double DoubleRowWidth = 72;
+    private const double DoubleRowHeight = 52;
     private readonly FloatingStatsViewModel _viewModel;
     private readonly DispatcherTimer _positionSaveTimer;
     private bool _isLoaded;
@@ -36,6 +41,7 @@ public partial class FloatingStatsWindow : Window
         var settings = StatsManager.Instance.Settings;
         Topmost = settings.FloatingStatsTopmost;
         UpdateDragCursor();
+        ApplyLayoutSettings();
 
         SourceInitialized += OnSourceInitialized;
         Loaded += OnLoaded;
@@ -58,6 +64,10 @@ public partial class FloatingStatsWindow : Window
         var settings = StatsManager.Instance.Settings;
         Topmost = settings.FloatingStatsTopmost;
         UpdateDragCursor();
+        if (ApplyLayoutSettings())
+        {
+            EnsureVisiblePosition();
+        }
     }
 
     private void OnSourceInitialized(object? sender, EventArgs e)
@@ -74,7 +84,8 @@ public partial class FloatingStatsWindow : Window
         App.CurrentApp?.TrackPageView("floating_stats", new Dictionary<string, object?>
         {
             ["primary_metric"] = _viewModel.PrimaryMetricId,
-            ["secondary_metric"] = _viewModel.SecondaryMetricId
+            ["secondary_metric"] = _viewModel.SecondaryMetricId,
+            ["layout"] = StatsManager.Instance.Settings.FloatingStatsLayoutMode
         });
     }
 
@@ -159,6 +170,23 @@ public partial class FloatingStatsWindow : Window
         RootBorder.Cursor = StatsManager.Instance.Settings.FloatingStatsPositionLocked
             ? Cursors.Arrow
             : Cursors.SizeAll;
+    }
+
+    private bool ApplyLayoutSettings()
+    {
+        var useDoubleRow = string.Equals(
+            StatsManager.Instance.Settings.FloatingStatsLayoutMode,
+            AppSettings.FloatingStatsDoubleRowLayoutMode,
+            StringComparison.Ordinal);
+        var targetWidth = useDoubleRow ? DoubleRowWidth : SingleRowWidth;
+        var targetHeight = useDoubleRow ? DoubleRowHeight : SingleRowHeight;
+        var sizeChanged = !Width.Equals(targetWidth) || !Height.Equals(targetHeight);
+
+        SingleRowLayout.Visibility = useDoubleRow ? Visibility.Collapsed : Visibility.Visible;
+        DoubleRowLayout.Visibility = useDoubleRow ? Visibility.Visible : Visibility.Collapsed;
+        Width = targetWidth;
+        Height = targetHeight;
+        return sizeChanged;
     }
 
     private void OnLocationChanged(object? sender, EventArgs e)
