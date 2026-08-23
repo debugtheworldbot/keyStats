@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:p="clr-namespace:KeyStats.Properties"
         Title="{x:Static p:Strings.FloatingStats_WindowTitle}"
-        Width="248"
-        Height="84"
+        Width="184"
+        Height="56"
         WindowStyle="None"
         AllowsTransparency="False"
         Background="Transparent"
@@ -20,87 +20,41 @@
             CornerRadius="9"
             Cursor="SizeAll"
             MouseLeftButtonDown="RootBorder_MouseLeftButtonDown">
-        <Grid Margin="11,7,11,8">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="14"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
+        <Grid Margin="9,6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="13"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Row="0"
-                       Text="{x:Static p:Strings.FloatingStats_Today}"
-                       FontSize="9"
+            <TextBlock Grid.Column="0"
+                       Text="{Binding PrimaryValue}"
+                       FontSize="22"
                        FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextTertiaryBrush}"
-                       VerticalAlignment="Top"/>
+                       Foreground="{DynamicResource TextPrimaryBrush}"
+                       TextAlignment="Center"
+                       TextTrimming="CharacterEllipsis"
+                       HorizontalAlignment="Stretch"
+                       VerticalAlignment="Center"
+                       ToolTip="{Binding PrimaryFullValue}"/>
 
-            <Grid Grid.Row="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="17"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+            <Border Grid.Column="1"
+                    Width="0.5"
+                    Height="28"
+                    Background="{DynamicResource DividerBrush}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"/>
 
-                <Grid Grid.Column="0" ToolTip="{Binding PrimaryFullValue}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <StackPanel Grid.Row="0" Orientation="Horizontal">
-                        <TextBlock Text="{Binding PrimaryIcon}"
-                                   FontFamily="Segoe MDL2 Assets"
-                                   FontSize="10"
-                                   Foreground="{DynamicResource AccentBrush}"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,5,0"/>
-                        <TextBlock Text="{Binding PrimaryLabel}"
-                                   FontSize="10"
-                                   Foreground="{DynamicResource TextSecondaryBrush}"
-                                   TextTrimming="CharacterEllipsis"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                    <TextBlock Grid.Row="1"
-                               Text="{Binding PrimaryValue}"
-                               FontSize="22"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextPrimaryBrush}"
-                               TextTrimming="CharacterEllipsis"
-                               VerticalAlignment="Bottom"/>
-                </Grid>
-
-                <Border Grid.Column="1"
-                        Width="0.5"
-                        Height="38"
-                        Background="{DynamicResource DividerBrush}"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"/>
-
-                <Grid Grid.Column="2" ToolTip="{Binding SecondaryFullValue}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <StackPanel Grid.Row="0" Orientation="Horizontal">
-                        <TextBlock Text="{Binding SecondaryIcon}"
-                                   FontFamily="Segoe MDL2 Assets"
-                                   FontSize="10"
-                                   Foreground="{DynamicResource AccentBrush}"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,5,0"/>
-                        <TextBlock Text="{Binding SecondaryLabel}"
-                                   FontSize="10"
-                                   Foreground="{DynamicResource TextSecondaryBrush}"
-                                   TextTrimming="CharacterEllipsis"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                    <TextBlock Grid.Row="1"
-                               Text="{Binding SecondaryValue}"
-                               FontSize="22"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextPrimaryBrush}"
-                               TextTrimming="CharacterEllipsis"
-                               VerticalAlignment="Bottom"/>
-                </Grid>
-            </Grid>
+            <TextBlock Grid.Column="2"
+                       Text="{Binding SecondaryValue}"
+                       FontSize="22"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextPrimaryBrush}"
+                       TextAlignment="Center"
+                       TextTrimming="CharacterEllipsis"
+                       HorizontalAlignment="Stretch"
+                       VerticalAlignment="Center"
+                       ToolTip="{Binding SecondaryFullValue}"/>
         </Grid>
     </Border>
 </Window>
