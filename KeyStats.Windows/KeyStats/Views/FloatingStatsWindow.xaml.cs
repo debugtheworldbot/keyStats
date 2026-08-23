@@ -19,7 +19,7 @@ public partial class FloatingStatsWindow : Window
     private const double EdgeMargin = 16;
     private const double SingleRowWidth = 72;
     private const double SingleRowHeight = 28;
-    private const double DoubleRowWidth = 56;
+    private const double DoubleRowWidth = 32;
     private const double DoubleRowHeight = 38;
     private readonly FloatingStatsViewModel _viewModel;
     private readonly DispatcherTimer _positionSaveTimer;
