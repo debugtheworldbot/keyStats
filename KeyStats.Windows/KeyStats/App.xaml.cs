@@ -29,7 +29,6 @@ public partial class App : System.Windows.Application
     private TrayIconViewModel? _trayIconViewModel;
     private TrayContextMenuHost? _trayContextMenuHost;
     private TaskbarCreatedWatcher? _taskbarCreatedWatcher;
-    private TaskbarStatsHost? _taskbarStatsHost;
     private SettingsWindow? _settingsWindow;
     private NotificationSettingsWindow? _notificationSettingsWindow;
     private MouseCalibrationWindow? _mouseCalibrationWindow;
@@ -39,13 +38,11 @@ public partial class App : System.Windows.Application
     private SyncSettingsWindow? _syncSettingsWindow;
     private FloatingStatsWindow? _floatingStatsWindow;
     private MenuItem? _floatingStatsMenuItem;
-    private MenuItem? _taskbarStatsMenuItem;
     private System.Threading.Mutex? _singleInstanceMutex;
     private string? _appVersion;
     private IPostHogAnalytics? _postHogClient;
     private SyncCoordinator? _syncCoordinator;
     private long _lastResumeRecoveryTicks;
-    private bool _taskbarStatsPageviewTracked;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -127,7 +124,6 @@ public partial class App : System.Windows.Application
             Console.WriteLine("Creating tray icon...");
             _trayIconViewModel = new TrayIconViewModel();
             _trayIconViewModel.PropertyChanged += OnTrayIconViewModelPropertyChanged;
-            _taskbarStatsHost = new TaskbarStatsHost();
             _taskbarCreatedWatcher = new TaskbarCreatedWatcher(() =>
             {
                 Dispatcher.BeginInvoke(new Action(() =>
@@ -184,19 +180,6 @@ public partial class App : System.Windows.Application
             SetFloatingStatsVisible(menuItem.IsChecked);
         };
         menu.Items.Add(_floatingStatsMenuItem);
-
-        _taskbarStatsMenuItem = new System.Windows.Controls.MenuItem
-        {
-            Header = KeyStats.Properties.Strings.Tray_TaskbarStats,
-            IsCheckable = true,
-            IsChecked = StatsManager.Instance.Settings.TaskbarStatsEnabled
-        };
-        _taskbarStatsMenuItem.Click += (s, e) =>
-        {
-            var menuItem = (System.Windows.Controls.MenuItem)s!;
-            SetTaskbarStatsEnabled(menuItem.IsChecked, "tray_context_menu");
-        };
-        menu.Items.Add(_taskbarStatsMenuItem);
 
         var settingsItem = new System.Windows.Controls.MenuItem { Header = KeyStats.Properties.Strings.Tray_Settings };
         settingsItem.Click += (s, e) =>
@@ -578,8 +561,6 @@ public partial class App : System.Windows.Application
         }
         TrackAnalyticsExit();
         _trayIconViewModel?.Cleanup();
-        _taskbarStatsHost?.Dispose();
-        _taskbarStatsHost = null;
         _trayContextMenuHost?.Dispose();
         _taskbarCreatedWatcher?.Dispose();
         _taskbarCreatedWatcher = null;
@@ -1002,56 +983,6 @@ public partial class App : System.Windows.Application
     /// </summary>
     public static App? CurrentApp => Current as App;
     public SyncCoordinator? SyncCoordinator => _syncCoordinator;
-    public event Action<bool>? TaskbarStatsVisibilityChanged;
-
-    public void SetTaskbarStatsEnabled(bool enabled, string source)
-    {
-        if (!Dispatcher.CheckAccess())
-        {
-            Dispatcher.BeginInvoke(new Action(() => SetTaskbarStatsEnabled(enabled, source)));
-            return;
-        }
-
-        var settings = StatsManager.Instance.Settings;
-        var changed = settings.TaskbarStatsEnabled != enabled;
-        settings.TaskbarStatsEnabled = enabled;
-        if (changed)
-        {
-            StatsManager.Instance.SaveSettings();
-        }
-
-        _taskbarStatsHost ??= new TaskbarStatsHost();
-        _taskbarStatsHost.SetEnabled(enabled);
-        if (_taskbarStatsMenuItem != null)
-        {
-            _taskbarStatsMenuItem.IsChecked = enabled;
-        }
-        if (enabled)
-        {
-            TrackTaskbarStatsPageViewOnce();
-        }
-
-        if (changed)
-        {
-            TrackClick("taskbar_stats_visibility", new Dictionary<string, object?>
-            {
-                ["enabled"] = enabled,
-                ["source"] = source
-            });
-            TaskbarStatsVisibilityChanged?.Invoke(enabled);
-        }
-    }
-
-    private void TrackTaskbarStatsPageViewOnce()
-    {
-        if (_taskbarStatsPageviewTracked)
-        {
-            return;
-        }
-
-        _taskbarStatsPageviewTracked = true;
-        TrackPageView("taskbar_stats");
-    }
 
     private void RegisterSystemEventHandlers()
     {
@@ -1180,23 +1111,6 @@ public partial class App : System.Windows.Application
         };
         _trayIcon.MouseClick += OnTrayIconMouseClick;
 
-        var taskbarStatsEnabled = StatsManager.Instance.Settings.TaskbarStatsEnabled;
-        if (taskbarStatsEnabled)
-        {
-            if (_taskbarStatsHost?.IsEnabled == true)
-            {
-                _taskbarStatsHost.Recreate();
-            }
-            else
-            {
-                _taskbarStatsHost?.SetEnabled(true);
-            }
-            TrackTaskbarStatsPageViewOnce();
-        }
-        else
-        {
-            _taskbarStatsHost?.SetEnabled(false);
-        }
     }
 
     private void OnTrayIconMouseClick(object? sender, Forms.MouseEventArgs e)

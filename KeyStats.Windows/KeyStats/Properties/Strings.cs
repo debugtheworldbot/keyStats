@@ -30,7 +30,6 @@ public static class Strings
 
     public static string Tray_OpenMainWindow => Get(nameof(Tray_OpenMainWindow));
     public static string Tray_ShowFloatingStats => Get(nameof(Tray_ShowFloatingStats));
-    public static string Tray_TaskbarStats => Get(nameof(Tray_TaskbarStats));
     public static string Tray_Settings => Get(nameof(Tray_Settings));
     public static string Tray_StartAtLogin => Get(nameof(Tray_StartAtLogin));
     public static string Tray_KeyHistory => Get(nameof(Tray_KeyHistory));
@@ -76,8 +75,6 @@ public static class Strings
     public static string Settings_SyncUnavailable => Get(nameof(Settings_SyncUnavailable));
     public static string Settings_FloatingStats => Get(nameof(Settings_FloatingStats));
     public static string Settings_FloatingStatsDesc => Get(nameof(Settings_FloatingStatsDesc));
-    public static string Settings_TaskbarStats => Get(nameof(Settings_TaskbarStats));
-    public static string Settings_TaskbarStatsDesc => Get(nameof(Settings_TaskbarStatsDesc));
 
     public static string Sync_WindowTitle => Get(nameof(Sync_WindowTitle));
     public static string Sync_HeaderTitle => Get(nameof(Sync_HeaderTitle));
@@ -181,10 +178,6 @@ public static class Strings
     public static string FloatingStats_LockPosition => Get(nameof(FloatingStats_LockPosition));
     public static string FloatingStats_OpenDetails => Get(nameof(FloatingStats_OpenDetails));
     public static string FloatingStats_Hide => Get(nameof(FloatingStats_Hide));
-    public static string TaskbarStats_OpenDetails => Get(nameof(TaskbarStats_OpenDetails));
-    public static string TaskbarStats_PrimaryMetric => Get(nameof(TaskbarStats_PrimaryMetric));
-    public static string TaskbarStats_SecondaryMetric => Get(nameof(TaskbarStats_SecondaryMetric));
-    public static string TaskbarStats_Hide => Get(nameof(TaskbarStats_Hide));
 
     public static string AppStats_WindowTitle => Get(nameof(AppStats_WindowTitle));
     public static string AppStats_HeaderTitle => Get(nameof(AppStats_HeaderTitle));

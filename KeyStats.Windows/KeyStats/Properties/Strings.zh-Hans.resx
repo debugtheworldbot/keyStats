@@ -69,7 +69,6 @@
 
   <data name="Tray_OpenMainWindow" xml:space="preserve"><value>打开主界面</value></data>
   <data name="Tray_ShowFloatingStats" xml:space="preserve"><value>显示今日统计浮窗</value></data>
-  <data name="Tray_TaskbarStats" xml:space="preserve"><value>显示任务栏双排统计</value></data>
   <data name="Tray_Settings" xml:space="preserve"><value>设置</value></data>
   <data name="Tray_StartAtLogin" xml:space="preserve"><value>开机启动</value></data>
   <data name="Tray_KeyHistory" xml:space="preserve"><value>历史按键统计</value></data>
@@ -86,12 +85,6 @@
   <data name="FloatingStats_LockPosition" xml:space="preserve"><value>锁定位置</value></data>
   <data name="FloatingStats_OpenDetails" xml:space="preserve"><value>打开详细统计</value></data>
   <data name="FloatingStats_Hide" xml:space="preserve"><value>隐藏浮窗</value></data>
-  <data name="TaskbarStats_OpenDetails" xml:space="preserve"><value>打开详细统计</value></data>
-  <data name="TaskbarStats_PrimaryMetric" xml:space="preserve"><value>第一行</value></data>
-  <data name="TaskbarStats_SecondaryMetric" xml:space="preserve"><value>第二行</value></data>
-  <data name="TaskbarStats_Hide" xml:space="preserve"><value>隐藏任务栏统计</value></data>
-  <data name="Settings_TaskbarStats" xml:space="preserve"><value>任务栏统计</value></data>
-  <data name="Settings_TaskbarStatsDesc" xml:space="preserve"><value>在任务栏中以独立双排组件显示今日选中的两项统计。</value></data>
   <data name="Settings_FloatingStats" xml:space="preserve"><value>统计浮窗</value></data>
   <data name="Settings_FloatingStatsDesc" xml:space="preserve"><value>选择桌面浮窗显示的两项统计，并调整浮窗行为。</value></data>
 

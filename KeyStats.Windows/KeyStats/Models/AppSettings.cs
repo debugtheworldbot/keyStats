@@ -84,9 +84,6 @@ public class AppSettings
     [JsonPropertyName("floatingStatsPositionLocked")]
     public bool FloatingStatsPositionLocked { get; set; }
 
-    [JsonPropertyName("taskbarStatsEnabled")]
-    public bool TaskbarStatsEnabled { get; set; }
-
     [JsonPropertyName("languagePreference")]
     public string LanguagePreference { get; set; } = "system";  // "system" | "zh-Hans" | "zh-Hant" | "en"
 }

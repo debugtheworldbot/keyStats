@@ -69,7 +69,6 @@
 
   <data name="Tray_OpenMainWindow" xml:space="preserve"><value>Open Main Window</value></data>
   <data name="Tray_ShowFloatingStats" xml:space="preserve"><value>Show Today's Floating Stats</value></data>
-  <data name="Tray_TaskbarStats" xml:space="preserve"><value>Show Taskbar Stats</value></data>
   <data name="Tray_Settings" xml:space="preserve"><value>Settings</value></data>
   <data name="Tray_StartAtLogin" xml:space="preserve"><value>Start at Login</value></data>
   <data name="Tray_KeyHistory" xml:space="preserve"><value>Key History</value></data>
@@ -86,12 +85,6 @@
   <data name="FloatingStats_LockPosition" xml:space="preserve"><value>Lock Position</value></data>
   <data name="FloatingStats_OpenDetails" xml:space="preserve"><value>Open Detailed Stats</value></data>
   <data name="FloatingStats_Hide" xml:space="preserve"><value>Hide Floating Window</value></data>
-  <data name="TaskbarStats_OpenDetails" xml:space="preserve"><value>Open Detailed Stats</value></data>
-  <data name="TaskbarStats_PrimaryMetric" xml:space="preserve"><value>First Row</value></data>
-  <data name="TaskbarStats_SecondaryMetric" xml:space="preserve"><value>Second Row</value></data>
-  <data name="TaskbarStats_Hide" xml:space="preserve"><value>Hide Taskbar Stats</value></data>
-  <data name="Settings_TaskbarStats" xml:space="preserve"><value>Taskbar Stats</value></data>
-  <data name="Settings_TaskbarStatsDesc" xml:space="preserve"><value>Show today's two selected metrics as a separate two-row taskbar component.</value></data>
   <data name="Settings_FloatingStats" xml:space="preserve"><value>Floating Stats</value></data>
   <data name="Settings_FloatingStatsDesc" xml:space="preserve"><value>Choose the two metrics shown in the desktop floating window and adjust its behavior.</value></data>
 

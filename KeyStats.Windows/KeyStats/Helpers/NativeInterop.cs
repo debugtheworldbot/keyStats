@@ -27,24 +27,6 @@ public static class NativeInterop
     public const int XBUTTON1 = 0x0001; // Back
     public const int XBUTTON2 = 0x0002; // Forward
 
-    public const int WS_CHILD = unchecked((int)0x40000000);
-    public const int WS_VISIBLE = 0x10000000;
-    public const int WS_CLIPSIBLINGS = 0x04000000;
-    public const int WS_CLIPCHILDREN = 0x02000000;
-    public const int WS_POPUP = unchecked((int)0x80000000);
-
-    public const int WS_EX_TOOLWINDOW = 0x00000080;
-    public const int WS_EX_NOACTIVATE = 0x08000000;
-    public const int WS_EX_NOPARENTNOTIFY = 0x00000004;
-
-    public const uint SWP_NOSIZE = 0x0001;
-    public const uint SWP_NOMOVE = 0x0002;
-    public const uint SWP_NOACTIVATE = 0x0010;
-    public const uint SWP_SHOWWINDOW = 0x0040;
-
-    public static readonly IntPtr HWND_TOP = IntPtr.Zero;
-    public static readonly IntPtr HWND_TOPMOST = new(-1);
-
     public const int VK_SHIFT = 0x10;
     public const int VK_CONTROL = 0x11;
     public const int VK_MENU = 0x12;        // Alt key
@@ -128,45 +110,6 @@ public static class NativeInterop
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool DestroyIcon(IntPtr hIcon);
 
-    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    public static extern IntPtr FindWindow(string? lpClassName, string? lpWindowName);
-
-    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    public static extern IntPtr FindWindowEx(
-        IntPtr hWndParent,
-        IntPtr hWndChildAfter,
-        string? lpszClass,
-        string? lpszWindow);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
-
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool IsWindow(IntPtr hWnd);
-
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool IsWindowVisible(IntPtr hWnd);
-
-    [DllImport("user32.dll")]
-    public static extern IntPtr GetParent(IntPtr hWnd);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool SetWindowPos(
-        IntPtr hWnd,
-        IntPtr hWndInsertAfter,
-        int x,
-        int y,
-        int cx,
-        int cy,
-        uint uFlags);
-
-    [DllImport("user32.dll")]
-    private static extern uint GetDpiForWindow(IntPtr hWnd);
-
     [DllImport("shell32.dll", SetLastError = true)]
     public static extern int Shell_NotifyIconGetRect(ref NOTIFYICONIDENTIFIER identifier, out RECT iconLocation);
 
@@ -186,24 +129,6 @@ public static class NativeInterop
     public static bool IsKeyDown(int vkCode)
     {
         return (GetAsyncKeyState(vkCode) & 0x8000) != 0;
-    }
-
-    public static uint TryGetDpiForWindow(IntPtr hWnd)
-    {
-        if (hWnd == IntPtr.Zero)
-        {
-            return 96;
-        }
-
-        try
-        {
-            var dpi = GetDpiForWindow(hWnd);
-            return dpi == 0 ? 96 : dpi;
-        }
-        catch (EntryPointNotFoundException)
-        {
-            return 96;
-        }
     }
 
     public static short HiWord(int dword)
