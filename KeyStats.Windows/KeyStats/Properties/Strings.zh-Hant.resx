@@ -79,6 +79,7 @@
   <data name="FloatingStats_PrimaryMetric" xml:space="preserve"><value>第一項</value></data>
   <data name="FloatingStats_SecondaryMetric" xml:space="preserve"><value>第二項</value></data>
   <data name="FloatingStats_Layout" xml:space="preserve"><value>顯示方式</value></data>
+  <data name="FloatingStats_FontSize" xml:space="preserve"><value>字型大小</value></data>
   <data name="FloatingStats_SingleRow" xml:space="preserve"><value>單排</value></data>
   <data name="FloatingStats_DoubleRow" xml:space="preserve"><value>雙排</value></data>
   <data name="FloatingStats_AlwaysOnTop" xml:space="preserve"><value>永遠置頂</value></data>

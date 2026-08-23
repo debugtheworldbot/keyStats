@@ -41,6 +41,7 @@ public partial class FloatingStatsWindow : Window
         var settings = StatsManager.Instance.Settings;
         Topmost = settings.FloatingStatsTopmost;
         UpdateDragCursor();
+        ApplyFontSettings();
         ApplyLayoutSettings();
 
         SourceInitialized += OnSourceInitialized;
@@ -64,6 +65,7 @@ public partial class FloatingStatsWindow : Window
         var settings = StatsManager.Instance.Settings;
         Topmost = settings.FloatingStatsTopmost;
         UpdateDragCursor();
+        ApplyFontSettings();
         if (ApplyLayoutSettings())
         {
             EnsureVisiblePosition();
@@ -210,6 +212,15 @@ public partial class FloatingStatsWindow : Window
         RootBorder.Cursor = StatsManager.Instance.Settings.FloatingStatsPositionLocked
             ? Cursors.Arrow
             : Cursors.SizeAll;
+    }
+
+    private void ApplyFontSettings()
+    {
+        var fontSize = StatsManager.Instance.Settings.FloatingStatsFontSize;
+        SinglePrimaryValueTextBlock.FontSize = fontSize;
+        SingleSecondaryValueTextBlock.FontSize = fontSize;
+        DoublePrimaryValueTextBlock.FontSize = fontSize;
+        DoubleSecondaryValueTextBlock.FontSize = fontSize;
     }
 
     private bool ApplyLayoutSettings()

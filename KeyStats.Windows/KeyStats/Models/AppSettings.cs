@@ -8,6 +8,10 @@ public class AppSettings
     public const double DefaultMouseMetersPerPixel = 0.00005;
     public const string FloatingStatsSingleRowLayoutMode = "singleRow";
     public const string FloatingStatsDoubleRowLayoutMode = "doubleRow";
+    public const int DefaultFloatingStatsFontSize = 11;
+    public const int MinimumFloatingStatsFontSize = 9;
+    public const int MaximumFloatingStatsFontSize = 13;
+    private int _floatingStatsFontSize = DefaultFloatingStatsFontSize;
 
     [JsonPropertyName("notificationsEnabled")]
     public bool NotificationsEnabled { get; set; }
@@ -71,6 +75,15 @@ public class AppSettings
 
     [JsonPropertyName("floatingStatsLayoutMode")]
     public string FloatingStatsLayoutMode { get; set; } = FloatingStatsSingleRowLayoutMode;
+
+    [JsonPropertyName("floatingStatsFontSize")]
+    public int FloatingStatsFontSize
+    {
+        get => _floatingStatsFontSize;
+        set => _floatingStatsFontSize = Math.Max(
+            MinimumFloatingStatsFontSize,
+            Math.Min(MaximumFloatingStatsFontSize, value));
+    }
 
     [JsonPropertyName("floatingStatsLeft")]
     public double? FloatingStatsLeft { get; set; }

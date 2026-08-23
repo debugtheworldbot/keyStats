@@ -112,6 +112,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -158,6 +159,18 @@
                         <ComboBoxItem Content="{x:Static p:Strings.FloatingStats_SingleRow}" Tag="singleRow"/>
                         <ComboBoxItem Content="{x:Static p:Strings.FloatingStats_DoubleRow}" Tag="doubleRow"/>
                     </ComboBox>
+
+                    <TextBlock Grid.Row="3"
+                               Text="{x:Static p:Strings.FloatingStats_FontSize}"
+                               FontSize="12"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               VerticalAlignment="Center"
+                               Margin="0,8,0,0"/>
+                    <ComboBox x:Name="FloatingFontSizeComboBox"
+                              Grid.Row="3" Grid.Column="1"
+                              MinWidth="150"
+                              SelectionChanged="FloatingFontSize_SelectionChanged"
+                              Margin="0,8,0,0"/>
                 </Grid>
 
                 <StackPanel Orientation="Horizontal" Margin="0,10,0,0">

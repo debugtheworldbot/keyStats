@@ -31,10 +31,11 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Column="0"
+                <TextBlock x:Name="SinglePrimaryValueTextBlock"
+                           Grid.Column="0"
                            Text="{Binding PrimaryValue}"
                            FontSize="11"
-                           FontWeight="SemiBold"
+                           FontWeight="Medium"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            TextAlignment="Center"
                            TextTrimming="CharacterEllipsis"
@@ -49,10 +50,11 @@
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"/>
 
-                <TextBlock Grid.Column="2"
+                <TextBlock x:Name="SingleSecondaryValueTextBlock"
+                           Grid.Column="2"
                            Text="{Binding SecondaryValue}"
                            FontSize="11"
-                           FontWeight="SemiBold"
+                           FontWeight="Medium"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            TextAlignment="Center"
                            TextTrimming="CharacterEllipsis"
@@ -68,10 +70,11 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0"
+                <TextBlock x:Name="DoublePrimaryValueTextBlock"
+                           Grid.Row="0"
                            Text="{Binding PrimaryValue}"
                            FontSize="11"
-                           FontWeight="SemiBold"
+                           FontWeight="Medium"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            TextAlignment="Center"
                            TextTrimming="CharacterEllipsis"
@@ -86,10 +89,11 @@
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"/>
 
-                <TextBlock Grid.Row="2"
+                <TextBlock x:Name="DoubleSecondaryValueTextBlock"
+                           Grid.Row="2"
                            Text="{Binding SecondaryValue}"
                            FontSize="11"
-                           FontWeight="SemiBold"
+                           FontWeight="Medium"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            TextAlignment="Center"
                            TextTrimming="CharacterEllipsis"

@@ -79,6 +79,7 @@
   <data name="FloatingStats_PrimaryMetric" xml:space="preserve"><value>First Metric</value></data>
   <data name="FloatingStats_SecondaryMetric" xml:space="preserve"><value>Second Metric</value></data>
   <data name="FloatingStats_Layout" xml:space="preserve"><value>Display Layout</value></data>
+  <data name="FloatingStats_FontSize" xml:space="preserve"><value>Font Size</value></data>
   <data name="FloatingStats_SingleRow" xml:space="preserve"><value>One Row</value></data>
   <data name="FloatingStats_DoubleRow" xml:space="preserve"><value>Two Rows</value></data>
   <data name="FloatingStats_AlwaysOnTop" xml:space="preserve"><value>Always on Top</value></data>

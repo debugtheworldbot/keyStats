@@ -159,6 +159,9 @@ public partial class SettingsWindow : Window
             .ToList();
         FloatingPrimaryMetricComboBox.ItemsSource = options;
         FloatingSecondaryMetricComboBox.ItemsSource = options;
+        FloatingFontSizeComboBox.ItemsSource = Enumerable.Range(
+            AppSettings.MinimumFloatingStatsFontSize,
+            AppSettings.MaximumFloatingStatsFontSize - AppSettings.MinimumFloatingStatsFontSize + 1);
         RefreshFloatingStatsControls();
         _isLoadingFloatingStats = false;
     }
@@ -183,6 +186,7 @@ public partial class SettingsWindow : Window
             ?? FloatingLayoutComboBox.Items[0];
         FloatingTopmostCheckBox.IsChecked = settings.FloatingStatsTopmost;
         FloatingLockPositionCheckBox.IsChecked = settings.FloatingStatsPositionLocked;
+        FloatingFontSizeComboBox.SelectedItem = settings.FloatingStatsFontSize;
     }
 
     private void FloatingMetric_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -266,6 +270,28 @@ public partial class SettingsWindow : Window
         App.CurrentApp?.TrackClick(eventName, new System.Collections.Generic.Dictionary<string, object?>
         {
             ["enabled"] = enabled
+        });
+    }
+
+    private void FloatingFontSize_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoadingFloatingStats || FloatingFontSizeComboBox.SelectedItem is not int fontSize)
+        {
+            return;
+        }
+
+        var settings = StatsManager.Instance.Settings;
+        if (settings.FloatingStatsFontSize == fontSize)
+        {
+            return;
+        }
+
+        settings.FloatingStatsFontSize = fontSize;
+        StatsManager.Instance.SaveSettings();
+        App.CurrentApp?.ApplyFloatingStatsBehaviorSettings();
+        App.CurrentApp?.TrackClick("settings_floating_stats_font_size", new System.Collections.Generic.Dictionary<string, object?>
+        {
+            ["font_size"] = fontSize
         });
     }
 
