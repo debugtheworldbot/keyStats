@@ -89,6 +89,8 @@
   <data name="TaskbarStats_Hide" xml:space="preserve"><value>隱藏工作列統計</value></data>
   <data name="Settings_TaskbarStats" xml:space="preserve"><value>工作列統計</value></data>
   <data name="Settings_TaskbarStatsDesc" xml:space="preserve"><value>在工作列中以獨立雙排元件顯示今日選取的兩項統計。</value></data>
+  <data name="Settings_FloatingStats" xml:space="preserve"><value>統計浮窗</value></data>
+  <data name="Settings_FloatingStatsDesc" xml:space="preserve"><value>選擇桌面浮窗顯示的兩項統計，並調整浮窗行為。</value></data>
 
   <data name="Toast_ExportSuccess_Title" xml:space="preserve"><value>匯出成功</value></data>
   <data name="Toast_ExportSuccess_BodyFormat" xml:space="preserve"><value>資料已儲存至 {0}</value></data>

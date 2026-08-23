@@ -89,6 +89,8 @@
   <data name="TaskbarStats_Hide" xml:space="preserve"><value>Hide Taskbar Stats</value></data>
   <data name="Settings_TaskbarStats" xml:space="preserve"><value>Taskbar Stats</value></data>
   <data name="Settings_TaskbarStatsDesc" xml:space="preserve"><value>Show today's two selected metrics as a separate two-row taskbar component.</value></data>
+  <data name="Settings_FloatingStats" xml:space="preserve"><value>Floating Stats</value></data>
+  <data name="Settings_FloatingStatsDesc" xml:space="preserve"><value>Choose the two metrics shown in the desktop floating window and adjust its behavior.</value></data>
 
   <data name="Toast_ExportSuccess_Title" xml:space="preserve"><value>Export Successful</value></data>
   <data name="Toast_ExportSuccess_BodyFormat" xml:space="preserve"><value>Data saved to {0}</value></data>

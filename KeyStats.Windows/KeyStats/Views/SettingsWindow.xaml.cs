@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using KeyStats.Helpers;
 using KeyStats.Services;
+using KeyStats.ViewModels;
 
 namespace KeyStats.Views;
 
@@ -12,6 +13,7 @@ public partial class SettingsWindow : Window
 {
     private const string GitHubUrl = "https://github.com/debugtheworldbot/keyStats";
     private bool _isLoadingTaskbarStats = true;
+    private bool _isLoadingFloatingStats = true;
 
     public SettingsWindow()
     {
@@ -25,6 +27,7 @@ public partial class SettingsWindow : Window
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         ApplyWindowBackdrop();
+        LoadFloatingStatsControls();
         _isLoadingTaskbarStats = true;
         TaskbarStatsCheckBox.IsChecked = StatsManager.Instance.Settings.TaskbarStatsEnabled;
         _isLoadingTaskbarStats = false;
@@ -157,6 +160,80 @@ public partial class SettingsWindow : Window
         App.CurrentApp?.ShowNotificationSettings();
     }
 
+    private void LoadFloatingStatsControls()
+    {
+        _isLoadingFloatingStats = true;
+        var options = FloatingStatsViewModel.AvailableMetricIds
+            .Select(metricId => new FloatingMetricOption(
+                metricId,
+                FloatingStatsViewModel.GetMetricLabel(metricId)))
+            .ToList();
+        FloatingPrimaryMetricComboBox.ItemsSource = options;
+        FloatingSecondaryMetricComboBox.ItemsSource = options;
+        RefreshFloatingStatsControls();
+        _isLoadingFloatingStats = false;
+    }
+
+    private void RefreshFloatingStatsControls()
+    {
+        var settings = StatsManager.Instance.Settings;
+        FloatingPrimaryMetricComboBox.SelectedValue = settings.FloatingStatsPrimaryMetric;
+        FloatingSecondaryMetricComboBox.SelectedValue = settings.FloatingStatsSecondaryMetric;
+        FloatingTopmostCheckBox.IsChecked = settings.FloatingStatsTopmost;
+        FloatingLockPositionCheckBox.IsChecked = settings.FloatingStatsPositionLocked;
+    }
+
+    private void FloatingMetric_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoadingFloatingStats || sender is not ComboBox comboBox)
+        {
+            return;
+        }
+
+        var isPrimary = ReferenceEquals(comboBox, FloatingPrimaryMetricComboBox);
+        if (comboBox.SelectedValue is not string metricId || string.IsNullOrWhiteSpace(metricId))
+        {
+            return;
+        }
+
+        if (!FloatingStatsViewModel.UpdateMetricSetting(isPrimary, metricId))
+        {
+            _isLoadingFloatingStats = true;
+            RefreshFloatingStatsControls();
+            _isLoadingFloatingStats = false;
+            return;
+        }
+
+        App.CurrentApp?.TrackClick("settings_floating_stats_metric_change", new System.Collections.Generic.Dictionary<string, object?>
+        {
+            ["slot"] = isPrimary ? "primary" : "secondary",
+            ["metric"] = metricId
+        });
+    }
+
+    private void FloatingStatsBehavior_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_isLoadingFloatingStats)
+        {
+            return;
+        }
+
+        var settings = StatsManager.Instance.Settings;
+        settings.FloatingStatsTopmost = FloatingTopmostCheckBox.IsChecked == true;
+        settings.FloatingStatsPositionLocked = FloatingLockPositionCheckBox.IsChecked == true;
+        StatsManager.Instance.SaveSettings();
+        App.CurrentApp?.ApplyFloatingStatsBehaviorSettings();
+
+        var eventName = ReferenceEquals(sender, FloatingTopmostCheckBox)
+            ? "settings_floating_stats_topmost"
+            : "settings_floating_stats_position_lock";
+        var enabled = sender is CheckBox checkBox && checkBox.IsChecked == true;
+        App.CurrentApp?.TrackClick(eventName, new System.Collections.Generic.Dictionary<string, object?>
+        {
+            ["enabled"] = enabled
+        });
+    }
+
     private void TaskbarStatsVisibility_Changed(object sender, RoutedEventArgs e)
     {
         if (_isLoadingTaskbarStats)
@@ -271,5 +348,18 @@ public partial class SettingsWindow : Window
             System.Console.WriteLine($"RestartApp: relaunch failed: {ex}");
         }
         Application.Current.Shutdown();
+    }
+
+    private sealed class FloatingMetricOption
+    {
+        public FloatingMetricOption(string id, string label)
+        {
+            Id = id;
+            Label = label;
+        }
+
+        public string Id { get; }
+
+        public string Label { get; }
     }
 }

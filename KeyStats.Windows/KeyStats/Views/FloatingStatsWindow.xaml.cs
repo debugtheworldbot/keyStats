@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -22,7 +21,6 @@ public partial class FloatingStatsWindow : Window
     private bool _isLoaded;
     private bool _isRestoringPosition;
     private bool _isBackdropEnabled;
-    private ContextMenu? _metricSelectorMenu;
 
     public FloatingStatsWindow()
     {
@@ -53,6 +51,13 @@ public partial class FloatingStatsWindow : Window
         {
             Show();
         }
+    }
+
+    public void ApplyBehaviorSettings()
+    {
+        var settings = StatsManager.Instance.Settings;
+        Topmost = settings.FloatingStatsTopmost;
+        UpdateDragCursor();
     }
 
     private void OnSourceInitialized(object? sender, EventArgs e)
@@ -135,133 +140,18 @@ public partial class FloatingStatsWindow : Window
     private ContextMenu BuildContextMenu()
     {
         var menu = new ContextMenu();
-
-        var primaryMetricItem = new MenuItem
+        var settingsItem = new MenuItem
         {
-            Header = $"{KeyStats.Properties.Strings.FloatingStats_PrimaryMetric}: {_viewModel.PrimaryLabel}"
+            Header = KeyStats.Properties.Strings.Tray_Settings
         };
-        primaryMetricItem.Click += (_, _) => OpenMetricSelector(isPrimary: true);
-        menu.Items.Add(primaryMetricItem);
-
-        var secondaryMetricItem = new MenuItem
+        settingsItem.Click += (_, _) =>
         {
-            Header = $"{KeyStats.Properties.Strings.FloatingStats_SecondaryMetric}: {_viewModel.SecondaryLabel}"
+            App.CurrentApp?.TrackClick("floating_stats_settings");
+            App.CurrentApp?.ShowSettingsWindow();
         };
-        secondaryMetricItem.Click += (_, _) => OpenMetricSelector(isPrimary: false);
-        menu.Items.Add(secondaryMetricItem);
-        menu.Items.Add(new Separator());
-
-        var topmostItem = new MenuItem
-        {
-            Header = KeyStats.Properties.Strings.FloatingStats_AlwaysOnTop,
-            IsCheckable = true,
-            IsChecked = StatsManager.Instance.Settings.FloatingStatsTopmost
-        };
-        topmostItem.Click += (_, _) =>
-        {
-            var enabled = topmostItem.IsChecked;
-            Topmost = enabled;
-            StatsManager.Instance.Settings.FloatingStatsTopmost = enabled;
-            StatsManager.Instance.SaveSettings();
-            App.CurrentApp?.TrackClick("floating_stats_topmost", new Dictionary<string, object?>
-            {
-                ["enabled"] = enabled
-            });
-        };
-        menu.Items.Add(topmostItem);
-
-        var lockItem = new MenuItem
-        {
-            Header = KeyStats.Properties.Strings.FloatingStats_LockPosition,
-            IsCheckable = true,
-            IsChecked = StatsManager.Instance.Settings.FloatingStatsPositionLocked
-        };
-        lockItem.Click += (_, _) =>
-        {
-            var enabled = lockItem.IsChecked;
-            StatsManager.Instance.Settings.FloatingStatsPositionLocked = enabled;
-            StatsManager.Instance.SaveSettings();
-            UpdateDragCursor();
-            App.CurrentApp?.TrackClick("floating_stats_position_lock", new Dictionary<string, object?>
-            {
-                ["enabled"] = enabled
-            });
-        };
-        menu.Items.Add(lockItem);
-        menu.Items.Add(new Separator());
-
-        var openDetailsItem = new MenuItem
-        {
-            Header = KeyStats.Properties.Strings.FloatingStats_OpenDetails
-        };
-        openDetailsItem.Click += (_, _) =>
-        {
-            App.CurrentApp?.TrackClick("floating_stats_open_details");
-            App.CurrentApp?.ShowMainWindow();
-        };
-        menu.Items.Add(openDetailsItem);
-
-        var hideItem = new MenuItem
-        {
-            Header = KeyStats.Properties.Strings.FloatingStats_Hide
-        };
-        hideItem.Click += (_, _) =>
-        {
-            App.CurrentApp?.TrackClick("floating_stats_hide");
-            Dispatcher.BeginInvoke(new Action(() => App.CurrentApp?.SetFloatingStatsVisible(false)));
-        };
-        menu.Items.Add(hideItem);
+        menu.Items.Add(settingsItem);
 
         return menu;
-    }
-
-    private void OpenMetricSelector(bool isPrimary)
-    {
-        if (_metricSelectorMenu != null)
-        {
-            _metricSelectorMenu.IsOpen = false;
-        }
-        var selector = new ContextMenu
-        {
-            PlacementTarget = RootBorder,
-            Placement = PlacementMode.MousePoint
-        };
-        _metricSelectorMenu = selector;
-        selector.Closed += (_, _) =>
-        {
-            if (ReferenceEquals(_metricSelectorMenu, selector))
-            {
-                _metricSelectorMenu = null;
-            }
-        };
-
-        var selectedMetric = isPrimary ? _viewModel.PrimaryMetricId : _viewModel.SecondaryMetricId;
-        var otherMetric = isPrimary ? _viewModel.SecondaryMetricId : _viewModel.PrimaryMetricId;
-
-        foreach (var metricId in FloatingStatsViewModel.AvailableMetricIds)
-        {
-            var capturedMetricId = metricId;
-            var item = new MenuItem
-            {
-                Header = FloatingStatsViewModel.GetMetricLabel(metricId),
-                IsCheckable = true,
-                IsChecked = string.Equals(metricId, selectedMetric, StringComparison.Ordinal),
-                IsEnabled = !string.Equals(metricId, otherMetric, StringComparison.Ordinal)
-            };
-            item.Click += (_, _) =>
-            {
-                _viewModel.SetMetric(isPrimary, capturedMetricId);
-                RootBorder.ContextMenu = BuildContextMenu();
-                App.CurrentApp?.TrackClick("floating_stats_metric_change", new Dictionary<string, object?>
-                {
-                    ["slot"] = isPrimary ? "primary" : "secondary",
-                    ["metric"] = capturedMetricId
-                });
-            };
-            selector.Items.Add(item);
-        }
-
-        Dispatcher.BeginInvoke(new Action(() => selector.IsOpen = true));
     }
 
     private void UpdateDragCursor()

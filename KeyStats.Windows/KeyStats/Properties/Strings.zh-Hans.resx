@@ -89,6 +89,8 @@
   <data name="TaskbarStats_Hide" xml:space="preserve"><value>隐藏任务栏统计</value></data>
   <data name="Settings_TaskbarStats" xml:space="preserve"><value>任务栏统计</value></data>
   <data name="Settings_TaskbarStatsDesc" xml:space="preserve"><value>在任务栏中以独立双排组件显示今日选中的两项统计。</value></data>
+  <data name="Settings_FloatingStats" xml:space="preserve"><value>统计浮窗</value></data>
+  <data name="Settings_FloatingStatsDesc" xml:space="preserve"><value>选择桌面浮窗显示的两项统计，并调整浮窗行为。</value></data>
 
   <data name="Toast_ExportSuccess_Title" xml:space="preserve"><value>导出成功</value></data>
   <data name="Toast_ExportSuccess_BodyFormat" xml:space="preserve"><value>数据已保存到 {0}</value></data>

@@ -74,6 +74,8 @@ public static class Strings
     public static string Settings_Sync => Get(nameof(Settings_Sync));
     public static string Settings_SyncDesc => Get(nameof(Settings_SyncDesc));
     public static string Settings_SyncUnavailable => Get(nameof(Settings_SyncUnavailable));
+    public static string Settings_FloatingStats => Get(nameof(Settings_FloatingStats));
+    public static string Settings_FloatingStatsDesc => Get(nameof(Settings_FloatingStatsDesc));
     public static string Settings_TaskbarStats => Get(nameof(Settings_TaskbarStats));
     public static string Settings_TaskbarStatsDesc => Get(nameof(Settings_TaskbarStatsDesc));
 

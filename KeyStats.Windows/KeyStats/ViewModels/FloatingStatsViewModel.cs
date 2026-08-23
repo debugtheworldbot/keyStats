@@ -8,6 +8,8 @@ namespace KeyStats.ViewModels;
 
 public sealed class FloatingStatsViewModel : ViewModelBase
 {
+    private static event Action? MetricSettingsChanged;
+
     public const string KeyPressesMetric = "keyPresses";
     public const string TotalClicksMetric = "totalClicks";
     public const string LeftClicksMetric = "leftClicks";
@@ -46,6 +48,7 @@ public sealed class FloatingStatsViewModel : ViewModelBase
         NormalizeMetricSettings();
         Refresh();
         StatsManager.Instance.StatsChanged += OnStatsChanged;
+        MetricSettingsChanged += OnMetricSettingsChanged;
     }
 
     public static IReadOnlyList<string> AvailableMetricIds => MetricIds;
@@ -137,11 +140,16 @@ public sealed class FloatingStatsViewModel : ViewModelBase
         };
     }
 
-    public void SetMetric(bool isPrimary, string metricId)
+    public bool SetMetric(bool isPrimary, string metricId)
+    {
+        return UpdateMetricSetting(isPrimary, metricId);
+    }
+
+    public static bool UpdateMetricSetting(bool isPrimary, string metricId)
     {
         if (!IsValidMetric(metricId))
         {
-            return;
+            return false;
         }
 
         var settings = StatsManager.Instance.Settings;
@@ -150,14 +158,14 @@ public sealed class FloatingStatsViewModel : ViewModelBase
             : settings.FloatingStatsPrimaryMetric;
         if (string.Equals(metricId, otherMetric, StringComparison.Ordinal))
         {
-            return;
+            return false;
         }
 
         if (isPrimary)
         {
             if (string.Equals(settings.FloatingStatsPrimaryMetric, metricId, StringComparison.Ordinal))
             {
-                return;
+                return false;
             }
 
             settings.FloatingStatsPrimaryMetric = metricId;
@@ -166,14 +174,15 @@ public sealed class FloatingStatsViewModel : ViewModelBase
         {
             if (string.Equals(settings.FloatingStatsSecondaryMetric, metricId, StringComparison.Ordinal))
             {
-                return;
+                return false;
             }
 
             settings.FloatingStatsSecondaryMetric = metricId;
         }
 
         StatsManager.Instance.SaveSettings();
-        Refresh();
+        MetricSettingsChanged?.Invoke();
+        return true;
     }
 
     public void Cleanup()
@@ -185,6 +194,7 @@ public sealed class FloatingStatsViewModel : ViewModelBase
 
         _isCleanedUp = true;
         StatsManager.Instance.StatsChanged -= OnStatsChanged;
+        MetricSettingsChanged -= OnMetricSettingsChanged;
     }
 
     private void NormalizeMetricSettings()
@@ -223,6 +233,18 @@ public sealed class FloatingStatsViewModel : ViewModelBase
     }
 
     private void OnStatsChanged(StatsManager.StatsUpdateKind _)
+    {
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher == null || dispatcher.CheckAccess())
+        {
+            Refresh();
+            return;
+        }
+
+        dispatcher.BeginInvoke(new Action(Refresh));
+    }
+
+    private void OnMetricSettingsChanged()
     {
         var dispatcher = Application.Current?.Dispatcher;
         if (dispatcher == null || dispatcher.CheckAccess())

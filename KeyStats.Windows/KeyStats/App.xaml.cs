@@ -361,6 +361,17 @@ public partial class App : System.Windows.Application
         _floatingStatsWindow = null;
     }
 
+    public void ApplyFloatingStatsBehaviorSettings()
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(new Action(ApplyFloatingStatsBehaviorSettings));
+            return;
+        }
+
+        _floatingStatsWindow?.ApplyBehaviorSettings();
+    }
+
     public void ShowMainWindow()
     {
         _trayIconViewModel?.ShowMainWindow();
