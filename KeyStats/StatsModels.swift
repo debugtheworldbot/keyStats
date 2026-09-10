@@ -687,3 +687,13 @@ struct AllTimeStats {
         )
     }
 }
+
+/// Current-device backup. Missing hourlyStats is a valid legacy v1 file.
+struct StatsExportPayload: Codable {
+    let version: Int
+    let scope: String?
+    let exportedAt: Date
+    let currentStats: DailyStats
+    let history: [String: DailyStats]
+    let hourlyStats: HourlyStats?
+}

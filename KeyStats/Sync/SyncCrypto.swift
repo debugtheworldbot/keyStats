@@ -209,7 +209,8 @@ enum SyncCrypto {
             revision: 0,
             keyPresses: content.keyPresses,
             keyPressCounts: content.keyPressCounts,
-            clicks: content.clicks
+            clicks: content.clicks,
+            hourlyStats: content.hourlyStats
         )
         return Data(SHA256.hash(data: try SyncJSON.encoder.encode(content))).base64URLEncodedString()
     }

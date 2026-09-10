@@ -23,6 +23,7 @@ final class HourlyStatsViewController: NSViewController {
     private let previousButton = NSButton()
     private let nextButton = NSButton()
     private let mode = NSSegmentedControl()
+    private let metric = NSSegmentedControl()
     private let summary = NSTextField(labelWithString: "")
     private let detail = NSTextField(labelWithString: "")
     private let note = NSTextField(wrappingLabelWithString: "")
@@ -38,6 +39,12 @@ final class HourlyStatsViewController: NSViewController {
         super.viewDidLoad()
         let title = NSTextField(labelWithString: NSLocalizedString("hourly.title", comment: ""))
         title.font = .systemFont(ofSize: 22, weight: .semibold)
+        metric.segmentCount = 2
+        metric.setLabel(NSLocalizedString("history.metric.keys", comment: ""), forSegment: 0)
+        metric.setLabel(NSLocalizedString("history.metric.clicks", comment: ""), forSegment: 1)
+        metric.selectedSegment = 0
+        metric.target = self
+        metric.action = #selector(metricChanged)
         mode.segmentCount = 2
         mode.setLabel(NSLocalizedString("hourly.byDate", comment: ""), forSegment: 0)
         mode.setLabel(NSLocalizedString("hourly.recent", comment: ""), forSegment: 1)
@@ -74,11 +81,14 @@ final class HourlyStatsViewController: NSViewController {
         detail.textColor = .secondaryLabelColor
         note.font = .systemFont(ofSize: 11)
         note.textColor = .secondaryLabelColor
-        for child in [title, controls, summary, chart, detail, note] {
+        for child in [title, metric, controls, summary, chart, detail, note] {
             child.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview(child)
         }
         NSLayoutConstraint.activate([
+            metric.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+            metric.centerYAnchor.constraint(equalTo: title.centerYAnchor),
+            metric.leadingAnchor.constraint(greaterThanOrEqualTo: title.trailingAnchor, constant: 16),
             datePickerButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 78),
             title.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
             title.topAnchor.constraint(equalTo: view.topAnchor, constant: 24),
@@ -136,21 +146,24 @@ final class HourlyStatsViewController: NSViewController {
         backToTodayButton.isHidden = recent || stats.calendar.isDate(selectedDate, inSameDayAs: now)
         previousButton.isEnabled = !recent
         nextButton.isEnabled = !recent && stats.calendar.startOfDay(for: selectedDate) < today
-        let points = stats.points(on: selectedDate, recent24Hours: recent, now: now)
+        let series = StatsManager.shared.hourlyTrendSeries(date: selectedDate, recent24Hours: recent)
+        let points = series.total
+        chart.showsClicks = metric.selectedSegment == 1
+        chart.localPoints = series.local
         chart.timeZone = stats.calendar.timeZone
         chart.points = points
         let recorded = points.compactMap(\.counts)
         if recorded.isEmpty {
             summary.stringValue = NSLocalizedString("hourly.empty", comment: "")
         } else {
-            let keys = saturatingNonnegativeSum(recorded.map(\.keys))
-            let clicks = saturatingNonnegativeSum(recorded.map(\.clicks))
+            let total = saturatingNonnegativeSum(recorded.map(chart.value))
+            let local = saturatingNonnegativeSum(series.local.compactMap(\.counts).map(chart.value))
             let peak = points.filter { $0.counts != nil }.max {
-                saturatingNonnegativeSum([$0.counts?.keys ?? 0, $0.counts?.clicks ?? 0]) <
-                saturatingNonnegativeSum([$1.counts?.keys ?? 0, $1.counts?.clicks ?? 0])
+                $0.counts.map(chart.value) ?? 0 < $1.counts.map(chart.value) ?? 0
             }
-            let peakText = (keys > 0 || clicks > 0) ? peak.map { chart.hourLabel($0.date) } ?? "—" : "—"
-            summary.stringValue = String(format: NSLocalizedString("hourly.summary", comment: ""), keys, clicks, peakText)
+            let peakText = total > 0 ? peak.map { chart.hourLabel($0.date) } ?? "—" : "—"
+            summary.stringValue = String(format: NSLocalizedString("hourly.summary.metric", comment: ""),
+                                         total, local, peakText)
         }
         let formatter = DateFormatter()
         formatter.timeZone = stats.calendar.timeZone
@@ -191,11 +204,9 @@ final class HourlyStatsViewController: NSViewController {
         formatter.timeZone = chart.timeZone
         formatter.setLocalizedDateFormatFromTemplate("MMMd HH:mm z")
         let time = formatter.string(from: point.date)
-        if let counts = point.counts {
-            detail.stringValue = String(format: NSLocalizedString("hourly.detail", comment: ""), time, counts.keys, counts.clicks)
-        } else {
-            detail.stringValue = time + " · " + NSLocalizedString("hourly.unavailable", comment: "")
-        }
+        let total = point.counts.map { String(chart.value($0)) } ?? "—"
+        let local = chart.localPoints.first(where: { $0.date == point.date })?.counts.map { String(chart.value($0)) } ?? "—"
+        detail.stringValue = String(format: NSLocalizedString("hourly.detail.metric", comment: ""), time, total, local)
     }
 
     private func updateDateButton(calendar: Calendar, now: Date) {
@@ -240,6 +251,11 @@ final class HourlyStatsViewController: NSViewController {
         selectedDate = StatsManager.shared.hourlyStatsSnapshot().calendar.startOfDay(for: Date())
         AppDelegate.trackClick("hourly_back_to_today")
         chart.clearHover()
+        refresh()
+    }
+
+    @objc private func metricChanged() {
+        AppDelegate.trackClick("hourly_metric", properties: ["metric": metric.selectedSegment == 0 ? "keys" : "clicks"])
         refresh()
     }
 

@@ -366,7 +366,10 @@
 "hourly.empty" = "No hourly data for this date";
 "hourly.unavailable" = "No hourly data";
 "hourly.summary" = "Recorded totals: %ld keys · %ld clicks · Busiest hour: %@";
-"hourly.note" = "Local data · Recording since %@ · %@\nThe first and current hours may be incomplete. Last 24 Hours includes the current hour and the preceding 23 hours.";
-"hourly.hover" = "Hover over the chart to see hourly counts.";
+"hourly.note" = "This Mac records since %@ · %@\nTotals compare each device’s local date and hour, using its latest synced hourly data. First/current hours may be partial; Last 24 Hours includes the current hour.";
+"hourly.hover" = "Hover to compare this Mac with the synced total for the selected metric.";
 "hourly.detail" = "%@ · %ld keys · %ld clicks";
-"hourly.chartAccessibility" = "Hourly counts: keys (solid blue), clicks (dashed orange). Each hour lists keys / clicks.";
+"hourly.chartAccessibility" = "Hourly counts for the selected metric: synced total (solid blue), this Mac (dashed orange). Each hour lists total / local.";
+"hourly.summary.metric" = "Synced total: %ld · This Mac: %ld · Busiest hour: %@";
+"hourly.detail.metric" = "%@ · Synced total: %@ · This Mac: %@";
+"hourly.import.differentTimeZones" = "These hourly records use different time zones and cannot be merged accurately. Use Replace to restore the backup instead.";

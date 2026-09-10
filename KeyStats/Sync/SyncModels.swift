@@ -49,6 +49,7 @@ struct CoreDaySnapshotV1: Codable, Equatable {
     let keyPresses: Int64
     let keyPressCounts: [String: Int64]
     let clicks: CoreClickSnapshotV1
+    let hourlyStats: HourlyStats?
 
     init(
         schemaVersion: Int = SyncConstants.schemaVersion,
@@ -57,7 +58,8 @@ struct CoreDaySnapshotV1: Codable, Equatable {
         revision: Int64,
         keyPresses: Int64,
         keyPressCounts: [String: Int64],
-        clicks: CoreClickSnapshotV1
+        clicks: CoreClickSnapshotV1,
+        hourlyStats: HourlyStats? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.deviceId = deviceId
@@ -66,6 +68,7 @@ struct CoreDaySnapshotV1: Codable, Equatable {
         self.keyPresses = keyPresses
         self.keyPressCounts = keyPressCounts
         self.clicks = clicks
+        self.hourlyStats = hourlyStats
     }
 
     func validated() throws -> CoreDaySnapshotV1 {
@@ -80,6 +83,8 @@ struct CoreDaySnapshotV1: Codable, Equatable {
               clicks.sideBack >= 0, clicks.sideForward >= 0 else {
             throw SyncValidationError.invalidSnapshot
         }
+
+        try hourlyStats?.validate(day: localDay)
 
         var normalizedCounts: [String: Int64] = [:]
         for (rawKey, value) in keyPressCounts {
@@ -97,7 +102,8 @@ struct CoreDaySnapshotV1: Codable, Equatable {
             revision: revision,
             keyPresses: keyPresses,
             keyPressCounts: normalizedCounts,
-            clicks: clicks
+            clicks: clicks,
+            hourlyStats: hourlyStats
         )
         let encoded = try SyncJSON.encoder.encode(normalized)
         guard encoded.count <= SyncConstants.maximumSnapshotBytes else { throw SyncValidationError.snapshotTooLarge }

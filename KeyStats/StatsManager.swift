@@ -876,6 +876,16 @@ class StatsManager {
         return hourlyStats
     }
 
+    func hourlyTrendSeries(date: Date, recent24Hours: Bool) -> (total: [HourlyStats.Point], local: [HourlyStats.Point]) {
+        let local = hourlyStatsSnapshot()
+        let state = SyncCoordinator.shared.state
+        let remote = state.isConfigured && !state.needsRepair
+            ? RemoteShardCache.shared.snapshots(excludingDeviceId: state.deviceId) : []
+        return DisplayStatsAggregator.hourlySeries(local: local, remote: remote,
+                                                   currentDeviceId: state.deviceId,
+                                                   date: date, recent24Hours: recent24Hours)
+    }
+
     private func loadStats() -> DailyStats? {
         guard let data = userDefaults.data(forKey: statsKey),
               let stats = try? JSONDecoder().decode(DailyStats.self, from: data) else {
@@ -894,13 +904,6 @@ class StatsManager {
 
     // MARK: - 数据导入导出
 
-    private struct ExportPayload: Codable {
-        let version: Int
-        let scope: String?
-        let exportedAt: Date
-        let currentStats: DailyStats
-        let history: [String: DailyStats]
-    }
 
     private enum ImportError: LocalizedError {
         case invalidFormat
@@ -926,18 +929,20 @@ class StatsManager {
         statsStateLock.lock()
         var exportHistory = history
         var current = currentStats
+        let hourly = hourlyStats
         statsStateLock.unlock()
         let normalizedDate = Calendar.current.startOfDay(for: current.date)
         current.date = normalizedDate
         let key = dateFormatter.string(from: normalizedDate)
         exportHistory[key] = current
 
-        let payload = ExportPayload(
+        let payload = StatsExportPayload(
             version: 1,
             scope: "currentDevice",
             exportedAt: Date(),
             currentStats: current,
-            history: exportHistory
+            history: exportHistory,
+            hourlyStats: hourly
         )
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -952,22 +957,19 @@ class StatsManager {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
 
-        let payload: ExportPayload
+        let payload: StatsExportPayload
         do {
-            payload = try decoder.decode(ExportPayload.self, from: data)
+            payload = try decoder.decode(StatsExportPayload.self, from: data)
         } catch {
             throw ImportError.invalidFormat
         }
 
         guard payload.version == 1 else { throw ImportError.unsupportedVersion }
 
-        applyImportedPayload(payload, mode: mode)
+        try applyImportedPayload(payload, mode: mode)
     }
 
-    private func applyImportedPayload(_ payload: ExportPayload, mode: ImportMode) {
-        saveTimer?.invalidate()
-        saveTimer = nil
-
+    private func applyImportedPayload(_ payload: StatsExportPayload, mode: ImportMode) throws {
         var importedHistory = normalizedHistory(payload.history)
         let importedCurrent = normalizedDailyStats(payload.currentStats)
         importedHistory[dateFormatter.string(from: importedCurrent.date)] = importedCurrent
@@ -983,7 +985,23 @@ class StatsManager {
         }
 
         statsStateLock.lock()
+        let resolvedHourly: HourlyStats
+        do {
+            if let imported = payload.hourlyStats {
+                switch mode {
+                case .overwrite: resolvedHourly = imported.forLocalRecording()
+                case .merge: resolvedHourly = try hourlyStats.mergingImport(imported)
+                }
+            } else {
+                // Legacy files must not erase the hourly recording.
+                resolvedHourly = hourlyStats
+            }
+        } catch {
+            statsStateLock.unlock()
+            throw error
+        }
         history = resolvedHistory
+        hourlyStats = resolvedHourly
         currentStats = resolvedHistory[todayKey] ?? DailyStats(date: today)
         recentKeyTimestamps.removeAll()
         recentClickTimestamps.removeAll()
@@ -1637,13 +1655,19 @@ extension StatsManager {
 
     /// Returns the current device's writable history only. Remote shards are never included.
     func localSyncHistorySnapshot() -> [String: DailyStats] {
+        localSyncSnapshot().history
+    }
+
+    /// Daily and hourly counters must describe the same input-event boundary.
+    func localSyncSnapshot() -> (history: [String: DailyStats], hourly: HourlyStats) {
         statsStateLock.lock()
         var snapshot = history
         let current = currentStats
+        let hourly = hourlyStats
         statsStateLock.unlock()
         let normalized = normalizedDailyStats(current)
         snapshot[dateFormatter.string(from: normalized.date)] = normalized
-        return normalizedHistory(snapshot)
+        return (normalizedHistory(snapshot), hourly)
     }
 
     func displayCurrentStats() -> DailyStats {

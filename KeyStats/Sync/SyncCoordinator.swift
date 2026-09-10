@@ -617,7 +617,8 @@ final class SyncCoordinator {
             revision: 0,
             keyPresses: snapshot.keyPresses,
             keyPressCounts: snapshot.keyPressCounts,
-            clicks: snapshot.clicks
+            clicks: snapshot.clicks,
+            hourlyStats: snapshot.hourlyStats
         ).validated()
         let contentHash = try SyncCrypto.contentHash(content)
         let previousRevision = state.revisions[snapshot.localDay]?.revision ?? 0
@@ -1112,13 +1113,18 @@ final class SyncCoordinator {
     private func prepareRecords() throws -> (current: EncryptedSyncRecordV1?, archives: [EncryptedSyncRecordV1]) {
         guard let vaultId = state.vaultId else { throw SyncCoordinatorError.notConfigured }
         let seed = try boundCredentials().recoverySeed
-        let localHistory = StatsManager.shared.localSyncHistorySnapshot()
+        let localSnapshot = StatsManager.shared.localSyncSnapshot()
+        var localHistory = localSnapshot.history
+        let hourlyShards = localSnapshot.hourly.syncShards()
+        for day in hourlyShards.keys where localHistory[day] == nil {
+            if let date = SyncDay.date(from: day) { localHistory[day] = DailyStats(date: date) }
+        }
         let today = SyncDay.string(from: Date())
         var current: EncryptedSyncRecordV1?
         var archives: [EncryptedSyncRecordV1] = []
 
         for (day, daily) in localHistory.sorted(by: { $0.key < $1.key }) {
-            let provisional = try DisplayStatsAggregator.coreSnapshot(from: daily, deviceId: state.deviceId, revision: 0)
+            let provisional = try DisplayStatsAggregator.coreSnapshot(from: daily, deviceId: state.deviceId, revision: 0, hourlyStats: hourlyShards[day])
             let contentHash = try SyncCrypto.contentHash(provisional)
             let previous = state.revisions[day]
             let existingEnvelope = state.pendingRecords[day]
@@ -1134,7 +1140,8 @@ final class SyncCoordinator {
                 let snapshot = try DisplayStatsAggregator.coreSnapshot(
                     from: daily,
                     deviceId: state.deviceId,
-                    revision: revision
+                    revision: revision,
+                    hourlyStats: hourlyShards[day]
                 )
                 record = try SyncCrypto.encrypt(snapshot: snapshot, vaultId: vaultId, seed: seed)
                 state.revisions[day] = SyncRevisionState(revision: revision, contentHash: contentHash)

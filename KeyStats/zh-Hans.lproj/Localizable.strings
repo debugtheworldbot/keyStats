@@ -366,7 +366,10 @@
 "hourly.empty" = "该日期暂无小时数据";
 "hourly.unavailable" = "暂无小时数据";
 "hourly.summary" = "已记录合计：按键 %ld · 点击 %ld · 最活跃时段：%@";
-"hourly.note" = "本机数据 · 从 %@ 开始记录 · %@\n起始小时和当前小时可能不完整。「最近 24 小时」包含当前小时及之前的 23 个小时。";
-"hourly.hover" = "将鼠标移至折线图，查看每小时的按键和点击次数。";
+"hourly.note" = "本机从 %@ 开始记录 · %@\n总数按各设备当地日期和小时汇总，以最近同步的小时数据为准。起始和当前小时可能不完整；最近 24 小时包含当前小时。";
+"hourly.hover" = "将鼠标移至折线图，比较当前指标的本设备次数和总数。";
 "hourly.detail" = "%@ · 按键 %ld · 点击 %ld";
-"hourly.chartAccessibility" = "每小时次数：按键为蓝色实线，点击为橙色虚线。每个小时依次列出按键数和点击数。";
+"hourly.chartAccessibility" = "所选指标每小时次数：总数为蓝色实线，本设备为橙色虚线。每个小时依次列出总数和本设备次数。";
+"hourly.summary.metric" = "总数：%ld · 本设备：%ld · 最活跃时段：%@";
+"hourly.detail.metric" = "%@ · 总数：%@ · 本设备：%@";
+"hourly.import.differentTimeZones" = "小时记录的时区不同，无法准确合并。请使用覆盖导入恢复备份。";
