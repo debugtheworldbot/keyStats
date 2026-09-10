@@ -665,7 +665,7 @@ private final class EmptyStateBadgeView: NSVisualEffectView {
     }
 }
 
-private final class HeatmapDatePickerPopoverViewController: NSViewController {
+final class HeatmapDatePickerPopoverViewController: NSViewController {
     private static let contentInset = NSEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
     static let contentSize = NSSize(width: 220, height: 200)
 
@@ -697,7 +697,9 @@ private final class HeatmapDatePickerPopoverViewController: NSViewController {
         configureConstraintsIfNeeded()
     }
 
-    func update(selectedDate: Date, bounds: (start: Date, end: Date)) {
+    func update(selectedDate: Date, bounds: (start: Date, end: Date), calendar: Calendar = .current) {
+        datePicker.calendar = calendar
+        datePicker.timeZone = calendar.timeZone
         datePicker.minDate = bounds.start
         datePicker.maxDate = bounds.end
         datePicker.dateValue = selectedDate
@@ -711,7 +713,7 @@ private final class HeatmapDatePickerPopoverViewController: NSViewController {
     }
 
     @objc private func datePicked(_ sender: NSDatePicker) {
-        onDateSelected?(Calendar.current.startOfDay(for: sender.dateValue))
+        onDateSelected?((sender.calendar ?? Calendar.current).startOfDay(for: sender.dateValue))
     }
 
     private func configureConstraintsIfNeeded() {

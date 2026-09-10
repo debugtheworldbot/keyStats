@@ -1,7 +1,25 @@
 import Cocoa
 
 final class HourlyStatsViewController: NSViewController {
-    private let datePicker = NSDatePicker()
+    private let datePickerButton = NSButton()
+    private let backToTodayButton = NSButton()
+    private var selectedDate = Date()
+    private lazy var datePickerController: HeatmapDatePickerPopoverViewController = {
+        let controller = HeatmapDatePickerPopoverViewController()
+        controller.onDateSelected = { [weak self] date in
+            guard let self else { return }
+            self.selectedDate = date
+            self.datePickerPopover.performClose(nil)
+            self.dateChanged()
+        }
+        return controller
+    }()
+    private lazy var datePickerPopover: NSPopover = {
+        let popover = NSPopover()
+        popover.behavior = .transient
+        popover.contentViewController = datePickerController
+        return popover
+    }()
     private let previousButton = NSButton()
     private let nextButton = NSButton()
     private let mode = NSSegmentedControl()
@@ -26,16 +44,31 @@ final class HourlyStatsViewController: NSViewController {
         mode.selectedSegment = 0
         mode.target = self
         mode.action = #selector(modeChanged)
-        datePicker.datePickerElements = [.yearMonthDay]
-        datePicker.datePickerStyle = .textFieldAndStepper
-        datePicker.dateValue = Date()
-        datePicker.target = self
-        datePicker.action = #selector(dateChanged)
-        datePicker.setAccessibilityLabel(NSLocalizedString("hourly.byDate", comment: ""))
-        configure(previousButton, title: "‹", label: "hourly.previous", action: #selector(previousDay))
-        configure(nextButton, title: "›", label: "hourly.next", action: #selector(nextDay))
-        let controls = NSStackView(views: [mode, previousButton, datePicker, nextButton])
-        controls.spacing = 10
+        datePickerButton.bezelStyle = .rounded
+        datePickerButton.controlSize = .regular
+        datePickerButton.font = .monospacedDigitSystemFont(ofSize: 14, weight: .semibold)
+        datePickerButton.contentTintColor = .labelColor
+        datePickerButton.target = self
+        datePickerButton.action = #selector(toggleDatePicker)
+        datePickerButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        datePickerButton.setContentHuggingPriority(.required, for: .horizontal)
+        datePickerButton.setAccessibilityLabel(NSLocalizedString("hourly.byDate", comment: ""))
+        backToTodayButton.title = NSLocalizedString("keyboardHeatmap.backToToday", comment: "")
+        backToTodayButton.bezelStyle = .rounded
+        backToTodayButton.controlSize = .regular
+        backToTodayButton.target = self
+        backToTodayButton.action = #selector(backToToday)
+        backToTodayButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        backToTodayButton.setContentHuggingPriority(.required, for: .horizontal)
+        configure(previousButton, symbol: "chevron.left", label: "hourly.previous", action: #selector(previousDay))
+        configure(nextButton, symbol: "chevron.right", label: "hourly.next", action: #selector(nextDay))
+        let dateControls = NSStackView(views: [previousButton, datePickerButton, nextButton, backToTodayButton])
+        dateControls.alignment = .centerY
+        dateControls.spacing = 8
+        dateControls.setCustomSpacing(10, after: nextButton)
+        let controls = NSStackView(views: [mode, dateControls])
+        controls.alignment = .centerY
+        controls.spacing = 20
         summary.font = .systemFont(ofSize: 15, weight: .medium)
         detail.font = .monospacedDigitSystemFont(ofSize: 12, weight: .regular)
         detail.textColor = .secondaryLabelColor
@@ -46,6 +79,7 @@ final class HourlyStatsViewController: NSViewController {
             view.addSubview(child)
         }
         NSLayoutConstraint.activate([
+            datePickerButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 78),
             title.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
             title.topAnchor.constraint(equalTo: view.topAnchor, constant: 24),
             controls.leadingAnchor.constraint(equalTo: title.leadingAnchor),
@@ -92,17 +126,17 @@ final class HourlyStatsViewController: NSViewController {
         let now = Date()
         let today = stats.calendar.startOfDay(for: now)
         // Follow today across midnight only when the user was already viewing today.
-        if let lastDay, lastDay != today, stats.calendar.isDate(datePicker.dateValue, inSameDayAs: lastDay) {
-            datePicker.dateValue = today
+        if let lastDay, lastDay != today, stats.calendar.isDate(selectedDate, inSameDayAs: lastDay) {
+            selectedDate = today
         }
         lastDay = today
-        datePicker.timeZone = stats.calendar.timeZone
-        datePicker.maxDate = now
+        updateDateButton(calendar: stats.calendar, now: now)
         let recent = mode.selectedSegment == 1
-        datePicker.isEnabled = !recent
+        datePickerButton.isEnabled = !recent
+        backToTodayButton.isHidden = recent || stats.calendar.isDate(selectedDate, inSameDayAs: now)
         previousButton.isEnabled = !recent
-        nextButton.isEnabled = !recent && stats.calendar.startOfDay(for: datePicker.dateValue) < today
-        let points = stats.points(on: datePicker.dateValue, recent24Hours: recent, now: now)
+        nextButton.isEnabled = !recent && stats.calendar.startOfDay(for: selectedDate) < today
+        let points = stats.points(on: selectedDate, recent24Hours: recent, now: now)
         chart.timeZone = stats.calendar.timeZone
         chart.points = points
         let recorded = points.compactMap(\.counts)
@@ -127,9 +161,21 @@ final class HourlyStatsViewController: NSViewController {
         showDetail(chart.hoveredPoint)
     }
 
-    private func configure(_ button: NSButton, title: String, label: String, action: Selector) {
-        button.title = title
+    private func configure(_ button: NSButton, symbol: String, label: String, action: Selector) {
+        button.title = ""
+        button.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
+            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 13, weight: .semibold))
+        button.contentTintColor = .labelColor
+        button.controlSize = .regular
+        button.setButtonType(.momentaryPushIn)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.imagePosition = .imageOnly
         button.bezelStyle = .rounded
+        button.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(equalToConstant: 32)
+        ])
         button.target = self
         button.action = action
         button.toolTip = NSLocalizedString(label, comment: "")
@@ -152,7 +198,53 @@ final class HourlyStatsViewController: NSViewController {
         }
     }
 
+    private func updateDateButton(calendar: Calendar, now: Date) {
+        let sameYear = calendar.component(.year, from: selectedDate) == calendar.component(.year, from: now)
+        let localization = Bundle.main.preferredLocalizations.first ?? ""
+        let language = Locale.preferredLanguages.first ?? ""
+        let title: String
+        if localization.hasPrefix("zh") || language.hasPrefix("zh") {
+            let monthDay = "\(calendar.component(.month, from: selectedDate))月\(calendar.component(.day, from: selectedDate))日"
+            title = sameYear ? monthDay : "\(calendar.component(.year, from: selectedDate))年" + monthDay
+        } else {
+            let formatter = DateFormatter()
+            formatter.calendar = calendar
+            formatter.timeZone = calendar.timeZone
+            formatter.setLocalizedDateFormatFromTemplate(sameYear ? "Md" : "yMd")
+            title = formatter.string(from: selectedDate)
+        }
+        let attributedTitle = NSAttributedString(string: title, attributes: [
+            .font: NSFont.monospacedDigitSystemFont(ofSize: 14, weight: .semibold),
+            .foregroundColor: NSColor.labelColor
+        ])
+        datePickerButton.attributedTitle = attributedTitle
+        datePickerButton.attributedAlternateTitle = attributedTitle
+        datePickerButton.setAccessibilityValue(title)
+    }
+
+    @objc private func toggleDatePicker() {
+        if datePickerPopover.isShown {
+            datePickerPopover.performClose(nil)
+            return
+        }
+        let calendar = StatsManager.shared.hourlyStatsSnapshot().calendar
+        datePickerController.update(selectedDate: selectedDate,
+                                    bounds: (.distantPast, Date()), calendar: calendar)
+        datePickerController.prepareForPresentation()
+        datePickerPopover.contentSize = datePickerController.preferredContentSize
+        datePickerPopover.show(relativeTo: datePickerButton.bounds, of: datePickerButton, preferredEdge: .maxY)
+        AppDelegate.trackClick("hourly_open_calendar")
+    }
+
+    @objc private func backToToday() {
+        selectedDate = StatsManager.shared.hourlyStatsSnapshot().calendar.startOfDay(for: Date())
+        AppDelegate.trackClick("hourly_back_to_today")
+        chart.clearHover()
+        refresh()
+    }
+
     @objc private func modeChanged() {
+        datePickerPopover.performClose(nil)
         AppDelegate.trackClick("hourly_mode", properties: ["mode": mode.selectedSegment == 0 ? "date" : "recent_24_hours"])
         chart.clearHover()
         refresh()
@@ -166,8 +258,8 @@ final class HourlyStatsViewController: NSViewController {
 
     private func moveDay(_ offset: Int) {
         let calendar = StatsManager.shared.hourlyStatsSnapshot().calendar
-        guard let date = calendar.date(byAdding: .day, value: offset, to: datePicker.dateValue) else { return }
-        datePicker.dateValue = min(date, Date())
+        guard let date = calendar.date(byAdding: .day, value: offset, to: selectedDate) else { return }
+        selectedDate = min(date, Date())
         AppDelegate.trackClick("hourly_day", properties: ["direction": offset < 0 ? "previous" : "next"])
         chart.clearHover()
         refresh()
