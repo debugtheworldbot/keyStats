@@ -26,7 +26,7 @@ func formatMenuBarCompactNumber(_ number: Int) -> String {
     return String(format: "%.\(decimalPlaces)f%@", truncatedValue, units[unitIndex])
 }
 
-private func saturatingNonnegativeSum(_ values: [Int]) -> Int {
+func saturatingNonnegativeSum(_ values: [Int]) -> Int {
     values.reduce(0) { total, value in
         let nonnegative = max(0, value)
         let (sum, overflow) = total.addingReportingOverflow(nonnegative)

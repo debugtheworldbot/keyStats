@@ -356,3 +356,17 @@
 "stats.reset.local.message" = "只会重置本机今天的统计，其他设备不受影响；下一次同步会用更高版本传播零值快照。";
 "button.cancel" = "取消";
 "button.confirm" = "确认";
+
+// Hourly trends
+"hourly.title" = "小时趋势";
+"hourly.byDate" = "选择日期";
+"hourly.recent" = "最近 24 小时";
+"hourly.previous" = "前一天";
+"hourly.next" = "后一天";
+"hourly.empty" = "该日期暂无小时数据";
+"hourly.unavailable" = "暂无小时数据";
+"hourly.summary" = "已记录合计：按键 %ld · 点击 %ld · 最活跃时段：%@";
+"hourly.note" = "本机数据 · 从 %@ 开始记录 · %@\n起始小时和当前小时可能不完整。「最近 24 小时」包含当前小时及之前的 23 个小时。";
+"hourly.hover" = "将鼠标移至折线图，查看每小时的按键和点击次数。";
+"hourly.detail" = "%@ · 按键 %ld · 点击 %ld";
+"hourly.chartAccessibility" = "每小时次数：按键为蓝色实线，点击为橙色虚线。每个小时依次列出按键数和点击数。";

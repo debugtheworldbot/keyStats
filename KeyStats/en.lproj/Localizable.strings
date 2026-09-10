@@ -356,3 +356,17 @@
 "stats.reset.local.message" = "Only today's statistics on this Mac will be reset. Other devices are unaffected, and the zero snapshot will sync with a higher revision.";
 "button.cancel" = "Cancel";
 "button.confirm" = "Confirm";
+
+// Hourly trends
+"hourly.title" = "Hourly Trends";
+"hourly.byDate" = "Select Date";
+"hourly.recent" = "Last 24 Hours";
+"hourly.previous" = "Previous day";
+"hourly.next" = "Next day";
+"hourly.empty" = "No hourly data for this date";
+"hourly.unavailable" = "No hourly data";
+"hourly.summary" = "Recorded totals: %ld keys · %ld clicks · Busiest hour: %@";
+"hourly.note" = "Local data · Recording since %@ · %@\nThe first and current hours may be incomplete. Last 24 Hours includes the current hour and the preceding 23 hours.";
+"hourly.hover" = "Hover over the chart to see hourly counts.";
+"hourly.detail" = "%@ · %ld keys · %ld clicks";
+"hourly.chartAccessibility" = "Hourly counts: keys (solid blue), clicks (dashed orange). Each hour lists keys / clicks.";

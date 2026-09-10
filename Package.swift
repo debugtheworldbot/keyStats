@@ -22,6 +22,9 @@ let package = Package(
                 "KeyStats.entitlements",
                 "NotificationManager.swift",
                 "StatsManager.swift",
+                "HourlyStatsWindowController.swift",
+                "HourlyStatsViewController.swift",
+                "HourlyStatsChartView.swift",
                 "HoverIconButton.swift",
                 "MouseDistanceCalibrationViewController.swift",
                 "ActivityHeatmapView.swift",
@@ -52,6 +55,7 @@ let package = Package(
             sources: [
                 "AppStats.swift",
                 "StatsModels.swift",
+                "HourlyStats.swift",
                 "UpdateCheckCoordinator.swift",
                 "Sync/SyncModels.swift",
                 "Sync/SyncCrypto.swift",
@@ -64,7 +68,7 @@ let package = Package(
             name: "KeyStatsCoreTests",
             dependencies: ["KeyStatsCore"],
             path: "KeyStatsTests",
-            sources: ["AppStatsTests.swift", "StatsModelsTests.swift", "UpdateCheckCoordinatorTests.swift", "SyncCoreTests.swift"]
+            sources: ["HourlyStatsTests.swift", "AppStatsTests.swift", "StatsModelsTests.swift", "UpdateCheckCoordinatorTests.swift", "SyncCoreTests.swift"]
         )
     ]
 )

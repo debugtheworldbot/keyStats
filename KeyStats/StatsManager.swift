@@ -96,6 +96,8 @@ class StatsManager {
     private let userDefaults = UserDefaults.standard
     private let statsKey = "dailyStats"
     private let historyKey = "dailyStatsHistory"
+    private let hourlyStatsKey = "hourlyStats.v1"
+    private var hourlyStats = HourlyStats()
     private let showKeyPressesKey = "showKeyPressesInMenuBar"
     private let showMouseClicksKey = "showMouseClicksInMenuBar"
     private let minimalMenuBarModeKey = "minimalMenuBarMode"
@@ -318,6 +320,10 @@ class StatsManager {
         let today = calendar.startOfDay(for: Date())
         currentStats = DailyStats(date: today)
         history = normalizedHistory(loadHistory())
+        if let data = userDefaults.data(forKey: hourlyStatsKey),
+           let stored = try? JSONDecoder().decode(HourlyStats.self, from: data) {
+            hourlyStats = stored
+        }
 
         // 优先加载 dailyStats；如果缺失或不是今天，回退到 history 里的今天数据。
         let loadedCurrent = loadStats().map(normalizedDailyStats)
@@ -378,6 +384,7 @@ class StatsManager {
         statsStateLock.lock()
         ensureCurrentDayLocked()
         currentStats.keyPresses += 1
+        hourlyStats.record(keys: 1)
         if let keyName = keyName {
             let canonicalName = canonicalKeyName(keyName)
             if !canonicalName.isEmpty {
@@ -401,6 +408,7 @@ class StatsManager {
         statsStateLock.lock()
         ensureCurrentDayLocked()
         currentStats.leftClicks += 1
+        hourlyStats.record(clicks: 1)
         if let appIdentity = appIdentity {
             updateAppStatsLocked(for: appIdentity) { stats in
                 stats.recordLeftClick()
@@ -418,6 +426,7 @@ class StatsManager {
         statsStateLock.lock()
         ensureCurrentDayLocked()
         currentStats.rightClicks += 1
+        hourlyStats.record(clicks: 1)
         if let appIdentity = appIdentity {
             updateAppStatsLocked(for: appIdentity) { stats in
                 stats.recordRightClick()
@@ -435,6 +444,7 @@ class StatsManager {
         statsStateLock.lock()
         ensureCurrentDayLocked()
         currentStats.sideBackClicks += 1
+        hourlyStats.record(clicks: 1)
         if let appIdentity = appIdentity {
             updateAppStatsLocked(for: appIdentity) { stats in
                 stats.recordSideBackClick()
@@ -452,6 +462,7 @@ class StatsManager {
         statsStateLock.lock()
         ensureCurrentDayLocked()
         currentStats.sideForwardClicks += 1
+        hourlyStats.record(clicks: 1)
         if let appIdentity = appIdentity {
             updateAppStatsLocked(for: appIdentity) { stats in
                 stats.recordSideForwardClick()
@@ -837,6 +848,7 @@ class StatsManager {
     private func saveStats() {
         statsStateLock.lock()
         let statsSnapshot = currentStats
+        let hourlySnapshot = hourlyStats
         let calendar = Calendar.current
         let normalizedDate = calendar.startOfDay(for: statsSnapshot.date)
         let key = dateFormatter.string(from: normalizedDate)
@@ -846,12 +858,22 @@ class StatsManager {
         let historySnapshot = history
         statsStateLock.unlock()
 
+        if let encoded = try? JSONEncoder().encode(hourlySnapshot) {
+            userDefaults.set(encoded, forKey: hourlyStatsKey)
+        }
         if let encoded = try? JSONEncoder().encode(statsSnapshot) {
             userDefaults.set(encoded, forKey: statsKey)
         }
         if let encoded = try? JSONEncoder().encode(historySnapshot) {
             userDefaults.set(encoded, forKey: historyKey)
         }
+    }
+
+    /// A value snapshot for the local hourly view; sync does not modify these counters.
+    func hourlyStatsSnapshot() -> HourlyStats {
+        statsStateLock.lock()
+        defer { statsStateLock.unlock() }
+        return hourlyStats
     }
 
     private func loadStats() -> DailyStats? {

@@ -50,6 +50,10 @@
 		B1000005 /* DisplayStatsAggregator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000005 /* DisplayStatsAggregator.swift */; };
 		B1000006 /* SyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000006 /* SyncCoordinator.swift */; };
 		B1000007 /* SyncSettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000007 /* SyncSettingsWindowController.swift */; };
+		C1100001 /* HourlyStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2100001 /* HourlyStats.swift */; };
+		C1100002 /* HourlyStatsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2100002 /* HourlyStatsWindowController.swift */; };
+		C1100003 /* HourlyStatsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2100003 /* HourlyStatsViewController.swift */; };
+		C1100004 /* HourlyStatsChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2100004 /* HourlyStatsChartView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -123,6 +127,10 @@
 		A3000001 /* KeyStats.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KeyStats.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A3000002 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A3000003 /* KeyStats.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = KeyStats.entitlements; sourceTree = "<group>"; };
+		C2100001 /* HourlyStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HourlyStats.swift; sourceTree = "<group>"; };
+		C2100002 /* HourlyStatsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HourlyStatsWindowController.swift; sourceTree = "<group>"; };
+		C2100003 /* HourlyStatsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HourlyStatsViewController.swift; sourceTree = "<group>"; };
+		C2100004 /* HourlyStatsChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HourlyStatsChartView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -183,6 +191,10 @@
 				9A20000C /* RemoteEventProcessor.swift */,
 				9A20000D /* HelperMigrationPresenter.swift */,
 				A2000032 /* StatsModels.swift */,
+				C2100004 /* HourlyStatsChartView.swift */,
+				C2100003 /* HourlyStatsViewController.swift */,
+				C2100002 /* HourlyStatsWindowController.swift */,
+				C2100001 /* HourlyStats.swift */,
 				A2000004 /* MenuBarController.swift */,
 				A2000033 /* KPSDetailView.swift */,
 				A2000005 /* StatsPopoverViewController.swift */,
@@ -376,6 +388,10 @@
 				A1000003 /* StatsManager.swift in Sources */,
 				A1000022 /* AppStats.swift in Sources */,
 				A1000032 /* StatsModels.swift in Sources */,
+				C1100004 /* HourlyStatsChartView.swift in Sources */,
+				C1100003 /* HourlyStatsViewController.swift in Sources */,
+				C1100002 /* HourlyStatsWindowController.swift in Sources */,
+				C1100001 /* HourlyStats.swift in Sources */,
 				A1000004 /* MenuBarController.swift in Sources */,
 				A1000033 /* KPSDetailView.swift in Sources */,
 				A1000005 /* StatsPopoverViewController.swift in Sources */,

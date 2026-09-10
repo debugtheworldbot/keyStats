@@ -292,6 +292,16 @@ class StatsPopoverViewController: NSViewController {
         historyTitleLabel = createLabel(text: NSLocalizedString("section.history", comment: ""), fontSize: 14, weight: .semibold)
         historyTitleLabel.translatesAutoresizingMaskIntoConstraints = false
         containerView.addSubview(historyTitleLabel)
+        let hourlyButton = NSButton(title: NSLocalizedString("hourly.title", comment: ""), target: self, action: #selector(showHourlyStats))
+        hourlyButton.bezelStyle = .rounded
+        hourlyButton.controlSize = .small
+        hourlyButton.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(hourlyButton)
+        NSLayoutConstraint.activate([
+            hourlyButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            hourlyButton.centerYAnchor.constraint(equalTo: historyTitleLabel.centerYAnchor),
+            hourlyButton.leadingAnchor.constraint(greaterThanOrEqualTo: historyTitleLabel.trailingAnchor, constant: 8)
+        ])
         
         // 时间范围
         rangeControl = NSSegmentedControl(labels: [
@@ -873,6 +883,12 @@ class StatsPopoverViewController: NSViewController {
     @objc private func openSettings() {
         AppDelegate.trackClick("open_settings")
         SettingsWindowController.shared.show()
+        view.window?.performClose(nil)
+    }
+
+    @objc private func showHourlyStats() {
+        AppDelegate.trackClick("open_hourly_stats")
+        HourlyStatsWindowController.shared.show()
         view.window?.performClose(nil)
     }
 
