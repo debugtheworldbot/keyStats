@@ -366,7 +366,7 @@
 "hourly.empty" = "No hourly data for this date";
 "hourly.unavailable" = "No hourly data";
 "hourly.summary" = "Recorded totals: %ld keys · %ld clicks · Busiest hour: %@";
-"hourly.note" = "This Mac records since %@ · %@\nTotals compare each device’s local date and hour, using its latest synced hourly data. First/current hours may be partial; Last 24 Hours includes the current hour.";
+"hourly.note" = "This Mac records since %@ · %@\nTotals compare each device’s local date and hour, using its latest synced hourly data. First/current hours may be partial; Last 24 Hours includes the current hour. Hours skipped by DST are included in an adjacent valid hour.";
 "hourly.hover" = "Hover to compare this Mac with the synced total for the selected metric.";
 "hourly.detail" = "%@ · %ld keys · %ld clicks";
 "hourly.chartAccessibility" = "Hourly counts for the selected metric: synced total (solid blue), this Mac (dashed orange). Each hour lists total / local.";

@@ -222,3 +222,129 @@ extension HourlyStatsTests {
         XCTAssertEqual(series.total.first?.counts?.keys, 7)
     }
 }
+
+extension HourlyStatsTests {
+    func testManualHourlyResetPreservesYesterdayAndPublishesZeroSnapshot() throws {
+        let yesterday = date("2026-09-09T10:00:00Z")
+        let today = date("2026-09-10T10:00:00Z")
+        var hourly = HourlyStats(startedAt: yesterday, timeZone: TimeZone(secondsFromGMT: 0)!)
+        hourly.record(keys: 8, clicks: 2, at: yesterday)
+        hourly.record(keys: 5, clicks: 3, at: today)
+        let before = snapshot(hourly.syncShards(now: today)["2026-09-10"])
+        hourly.reset(on: today)
+        let restored = try SyncJSON.decoder.decode(HourlyStats.self, from: SyncJSON.encoder.encode(hourly))
+        XCTAssertEqual(restored.points(on: yesterday, recent24Hours: false, now: today)[10].counts,
+                       HourlyStats.Counts(keys: 8, clicks: 2))
+        XCTAssertEqual(restored.points(on: today, recent24Hours: false, now: today)[10].counts,
+                       HourlyStats.Counts())
+        let after = snapshot(restored.syncShards(now: today)["2026-09-10"], revision: 2)
+        XCTAssertNotEqual(try SyncCrypto.contentHash(before), try SyncCrypto.contentHash(after))
+        let record = try SyncCrypto.encrypt(snapshot: after, vaultId: "vault", seed: Data(0..<16))
+        let remote = try SyncCrypto.decrypt(record: record, vaultId: "vault", seed: Data(0..<16))
+        XCTAssertEqual(remote.hourlyStats?.points(on: today, recent24Hours: false, now: today)[10].counts,
+                       HourlyStats.Counts())
+        hourly.record(keys: 1, at: today)
+        XCTAssertEqual(hourly.points(on: today, recent24Hours: false, now: today)[10].counts?.keys, 1)
+    }
+
+    func testHalfHourSpringTransitionUsesSameBucketsForRecordingAndBothViews() throws {
+        let zone = TimeZone(identifier: "Australia/Lord_Howe")!
+        let start = date("2026-10-03T00:00:00Z")
+        let partialHour = date("2026-10-03T15:45:00Z") // 02:45 after the jump
+        let regularHour = date("2026-10-03T16:15:00Z") // 03:15
+        var hourly = HourlyStats(startedAt: start, timeZone: zone)
+        hourly.record(keys: 7, at: partialHour)
+        hourly.record(keys: 9, at: regularHour)
+        let daily = hourly.points(on: regularHour, recent24Hours: false, now: regularHour)
+        XCTAssertEqual(daily.reduce(0) { $0 + ($1.counts?.keys ?? 0) }, 16)
+        XCTAssertEqual(daily.first { $0.date == date("2026-10-03T15:30:00Z") }?.counts?.keys, 7)
+        XCTAssertEqual(daily.first { $0.date == date("2026-10-03T16:00:00Z") }?.counts?.keys, 9)
+        let recent = hourly.points(on: regularHour, recent24Hours: true, now: regularHour)
+        XCTAssertEqual(recent.count, 24)
+        XCTAssertEqual(recent.reduce(0) { $0 + ($1.counts?.keys ?? 0) }, 16)
+        let restored = try SyncJSON.decoder.decode(HourlyStats.self, from: SyncJSON.encoder.encode(hourly))
+        XCTAssertEqual(restored, hourly)
+        for (day, shard) in hourly.syncShards(now: regularHour) { try shard.validate(day: day) }
+    }
+
+    func testHalfHourFallTransitionPreservesBothRepeatedHours() throws {
+        var hourly = HourlyStats(startedAt: date("2026-04-03T00:00:00Z"),
+                                 timeZone: TimeZone(identifier: "Australia/Lord_Howe")!)
+        hourly.record(keys: 3, at: date("2026-04-04T14:45:00Z")) // first 01:45
+        hourly.record(keys: 7, at: date("2026-04-04T15:15:00Z")) // second 01:45
+        let now = date("2026-04-04T16:00:00Z")
+        let points = hourly.points(on: now, recent24Hours: false, now: now)
+        XCTAssertEqual(points.first { $0.date == date("2026-04-04T14:00:00Z") }?.counts?.keys, 3)
+        XCTAssertEqual(points.first { $0.date == date("2026-04-04T15:00:00Z") }?.counts?.keys, 7)
+        XCTAssertEqual(points.reduce(0) { $0 + ($1.counts?.keys ?? 0) }, 10)
+        let restored = try SyncJSON.decoder.decode(HourlyStats.self, from: SyncJSON.encoder.encode(hourly))
+        XCTAssertEqual(restored, hourly)
+    }
+
+    func testLegacyHalfHourTransitionBucketMigratesWithoutLosingCounts() throws {
+        var hourly = HourlyStats(startedAt: date("2026-10-03T00:00:00Z"),
+                                 timeZone: TimeZone(identifier: "Australia/Lord_Howe")!)
+        let event = date("2026-10-03T15:45:00Z")
+        hourly.record(keys: 7, at: event)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: SyncJSON.encoder.encode(hourly)) as? [String: Any])
+        let legacyStart = try XCTUnwrap(hourly.calendar.dateInterval(of: .hour, for: event)?.start)
+        json["buckets"] = [String(Int64(legacyStart.timeIntervalSince1970)): ["keys": 7, "clicks": 0]]
+        let restored = try SyncJSON.decoder.decode(HourlyStats.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertEqual(restored, hourly)
+        json["buckets"] = [String(Int64(legacyStart.timeIntervalSince1970)): ["keys": -1, "clicks": 0]]
+        XCTAssertThrowsError(try SyncJSON.decoder.decode(HourlyStats.self, from: JSONSerialization.data(withJSONObject: json)))
+    }
+
+    func testRemoteSkippedClockHourIsIncludedInNextValidHour() throws {
+        let start = date("2026-03-01T00:00:00Z")
+        let local = HourlyStats(startedAt: start, timeZone: TimeZone(identifier: "America/New_York")!)
+        var remote = HourlyStats(startedAt: start, timeZone: TimeZone(secondsFromGMT: 0)!)
+        remote.record(keys: 7, clicks: 2, at: date("2026-03-08T02:30:00Z"))
+        remote.record(keys: 5, clicks: 1, at: date("2026-03-08T03:30:00Z"))
+        let now = date("2026-03-09T12:00:00Z")
+        let shards = remote.syncShards(now: now).map { snapshot($0.value, day: $0.key) }
+        let series = DisplayStatsAggregator.hourlySeries(local: local, remote: shards, currentDeviceId: "local",
+            date: date("2026-03-08T12:00:00Z"), recent24Hours: false, now: now)
+        XCTAssertEqual(series.total.reduce(0) { $0 + ($1.counts?.keys ?? 0) }, 12)
+        let three = series.total.first { local.calendar.component(.hour, from: $0.date) == 3 }
+        XCTAssertEqual(three?.counts, HourlyStats.Counts(keys: 12, clicks: 3))
+    }
+
+    func testZeroActivityDayRemainsAnArchiveAfterRolloverAndCacheReload() throws {
+        let start = date("2026-09-09T00:00:00Z")
+        let hourly = HourlyStats(startedAt: start, timeZone: TimeZone(secondsFromGMT: 0)!)
+        let first = snapshot(hourly.syncShards(now: date("2026-09-09T12:00:00Z"))["2026-09-09"], day: "2026-09-09")
+        let next = try XCTUnwrap(hourly.syncShards(now: date("2026-09-10T12:00:00Z"))["2026-09-09"])
+        let later = try XCTUnwrap(hourly.syncShards(now: date("2026-09-11T12:00:00Z"))["2026-09-09"])
+        XCTAssertEqual(next, later)
+        XCTAssertEqual(next.recordedThrough, date("2026-09-10T00:00:00Z").addingTimeInterval(-0.001))
+        let path = FileManager.default.temporaryDirectory.appendingPathComponent("zero-day-cache-\(UUID().uuidString).json")
+        let cache = RemoteShardCache(fileURL: path)
+        _ = try cache.apply(recordId: "record", snapshot: first, currentDeviceId: "local")
+        _ = try cache.apply(recordId: "record", snapshot: snapshot(next, day: "2026-09-09", revision: 2), currentDeviceId: "local")
+        let restored = RemoteShardCache(fileURL: path)
+        let local = HourlyStats(startedAt: date("2026-09-10T00:00:00Z"), timeZone: TimeZone(secondsFromGMT: 0)!)
+        let series = DisplayStatsAggregator.hourlySeries(local: local, remote: restored.snapshots(), currentDeviceId: "local",
+            date: start, recent24Hours: false, now: date("2026-09-11T12:00:00Z"))
+        XCTAssertTrue(series.local.allSatisfy { $0.counts == nil })
+        XCTAssertTrue(series.total.allSatisfy { $0.counts == HourlyStats.Counts() })
+        XCTAssertNil(hourly.syncShards(now: date("2026-09-10T12:00:00Z"))["2026-09-08"])
+    }
+}
+
+extension HourlyStatsTests {
+    func testResetUsesTheDailyStatisticsCalendarAfterTravel() {
+        var hourly = HourlyStats(startedAt: date("2026-09-09T00:00:00Z"),
+                                 timeZone: TimeZone(identifier: "Asia/Shanghai")!)
+        let events = ["2026-09-09T23:00:00Z", "2026-09-10T10:00:00Z", "2026-09-10T20:00:00Z", "2026-09-11T01:00:00Z"].map(date)
+        for event in events { hourly.record(keys: 1, at: event) }
+        var dailyCalendar = Calendar(identifier: .gregorian)
+        dailyCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        hourly.reset(on: date("2026-09-10T23:00:00Z"), calendar: dailyCalendar)
+        let now = date("2026-09-12T00:00:00Z")
+        for (index, event) in events.enumerated() {
+            let point = hourly.points(on: event, recent24Hours: false, now: now).first { $0.date == event }
+            XCTAssertEqual(point?.counts?.keys, index == 0 || index == 3 ? 1 : 0)
+        }
+    }
+}

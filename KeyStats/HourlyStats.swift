@@ -31,7 +31,7 @@ struct HourlyStats: Codable, Equatable {
 
     mutating func record(keys: Int = 0, clicks: Int = 0, at date: Date = Date()) {
         guard date >= startedAt,
-              let hour = calendar.dateInterval(of: .hour, for: date) else { return }
+              let hour = Self.hourInterval(containing: date, calendar: calendar) else { return }
         let key = bucketKey(hour.start)
         var counts = buckets[key] ?? Counts()
         counts.keys = saturatingNonnegativeSum([counts.keys, keys])
@@ -45,8 +45,13 @@ struct HourlyStats: Codable, Equatable {
         let start: Date
         let end: Date
         if recent24Hours {
-            guard let hour = calendar.dateInterval(of: .hour, for: now) else { return [] }
-            start = hour.start.addingTimeInterval(-23 * 3600)
+            guard let hour = Self.hourInterval(containing: now, calendar: calendar) else { return [] }
+            var first = hour
+            for _ in 0..<23 {
+                guard let previous = Self.hourInterval(containing: first.start.addingTimeInterval(-0.001), calendar: calendar) else { return [] }
+                first = previous
+            }
+            start = first.start
             end = hour.end
         } else {
             guard let day = calendar.dateInterval(of: .day, for: date) else { return [] }
@@ -56,9 +61,10 @@ struct HourlyStats: Codable, Equatable {
         var result: [Point] = []
         var hour = start
         while hour < end {
-            let available = hour <= availableThrough && hour.addingTimeInterval(3600) > startedAt
+            guard let interval = Self.hourInterval(containing: hour, calendar: calendar), interval.end > hour else { break }
+            let available = hour <= availableThrough && interval.end > startedAt
             result.append(Point(date: hour, counts: available ? (buckets[bucketKey(hour)] ?? Counts()) : nil))
-            hour = hour.addingTimeInterval(3600)
+            hour = interval.end
         }
         return result
     }
@@ -74,6 +80,22 @@ struct HourlyStats: Codable, Equatable {
         timeZoneIdentifier = try values.decode(String.self, forKey: .timeZoneIdentifier)
         buckets = try values.decode([String: Counts].self, forKey: .buckets)
         recordedThrough = try values.decodeIfPresent(Date.self, forKey: .recordedThrough)
+        // Older Foundation hour intervals can start before a half-hour clock
+        // transition. Move those legacy keys to the actual transition boundary.
+        for (key, counts) in buckets {
+            guard counts.keys >= 0, counts.clicks >= 0 else { throw SyncValidationError.invalidSnapshot }
+            guard let timestamp = Int64(key) else { continue }
+            let date = Date(timeIntervalSince1970: Double(timestamp))
+            guard Self.hourInterval(containing: date, calendar: calendar)?.start != date,
+                  let transition = calendar.timeZone.nextDaylightSavingTimeTransition(after: date),
+                  transition < date.addingTimeInterval(3600),
+                  calendar.dateInterval(of: .hour, for: date.addingTimeInterval(3599))?.start == date else { continue }
+            let replacement = bucketKey(transition)
+            let old = buckets[replacement] ?? Counts()
+            buckets[replacement] = Counts(keys: saturatingNonnegativeSum([old.keys, counts.keys]),
+                                          clicks: saturatingNonnegativeSum([old.clicks, counts.clicks]))
+            buckets.removeValue(forKey: key)
+        }
         try validate()
     }
 
@@ -86,7 +108,7 @@ struct HourlyStats: Codable, Equatable {
             guard let timestamp = Int64(key), String(timestamp) == key,
                   counts.keys >= 0, counts.clicks >= 0 else { throw SyncValidationError.invalidSnapshot }
             let date = Date(timeIntervalSince1970: Double(timestamp))
-            guard let hour = calendar.dateInterval(of: .hour, for: date), hour.start == date,
+            guard let hour = Self.hourInterval(containing: date, calendar: calendar), hour.start == date,
                   hour.end > startedAt, recordedThrough.map({ date <= $0 }) ?? true,
                   day.map({ dayKey(date) == $0 }) ?? true else { throw SyncValidationError.invalidSnapshot }
         }
@@ -99,15 +121,20 @@ struct HourlyStats: Codable, Equatable {
             dayKey(Date(timeIntervalSince1970: Double(Int64(key) ?? 0)))
         }
         var result: [String: HourlyStats] = [:]
-        let currentDay = dayKey(now)
-        for day in Set(grouped.keys).union([currentDay]) {
+        // Retain known zero days as well as days with events. Local points use
+        // this same continuous recording period, so archives must preserve it.
+        var days: [String: DateInterval] = [:]
+        var cursor = startedAt
+        while cursor <= now, let interval = calendar.dateInterval(of: .day, for: cursor), interval.end > cursor {
+            days[dayKey(cursor)] = interval
+            cursor = interval.end
+        }
+        for (day, interval) in days {
             var shard = self
             shard.buckets = Dictionary(uniqueKeysWithValues: (grouped[day] ?? []).compactMap { key in
                 buckets[key].map { (key, $0) }
             })
-            let sample = shard.buckets.keys.first.flatMap(Int64.init).map { Date(timeIntervalSince1970: Double($0)) } ?? now
-            let end = calendar.dateInterval(of: .day, for: sample)?.end ?? now
-            shard.recordedThrough = max(startedAt, min(now, end.addingTimeInterval(-0.001)))
+            shard.recordedThrough = max(startedAt, min(now, interval.end.addingTimeInterval(-0.001)))
             result[day] = shard
         }
         return result
@@ -162,13 +189,23 @@ struct HourlyStats: Codable, Equatable {
             let source = points(on: sourceDate, recent24Hours: false, now: now)
             guard let firstIndex = indices.first,
                   let targetDay = displayCalendar.dateInterval(of: .day, for: target[firstIndex].date) else { continue }
-            let fullDay = stride(from: targetDay.start.timeIntervalSince1970,
-                                 to: targetDay.end.timeIntervalSince1970, by: 3600).map { Date(timeIntervalSince1970: $0) }
+            var fullDay: [Date] = []
+            var cursor = targetDay.start
+            while cursor < targetDay.end {
+                guard let interval = Self.hourInterval(containing: cursor, calendar: displayCalendar), interval.end > cursor else { break }
+                fullDay.append(cursor)
+                cursor = interval.end
+            }
             let targetHours = Dictionary(grouping: fullDay) { displayCalendar.component(.hour, from: $0) }
             let visibleIndices = Dictionary(uniqueKeysWithValues: indices.map { (target[$0].date, $0) })
             let sourceHours = Dictionary(grouping: source) { calendar.component(.hour, from: $0.date) }
             for (hour, sourcePoints) in sourceHours {
-                guard let slots = targetHours[hour] else { continue }
+                // A remote clock hour may not exist on this device's spring
+                // transition day. Preserve its counts in the next valid slot
+                // (or the last slot when the jump ends the local day).
+                let destinationHour = targetHours[hour] != nil ? hour
+                    : (targetHours.keys.filter { $0 > hour }.min() ?? targetHours.keys.max())
+                guard let destinationHour, let slots = targetHours[destinationHour] else { continue }
                 for (occurrence, point) in sourcePoints.enumerated() {
                     guard let counts = point.counts else { continue }
                     // Preserve repeated hours when present on both devices; otherwise
@@ -181,6 +218,36 @@ struct HourlyStats: Codable, Equatable {
             }
         }
         return result
+    }
+
+    /// Clear only the requested local calendar day; rollover never calls this.
+    mutating func reset(on date: Date, calendar resetCalendar: Calendar? = nil) {
+        guard let day = (resetCalendar ?? calendar).dateInterval(of: .day, for: date) else { return }
+        buckets = buckets.filter { key, _ in
+            guard let timestamp = Int64(key) else { return false }
+            let start = Date(timeIntervalSince1970: Double(timestamp))
+            return start < day.start || start >= day.end
+        }
+    }
+
+    /// Wall-clock hours split at offset transitions, including 30-minute DST
+    /// changes. Foundation's hour interval can overlap its predecessor there.
+    private static func hourInterval(containing date: Date, calendar: Calendar) -> DateInterval? {
+        let zone = calendar.timeZone
+        let offset = Double(zone.secondsFromGMT(for: date))
+        let timestamp = date.timeIntervalSince1970
+        guard timestamp.isFinite else { return nil }
+        let nominalStart = Date(timeIntervalSince1970: floor((timestamp + offset) / 3600) * 3600 - offset)
+        var start = nominalStart
+        var end = nominalStart.addingTimeInterval(3600)
+        if let transition = zone.nextDaylightSavingTimeTransition(after: nominalStart.addingTimeInterval(-0.001)), transition <= date {
+            start = max(start, transition)
+        }
+        if let transition = zone.nextDaylightSavingTimeTransition(after: date), transition < end {
+            end = transition
+        }
+        guard start <= date, date < end else { return nil }
+        return DateInterval(start: start, end: end)
     }
 
     private func dayKey(_ date: Date) -> String {

@@ -1302,8 +1302,10 @@ class StatsManager {
     }
     
     func resetStats() {
+        let now = Date()
         statsStateLock.lock()
-        resetStatsLocked(for: Date())
+        resetStatsLocked(for: now)
+        hourlyStats.reset(on: now, calendar: .current)
         statsStateLock.unlock()
         updateNotificationBaselines()
         notifyMenuBarUpdate()
