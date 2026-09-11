@@ -364,6 +364,7 @@
 "hourly.previous" = "前一天";
 "hourly.next" = "后一天";
 "hourly.empty" = "该日期暂无小时数据";
+"hourly.empty.hint" = "切换其他日期，查看小时活动记录。";
 "hourly.unavailable" = "暂无小时数据";
 "hourly.summary" = "已记录合计：按键 %ld · 点击 %ld · 最活跃时段：%@";
 "hourly.note" = "本机从 %@ 开始记录 · %@\n总数按各设备当地日期和小时汇总，以最近同步的小时数据为准。起始和当前小时可能不完整；最近 24 小时包含当前小时。夏令时跳过的小时并入相邻有效时段。";

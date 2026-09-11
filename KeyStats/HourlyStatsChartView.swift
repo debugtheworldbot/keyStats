@@ -5,6 +5,11 @@ final class HourlyStatsChartView: NSView {
     var points: [HourlyStats.Point] = [] {
         didSet {
             needsDisplay = true
+            if !hasData {
+                clearHover()
+                setAccessibilityValue(NSLocalizedString("hourly.empty", comment: ""))
+                return
+            }
             setAccessibilityValue(points.enumerated().map { index, point in
                 let total = point.counts.map { String(value($0)) } ?? "—"
                 let local = localPoints.indices.contains(index) ? localPoints[index].counts.map { String(value($0)) } ?? "—" : "—"
@@ -18,6 +23,8 @@ final class HourlyStatsChartView: NSView {
     var onHover: ((HourlyStats.Point?) -> Void)?
     private var hoverIndex: Int?
     private var area: NSTrackingArea?
+
+    var hasData: Bool { points.contains { $0.counts != nil } }
 
     var hoveredPoint: HourlyStats.Point? {
         guard let hoverIndex, points.indices.contains(hoverIndex) else { return nil }
@@ -48,7 +55,7 @@ final class HourlyStatsChartView: NSView {
 
     override func mouseMoved(with event: NSEvent) {
         let position = convert(event.locationInWindow, from: nil)
-        guard plotRect.contains(position), !points.isEmpty else { clearHover(); return }
+        guard plotRect.contains(position), hasData else { clearHover(); return }
         let fraction = (position.x - plotRect.minX) / plotRect.width
         hoverIndex = min(points.count - 1, max(0, Int((fraction * CGFloat(points.count - 1)).rounded())))
         needsDisplay = true
@@ -78,6 +85,10 @@ final class HourlyStatsChartView: NSView {
         super.draw(dirtyRect)
         NSColor.controlBackgroundColor.withAlphaComponent(0.5).setFill()
         NSBezierPath(roundedRect: bounds, xRadius: 10, yRadius: 10).fill()
+        guard hasData else {
+            drawEmptyState()
+            return
+        }
         let rect = plotRect
         let maximum = max(4, points.reduce(0) { max($0, $1.counts.map(value) ?? 0) })
         for step in 0...4 {
@@ -100,12 +111,37 @@ final class HourlyStatsChartView: NSView {
         }
         drawSeries(points, color: .systemBlue, maximum: maximum, dashed: false)
         drawSeries(localPoints, color: .systemOrange, maximum: maximum, dashed: true)
-        if points.allSatisfy({ $0.counts == nil }) {
-            label(NSLocalizedString("hourly.empty", comment: ""), at: NSPoint(x: rect.minX + 16, y: rect.midY), color: .secondaryLabelColor)
-        }
         if let hoverIndex, points.indices.contains(hoverIndex) {
             stroke(from: NSPoint(x: x(hoverIndex), y: rect.minY), to: NSPoint(x: x(hoverIndex), y: rect.maxY), color: .secondaryLabelColor, width: 1)
         }
+    }
+
+    private func drawEmptyState() {
+        let center = NSPoint(x: bounds.midX, y: bounds.midY)
+        let badge = NSRect(x: center.x - 26, y: center.y + 6, width: 52, height: 52)
+        NSColor.systemBlue.withAlphaComponent(0.08).setFill()
+        NSBezierPath(roundedRect: badge, xRadius: 16, yRadius: 16).fill()
+        let symbol = NSImage(systemSymbolName: "clock", accessibilityDescription: nil)?
+            .withSymbolConfiguration(NSImage.SymbolConfiguration(paletteColors: [.systemBlue]))
+        symbol?.draw(in: badge.insetBy(dx: 13, dy: 13))
+
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .center
+        let textWidth = max(1, min(420, bounds.width - 48))
+        let textX = center.x - textWidth / 2
+        let titleAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 14, weight: .medium),
+            .foregroundColor: NSColor.labelColor,
+            .paragraphStyle: paragraph
+        ]
+        NSLocalizedString("hourly.empty", comment: "").draw(
+            in: NSRect(x: textX, y: center.y - 30, width: textWidth, height: 22),
+            withAttributes: titleAttributes)
+        NSLocalizedString("hourly.empty.hint", comment: "").draw(
+            in: NSRect(x: textX, y: center.y - 70, width: textWidth, height: 34),
+            withAttributes: [.font: NSFont.systemFont(ofSize: 12),
+                             .foregroundColor: NSColor.secondaryLabelColor,
+                             .paragraphStyle: paragraph])
     }
 
     private func x(_ index: Int) -> CGFloat {

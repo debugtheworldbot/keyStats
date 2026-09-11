@@ -182,7 +182,7 @@ final class HourlyStatsViewController: NSViewController {
         chart.points = points
         let recorded = points.compactMap(\.counts)
         if recorded.isEmpty {
-            summary.stringValue = NSLocalizedString("hourly.empty", comment: "")
+            summary.stringValue = ""
         } else {
             let total = saturatingNonnegativeSum(recorded.map(chart.value))
             let local = saturatingNonnegativeSum(series.local.compactMap(\.counts).map(chart.value))
@@ -225,7 +225,7 @@ final class HourlyStatsViewController: NSViewController {
 
     private func showDetail(_ point: HourlyStats.Point?) {
         guard let point else {
-            detail.stringValue = NSLocalizedString("hourly.hover", comment: "")
+            detail.stringValue = chart.hasData ? NSLocalizedString("hourly.hover", comment: "") : ""
             return
         }
         let formatter = DateFormatter()
