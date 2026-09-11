@@ -88,8 +88,10 @@ final class HourlyStatsChartView: NSView {
         }
         let keyLabel = NSLocalizedString("history.series.synced", comment: "")
         let clickLabel = NSLocalizedString("history.series.local", comment: "")
-        label("● " + keyLabel, at: NSPoint(x: rect.minX, y: bounds.height - 22), color: .systemBlue)
-        label("◆ " + clickLabel, at: NSPoint(x: rect.minX + 160, y: bounds.height - 22), color: .systemOrange)
+        let syncedLegend = "● " + keyLabel
+        let syncedLegendWidth = syncedLegend.size(withAttributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)]).width
+        label(syncedLegend, at: NSPoint(x: rect.minX, y: bounds.height - 22), color: .systemBlue)
+        label("◆ " + clickLabel, at: NSPoint(x: rect.minX + syncedLegendWidth + 16, y: bounds.height - 22), color: .systemOrange)
         guard !points.isEmpty else { return }
         for index in points.indices where index % 3 == 0 || index == points.count - 1 {
             // Avoid colliding with the last tick on 23/25-hour daylight-saving days.
