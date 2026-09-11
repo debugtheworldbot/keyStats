@@ -1,6 +1,22 @@
 import Cocoa
 
 final class HourlyStatsViewController: NSViewController {
+    private enum DaySlideDirection {
+        case left
+        case right
+
+        func incomingOffset(distance: CGFloat) -> CGFloat {
+            switch self {
+            case .left: return -distance
+            case .right: return distance
+            }
+        }
+
+        func outgoingOffset(distance: CGFloat) -> CGFloat {
+            -incomingOffset(distance: distance)
+        }
+    }
+
     private let datePickerButton = NSButton()
     private let backToTodayButton = NSButton()
     private var selectedDate = Date()
@@ -8,9 +24,9 @@ final class HourlyStatsViewController: NSViewController {
         let controller = HeatmapDatePickerPopoverViewController()
         controller.onDateSelected = { [weak self] date in
             guard let self else { return }
-            self.selectedDate = date
             self.datePickerPopover.performClose(nil)
-            self.dateChanged()
+            AppDelegate.trackClick("hourly_date")
+            self.transitionToDate(date)
         }
         return controller
     }()
@@ -28,6 +44,8 @@ final class HourlyStatsViewController: NSViewController {
     private let detail = NSTextField(labelWithString: "")
     private let note = NSTextField(wrappingLabelWithString: "")
     private let chart = HourlyStatsChartView()
+    private let chartContainer = NSView()
+    private var isDayTransitionAnimating = false
     private var refreshTimer: Timer?
     private var lastDay: Date?
 
@@ -81,7 +99,17 @@ final class HourlyStatsViewController: NSViewController {
         detail.textColor = .secondaryLabelColor
         note.font = .systemFont(ofSize: 11)
         note.textColor = .secondaryLabelColor
-        for child in [title, metric, controls, summary, chart, detail, note] {
+        chartContainer.wantsLayer = true
+        chartContainer.layer?.masksToBounds = true
+        chart.translatesAutoresizingMaskIntoConstraints = false
+        chartContainer.addSubview(chart)
+        NSLayoutConstraint.activate([
+            chart.leadingAnchor.constraint(equalTo: chartContainer.leadingAnchor),
+            chart.trailingAnchor.constraint(equalTo: chartContainer.trailingAnchor),
+            chart.topAnchor.constraint(equalTo: chartContainer.topAnchor),
+            chart.bottomAnchor.constraint(equalTo: chartContainer.bottomAnchor)
+        ])
+        for child in [title, metric, controls, summary, chartContainer, detail, note] {
             child.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview(child)
         }
@@ -98,15 +126,15 @@ final class HourlyStatsViewController: NSViewController {
             summary.leadingAnchor.constraint(equalTo: title.leadingAnchor),
             summary.topAnchor.constraint(equalTo: controls.bottomAnchor, constant: 20),
             summary.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
-            chart.leadingAnchor.constraint(equalTo: title.leadingAnchor),
-            chart.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
-            chart.topAnchor.constraint(equalTo: summary.bottomAnchor, constant: 12),
-            chart.bottomAnchor.constraint(equalTo: detail.topAnchor, constant: -10),
+            chartContainer.leadingAnchor.constraint(equalTo: title.leadingAnchor),
+            chartContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+            chartContainer.topAnchor.constraint(equalTo: summary.bottomAnchor, constant: 12),
+            chartContainer.bottomAnchor.constraint(equalTo: detail.topAnchor, constant: -10),
             detail.leadingAnchor.constraint(equalTo: title.leadingAnchor),
-            detail.trailingAnchor.constraint(equalTo: chart.trailingAnchor),
+            detail.trailingAnchor.constraint(equalTo: chartContainer.trailingAnchor),
             detail.bottomAnchor.constraint(equalTo: note.topAnchor, constant: -12),
             note.leadingAnchor.constraint(equalTo: title.leadingAnchor),
-            note.trailingAnchor.constraint(equalTo: chart.trailingAnchor),
+            note.trailingAnchor.constraint(equalTo: chartContainer.trailingAnchor),
             note.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20)
         ])
         chart.onHover = { [weak self] point in self?.showDetail(point) }
@@ -248,10 +276,8 @@ final class HourlyStatsViewController: NSViewController {
     }
 
     @objc private func backToToday() {
-        selectedDate = StatsManager.shared.hourlyStatsSnapshot().calendar.startOfDay(for: Date())
         AppDelegate.trackClick("hourly_back_to_today")
-        chart.clearHover()
-        refresh()
+        transitionToDate(Date())
     }
 
     @objc private func metricChanged() {
@@ -266,19 +292,108 @@ final class HourlyStatsViewController: NSViewController {
         refresh()
     }
 
-    @objc private func dateChanged() {
-        AppDelegate.trackClick("hourly_date")
+    private func transitionToDate(_ date: Date) {
+        let calendar = StatsManager.shared.hourlyStatsSnapshot().calendar
+        let targetDate = calendar.startOfDay(for: min(date, Date()))
+        guard !calendar.isDate(targetDate, inSameDayAs: selectedDate) else { return }
+        let direction: DaySlideDirection = targetDate < selectedDate ? .left : .right
         chart.clearHover()
+        let previousSnapshot = isDayTransitionAnimating ? nil : makeChartSnapshot()
+        selectedDate = targetDate
         refresh()
+        animateDayTransition(direction: direction, previousSnapshot: previousSnapshot)
     }
 
     private func moveDay(_ offset: Int) {
         let calendar = StatsManager.shared.hourlyStatsSnapshot().calendar
         guard let date = calendar.date(byAdding: .day, value: offset, to: selectedDate) else { return }
-        selectedDate = min(date, Date())
         AppDelegate.trackClick("hourly_day", properties: ["direction": offset < 0 ? "previous" : "next"])
-        chart.clearHover()
-        refresh()
+        transitionToDate(date)
+    }
+
+    private func makeChartSnapshot() -> NSImageView? {
+        guard chartContainer.bounds.width > 0, chartContainer.bounds.height > 0 else { return nil }
+        chartContainer.layoutSubtreeIfNeeded()
+
+        let bounds = chartContainer.bounds
+        guard let bitmap = chartContainer.bitmapImageRepForCachingDisplay(in: bounds) else { return nil }
+        chartContainer.cacheDisplay(in: bounds, to: bitmap)
+
+        let image = NSImage(size: bounds.size)
+        image.addRepresentation(bitmap)
+
+        let imageView = NSImageView(image: image)
+        imageView.frame = bounds
+        imageView.imageScaling = .scaleAxesIndependently
+        imageView.autoresizingMask = [.width, .height]
+        imageView.wantsLayer = true
+        return imageView
+    }
+
+    private func animateDayTransition(direction: DaySlideDirection, previousSnapshot: NSImageView?) {
+        guard !isDayTransitionAnimating else {
+            previousSnapshot?.removeFromSuperview()
+            return
+        }
+        guard let containerLayer = chartContainer.layer else {
+            previousSnapshot?.removeFromSuperview()
+            return
+        }
+
+        isDayTransitionAnimating = true
+        let duration: CFTimeInterval = 0.16
+        let slideDistance = max(260, chartContainer.bounds.width * 0.88)
+        let timingFunction = CAMediaTimingFunction(name: .easeOut)
+
+        if let previousSnapshot {
+            chartContainer.addSubview(previousSnapshot, positioned: .above, relativeTo: nil)
+        }
+
+        CATransaction.begin()
+        CATransaction.setAnimationDuration(duration)
+        CATransaction.setAnimationTimingFunction(timingFunction)
+        CATransaction.setCompletionBlock { [weak self] in
+            previousSnapshot?.removeFromSuperview()
+            self?.isDayTransitionAnimating = false
+        }
+
+        if let previousLayer = previousSnapshot?.layer {
+            let outgoingAnimation = CAAnimationGroup()
+            outgoingAnimation.animations = [
+                basicAnimation(keyPath: "transform.translation.x", from: 0, to: direction.outgoingOffset(distance: slideDistance)),
+                basicAnimation(keyPath: "opacity", from: 1, to: 0)
+            ]
+            outgoingAnimation.duration = duration
+            outgoingAnimation.timingFunction = timingFunction
+            previousLayer.add(outgoingAnimation, forKey: "day-slide-out")
+            previousLayer.opacity = 0
+        }
+
+        let incomingTargets: [NSView] = [chart]
+        for view in incomingTargets {
+            view.wantsLayer = true
+            guard let layer = view.layer else { continue }
+            let targetOpacity = max(0, min(1, view.alphaValue))
+            layer.removeAnimation(forKey: "day-slide-in")
+            let incomingAnimation = CAAnimationGroup()
+            incomingAnimation.animations = [
+                basicAnimation(keyPath: "transform.translation.x", from: direction.incomingOffset(distance: slideDistance), to: 0),
+                basicAnimation(keyPath: "opacity", from: 0, to: targetOpacity)
+            ]
+            incomingAnimation.duration = duration
+            incomingAnimation.timingFunction = timingFunction
+            layer.add(incomingAnimation, forKey: "day-slide-in")
+        }
+
+        containerLayer.layoutIfNeeded()
+        CATransaction.commit()
+    }
+
+    private func basicAnimation(keyPath: String, from: CGFloat, to: CGFloat) -> CABasicAnimation {
+        let animation = CABasicAnimation(keyPath: keyPath)
+        animation.fromValue = from
+        animation.toValue = to
+        return animation
     }
 
     @objc private func previousDay() { moveDay(-1) }
