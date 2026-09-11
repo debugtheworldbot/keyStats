@@ -86,8 +86,8 @@ final class HourlyStatsChartView: NSView {
             label(String(format: "%.0f", Double(maximum) * Double(step) / 4),
                   at: NSPoint(x: 4, y: y - 6), color: .secondaryLabelColor)
         }
-        let keyLabel = NSLocalizedString("history.series.synced", comment: "")
-        let clickLabel = NSLocalizedString("history.series.local", comment: "")
+        let keyLabel = legendLabel(title: NSLocalizedString("history.series.synced", comment: ""), series: points)
+        let clickLabel = legendLabel(title: NSLocalizedString("history.series.local", comment: ""), series: localPoints)
         let syncedLegend = "● " + keyLabel
         let syncedLegendWidth = syncedLegend.size(withAttributes: [.font: NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)]).width
         label(syncedLegend, at: NSPoint(x: rect.minX, y: bounds.height - 22), color: .systemBlue)
@@ -116,12 +116,16 @@ final class HourlyStatsChartView: NSView {
 
     private func drawSeries(_ series: [HourlyStats.Point], color: NSColor, maximum: Int, dashed: Bool) {
         let path = NSBezierPath()
-        var previous: NSPoint?
+        var segment: [NSPoint] = []
         for (index, point) in series.enumerated() {
-            guard let counts = point.counts else { previous = nil; continue }
+            guard let counts = point.counts else {
+                appendSmoothSegment(segment, to: path)
+                segment.removeAll(keepingCapacity: true)
+                continue
+            }
             let value = value(counts)
             let position = NSPoint(x: x(index), y: plotRect.minY + plotRect.height * CGFloat(value) / CGFloat(maximum))
-            if previous != nil { path.line(to: position) } else { path.move(to: position) }
+            segment.append(position)
             color.setFill()
             if dashed {
                 let diamond = NSBezierPath()
@@ -134,12 +138,93 @@ final class HourlyStatsChartView: NSView {
             } else {
                 NSBezierPath(ovalIn: NSRect(x: position.x - 2.5, y: position.y - 2.5, width: 5, height: 5)).fill()
             }
-            previous = position
         }
+        appendSmoothSegment(segment, to: path)
         color.setStroke()
         path.lineWidth = 2
+        path.lineJoinStyle = .round
+        path.lineCapStyle = .round
         if dashed { path.setLineDash([5, 3], count: 2, phase: 0) }
         path.stroke()
+    }
+
+    private func legendLabel(title: String, series: [HourlyStats.Point]) -> String {
+        guard let hoveredPoint else { return title }
+        let counts = series.first(where: { $0.date == hoveredPoint.date })?.counts
+        let text = counts.map { String(value($0)) } ?? "—"
+        return String(format: NSLocalizedString("history.series.value", comment: ""), title, text)
+    }
+
+    private func appendSmoothSegment(_ points: [NSPoint], to path: NSBezierPath) {
+        guard let first = points.first else { return }
+        path.move(to: first)
+        let tangents = monotoneTangents(for: points)
+        for index in 0..<(points.count - 1) {
+            let current = points[index]
+            let next = points[index + 1]
+            let dx = next.x - current.x
+            path.curve(to: next,
+                       controlPoint1: NSPoint(x: current.x + dx / 3, y: current.y + tangents[index] * dx / 3),
+                       controlPoint2: NSPoint(x: next.x - dx / 3, y: next.y - tangents[index + 1] * dx / 3))
+        }
+    }
+
+    // Same shape-preserving interpolation as the main trend chart, applied separately across gaps.
+    private func monotoneTangents(for points: [NSPoint]) -> [CGFloat] {
+        let count = points.count
+        guard count > 1 else { return [0] }
+
+        var dx = Array(repeating: CGFloat(0), count: count - 1)
+        var slopes = Array(repeating: CGFloat(0), count: count - 1)
+
+        for index in 0..<(count - 1) {
+            let deltaX = max(0.0001, points[index + 1].x - points[index].x)
+            dx[index] = deltaX
+            slopes[index] = (points[index + 1].y - points[index].y) / deltaX
+        }
+
+        var tangents = Array(repeating: CGFloat(0), count: count)
+        tangents[0] = slopes[0]
+        tangents[count - 1] = slopes[count - 2]
+
+        if count > 2 {
+            for index in 1..<(count - 1) {
+                let previousSlope = slopes[index - 1]
+                let nextSlope = slopes[index]
+
+                if previousSlope == 0 || nextSlope == 0 || (previousSlope > 0) != (nextSlope > 0) {
+                    tangents[index] = 0
+                    continue
+                }
+
+                let previousDX = dx[index - 1]
+                let nextDX = dx[index]
+                let weight1 = 2 * nextDX + previousDX
+                let weight2 = nextDX + 2 * previousDX
+                tangents[index] = (weight1 + weight2) / ((weight1 / previousSlope) + (weight2 / nextSlope))
+            }
+        }
+
+        for index in 0..<(count - 1) {
+            let slope = slopes[index]
+            if slope == 0 {
+                tangents[index] = 0
+                tangents[index + 1] = 0
+                continue
+            }
+
+            let alpha = tangents[index] / slope
+            let beta = tangents[index + 1] / slope
+            let magnitude = alpha * alpha + beta * beta
+
+            if magnitude > 9 {
+                let scale = CGFloat(3.0 / sqrt(Double(magnitude)))
+                tangents[index] = scale * alpha * slope
+                tangents[index + 1] = scale * beta * slope
+            }
+        }
+
+        return tangents
     }
 
     private func stroke(from start: NSPoint, to end: NSPoint, color: NSColor, width: CGFloat) {
