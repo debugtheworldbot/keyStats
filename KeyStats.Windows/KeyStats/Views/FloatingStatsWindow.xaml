@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:p="clr-namespace:KeyStats.Properties"
         Title="{x:Static p:Strings.FloatingStats_WindowTitle}"
-        Width="35"
+        SizeToContent="Width"
         Height="41"
         WindowStyle="None"
         AllowsTransparency="True"
@@ -24,11 +24,15 @@
             SnapsToDevicePixels="True"
             MouseLeftButtonDown="RootBorder_MouseLeftButtonDown">
         <Grid>
-            <Grid x:Name="SingleRowLayout" Margin="2,1" Visibility="Collapsed">
+            <Grid x:Name="SingleRowLayout"
+                  Margin="4,1"
+                  HorizontalAlignment="Center"
+                  Grid.IsSharedSizeScope="True"
+                  Visibility="Collapsed">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="Value"/>
                     <ColumnDefinition Width="3"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="Value"/>
                 </Grid.ColumnDefinitions>
 
                 <TextBlock x:Name="SinglePrimaryValueTextBlock"
@@ -38,7 +42,6 @@
                            FontWeight="Medium"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            TextAlignment="Center"
-                           TextTrimming="CharacterEllipsis"
                            HorizontalAlignment="Stretch"
                            VerticalAlignment="Center"
                            ToolTip="{Binding PrimaryFullValue}"/>
@@ -57,13 +60,12 @@
                            FontWeight="Medium"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            TextAlignment="Center"
-                           TextTrimming="CharacterEllipsis"
                            HorizontalAlignment="Stretch"
                            VerticalAlignment="Center"
                            ToolTip="{Binding SecondaryFullValue}"/>
             </Grid>
 
-            <Grid x:Name="DoubleRowLayout" Margin="0,1">
+            <Grid x:Name="DoubleRowLayout" Margin="1,1">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="3"/>
@@ -77,7 +79,6 @@
                            FontWeight="Medium"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            TextAlignment="Center"
-                           TextTrimming="CharacterEllipsis"
                            HorizontalAlignment="Stretch"
                            VerticalAlignment="Center"
                            ToolTip="{Binding PrimaryFullValue}"/>
@@ -96,7 +97,6 @@
                            FontWeight="Medium"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            TextAlignment="Center"
-                           TextTrimming="CharacterEllipsis"
                            HorizontalAlignment="Stretch"
                            VerticalAlignment="Center"
                            ToolTip="{Binding SecondaryFullValue}"/>

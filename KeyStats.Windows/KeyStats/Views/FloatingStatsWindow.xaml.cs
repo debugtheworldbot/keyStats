@@ -48,6 +48,7 @@ public partial class FloatingStatsWindow : Window
         Loaded += OnLoaded;
         Closed += OnClosed;
         LocationChanged += OnLocationChanged;
+        SizeChanged += OnSizeChanged;
         ThemeManager.Instance.ThemeChanged += OnThemeChanged;
         SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
     }
@@ -235,13 +236,47 @@ public partial class FloatingStatsWindow : Window
         var baseHeight = useDoubleRow ? DoubleRowHeight : SingleRowHeight;
         var targetWidth = Math.Round(baseWidth * layoutScale, MidpointRounding.AwayFromZero);
         var targetHeight = Math.Round(baseHeight * layoutScale, MidpointRounding.AwayFromZero);
-        var sizeChanged = !Width.Equals(targetWidth) || !Height.Equals(targetHeight);
+        var sizeChanged = !MinWidth.Equals(targetWidth) || !Height.Equals(targetHeight);
 
         SingleRowLayout.Visibility = useDoubleRow ? Visibility.Collapsed : Visibility.Visible;
         DoubleRowLayout.Visibility = useDoubleRow ? Visibility.Visible : Visibility.Collapsed;
-        Width = targetWidth;
+        // Width follows content (SizeToContent) so large values are never truncated.
+        MinWidth = targetWidth;
         Height = targetHeight;
         return sizeChanged;
+    }
+
+    private void OnSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (!_isLoaded || !e.WidthChanged)
+        {
+            return;
+        }
+
+        // Keep the right edge fixed when the window sits on the right half of its screen,
+        // so it grows toward the screen center instead of jumping when the value widens.
+        var widthDelta = e.NewSize.Width - e.PreviousSize.Width;
+        var workingAreas = GetWorkingAreasInDips();
+        var previousBounds = new Rect(Left, Top, e.PreviousSize.Width, Height);
+        var area = FindWorkingAreaByDeviceName(GetCurrentMonitorDeviceName(), workingAreas)
+            ?? FindBestWorkingArea(previousBounds, workingAreas);
+        var areaCenterX = area != null
+            ? area.Bounds.Left + area.Bounds.Width / 2
+            : SystemParameters.WorkArea.Left + SystemParameters.WorkArea.Width / 2;
+        if (previousBounds.Left + previousBounds.Width / 2 > areaCenterX)
+        {
+            _isRestoringPosition = true;
+            try
+            {
+                Left -= widthDelta;
+            }
+            finally
+            {
+                _isRestoringPosition = false;
+            }
+        }
+
+        EnsureVisiblePosition();
     }
 
     private void OnLocationChanged(object? sender, EventArgs e)
@@ -287,11 +322,11 @@ public partial class FloatingStatsWindow : Window
             workingAreas);
         var preferredArea = savedArea ?? primaryArea;
         var requestedBounds = settings.FloatingStatsLeft.HasValue && settings.FloatingStatsTop.HasValue
-            ? new Rect(settings.FloatingStatsLeft.Value, settings.FloatingStatsTop.Value, Width, Height)
+            ? new Rect(settings.FloatingStatsLeft.Value, settings.FloatingStatsTop.Value, ActualWidth, Height)
             : new Rect(
-                preferredArea.Bounds.Right - Width - EdgeMargin,
+                preferredArea.Bounds.Right - ActualWidth - EdgeMargin,
                 preferredArea.Bounds.Top + EdgeMargin,
-                Width,
+                ActualWidth,
                 Height);
 
         var targetArea = savedArea ?? FindBestWorkingArea(requestedBounds, workingAreas) ?? preferredArea;
@@ -327,7 +362,7 @@ public partial class FloatingStatsWindow : Window
         var preferredArea = workingAreas.Count > 0
             ? workingAreas[0]
             : new WorkingAreaInfo(string.Empty, SystemParameters.WorkArea);
-        var bounds = new Rect(Left, Top, Width, Height);
+        var bounds = new Rect(Left, Top, ActualWidth, Height);
         var currentArea = FindWorkingAreaByDeviceName(GetCurrentMonitorDeviceName(), workingAreas);
         var targetArea = currentArea ?? FindBestWorkingArea(bounds, workingAreas) ?? preferredArea;
         var clamped = ClampToArea(bounds, targetArea.Bounds);
