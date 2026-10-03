@@ -105,6 +105,8 @@ Issue type?
 - ✅ Before committing, inspect `git status` again and include only files changed for the completed feature or module
 - ✅ Do not automatically commit incomplete work, failed verification, or unrelated existing changes
 - ✅ Follow the repository's commit message and Git safety rules for every automatic commit
+- ✅ Use Conventional Commits messages matching the history, e.g. `fix(input): ...`, `feat(heatmap): ...`, `docs: ...`
+- ✅ Commit on the current branch; never push, force-push, amend, or rewrite history automatically
 
 ### ☁️ Sync Worker Staging Deployment
 

@@ -64,6 +64,13 @@ Helper 是独立 `.app` bundle（target 名 `helper`，产物 `KeyStatsHelper.ap
 - Use `[weak self]` in closures to prevent retain cycles
 - Maintain backward compatibility with existing UserDefaults keys when changing data models
 
+### Automatic Commits
+- After a feature/fix is fully implemented and its relevant checks pass (e.g. `swift test`), create an atomic commit **without waiting for the user to ask**
+- Re-check `git status` first; stage only files belonging to that feature — never unrelated existing changes, incomplete work, or failing changes
+- Conventional Commits style matching history: `fix(input): ...`, `feat(heatmap): ...`, `docs: ...`
+- Commit on the current branch only; never push, force-push, amend, or rewrite history automatically
+- Same policy as `AGENTS.md` → "Automatic Commit Policy"; keep the two in sync
+
 ### Vendored Helper
 
 `KeyStatsHelper.app` is **vendored** at `vendor/KeyStatsHelper.app/` (binary-tracked via `.gitattributes`). Both `scripts/build_dmg.sh` and `.github/workflows/release.yml` overwrite Xcode's freshly-built helper with this exact bundle (via `scripts/embed_vendored_helper.sh`) before `sign_app.sh` re-signs the outer app. Re-signing the helper with the unchanged `KeyStatsHelper.entitlements` is deterministic, so the shipped helper's cdhash equals `vendor/KeyStatsHelper.cdhash.txt` regardless of toolchain — TCC Accessibility grant survives Sparkle updates.
