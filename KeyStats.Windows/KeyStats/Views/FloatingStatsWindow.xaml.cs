@@ -18,9 +18,7 @@ namespace KeyStats.Views;
 public partial class FloatingStatsWindow : Window
 {
     private const double EdgeMargin = 16;
-    private const double SingleRowWidth = 72;
     private const double SingleRowHeight = 28;
-    private const double DoubleRowWidth = 32;
     private const double DoubleRowHeight = 38;
     private readonly FloatingStatsViewModel _viewModel;
     private readonly DispatcherTimer _positionSaveTimer;
@@ -232,16 +230,14 @@ public partial class FloatingStatsWindow : Window
             AppSettings.FloatingStatsDoubleRowLayoutMode,
             StringComparison.Ordinal);
         var layoutScale = settings.FloatingStatsFontSize / (double)AppSettings.FloatingStatsLayoutBaseFontSize;
-        var baseWidth = useDoubleRow ? DoubleRowWidth : SingleRowWidth;
         var baseHeight = useDoubleRow ? DoubleRowHeight : SingleRowHeight;
-        var targetWidth = Math.Round(baseWidth * layoutScale, MidpointRounding.AwayFromZero);
         var targetHeight = Math.Round(baseHeight * layoutScale, MidpointRounding.AwayFromZero);
-        var sizeChanged = !MinWidth.Equals(targetWidth) || !Height.Equals(targetHeight);
+        var layoutChanged = DoubleRowLayout.Visibility != (useDoubleRow ? Visibility.Visible : Visibility.Collapsed);
+        var sizeChanged = layoutChanged || !Height.Equals(targetHeight);
 
         SingleRowLayout.Visibility = useDoubleRow ? Visibility.Collapsed : Visibility.Visible;
         DoubleRowLayout.Visibility = useDoubleRow ? Visibility.Visible : Visibility.Collapsed;
         // Width follows content (SizeToContent) so large values are never truncated.
-        MinWidth = targetWidth;
         Height = targetHeight;
         return sizeChanged;
     }

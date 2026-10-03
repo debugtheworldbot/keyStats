@@ -27,12 +27,11 @@
             <Grid x:Name="SingleRowLayout"
                   Margin="4,1"
                   HorizontalAlignment="Center"
-                  Grid.IsSharedSizeScope="True"
                   Visibility="Collapsed">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" SharedSizeGroup="Value"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="3"/>
-                    <ColumnDefinition Width="Auto" SharedSizeGroup="Value"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <TextBlock x:Name="SinglePrimaryValueTextBlock"
@@ -65,7 +64,7 @@
                            ToolTip="{Binding SecondaryFullValue}"/>
             </Grid>
 
-            <Grid x:Name="DoubleRowLayout" Margin="1,1">
+            <Grid x:Name="DoubleRowLayout" Margin="4,1">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="3"/>
@@ -84,10 +83,10 @@
                            ToolTip="{Binding PrimaryFullValue}"/>
 
                 <Border Grid.Row="1"
-                        Width="22"
+                        Margin="3,0"
                         Height="0.5"
                         Background="{DynamicResource DividerBrush}"
-                        HorizontalAlignment="Center"
+                        HorizontalAlignment="Stretch"
                         VerticalAlignment="Center"/>
 
                 <TextBlock x:Name="DoubleSecondaryValueTextBlock"
