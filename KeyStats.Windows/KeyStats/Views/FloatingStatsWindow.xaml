@@ -13,6 +13,8 @@
         Topmost="True"
         ResizeMode="NoResize"
         WindowStartupLocation="Manual"
+        HorizontalContentAlignment="Stretch"
+        VerticalContentAlignment="Stretch"
         TextOptions.TextFormattingMode="Display"
         TextOptions.TextRenderingMode="ClearType">
     <Border x:Name="RootBorder"
@@ -36,6 +38,7 @@
 
                 <TextBlock x:Name="SinglePrimaryValueTextBlock"
                            Grid.Column="0"
+                           Padding="6,0"
                            Text="{Binding PrimaryValue}"
                            FontSize="12"
                            FontWeight="Medium"
@@ -54,6 +57,7 @@
 
                 <TextBlock x:Name="SingleSecondaryValueTextBlock"
                            Grid.Column="2"
+                           Padding="6,0"
                            Text="{Binding SecondaryValue}"
                            FontSize="12"
                            FontWeight="Medium"
@@ -73,6 +77,7 @@
 
                 <TextBlock x:Name="DoublePrimaryValueTextBlock"
                            Grid.Row="0"
+                           Padding="6,0"
                            Text="{Binding PrimaryValue}"
                            FontSize="12"
                            FontWeight="Medium"
@@ -91,6 +96,7 @@
 
                 <TextBlock x:Name="DoubleSecondaryValueTextBlock"
                            Grid.Row="2"
+                           Padding="6,0"
                            Text="{Binding SecondaryValue}"
                            FontSize="12"
                            FontWeight="Medium"
