@@ -1317,7 +1317,8 @@ public class StatsManager : IDisposable
 
     public string FormatNumber(int number)
     {
-        if (number >= 1_000_000)
+        // 999,950+ would round to "1000.0k", so switch to M before that.
+        if (number >= 999_950)
             return $"{number / 1_000_000.0:F1}M";
         if (number >= 1_000)
             return $"{number / 1_000.0:F1}k";
