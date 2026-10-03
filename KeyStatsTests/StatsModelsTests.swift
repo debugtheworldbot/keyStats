@@ -243,6 +243,114 @@ final class StatsModelsTests: XCTestCase {
         XCTAssertEqual(committed, "RightShift")
     }
 
+    func testStandaloneModifierHelpersRecognizeControlAndFnKeys() {
+        XCTAssertEqual(standaloneModifierHeatmapKeyName(for: 59), "Ctrl")
+        XCTAssertEqual(standaloneModifierHeatmapKeyName(for: 62), "Ctrl")
+        XCTAssertEqual(standaloneModifierHeatmapKeyName(for: 63), "Fn")
+        XCTAssertEqual(standaloneModifierHeatmapKeyName(for: 179), "Fn")
+        XCTAssertTrue(isStandaloneModifierPress(rawFlags: UInt64(NX_DEVICELCTLKEYMASK), keyCode: 59))
+        XCTAssertTrue(isStandaloneModifierPress(rawFlags: CGEventFlags.maskControl.rawValue, keyCode: 62))
+        XCTAssertFalse(isStandaloneModifierPress(rawFlags: 0, keyCode: 59))
+        XCTAssertTrue(isStandaloneModifierPress(rawFlags: CGEventFlags.maskSecondaryFn.rawValue, keyCode: 63))
+        XCTAssertFalse(isStandaloneModifierPress(rawFlags: 0, keyCode: 63))
+    }
+
+    func testModifierStandaloneTrackerCommitsSingleControlPressOnRelease() {
+        var tracker = ModifierStandaloneTracker()
+
+        XCTAssertNil(tracker.handleFlagsChanged(keyCode: 59, rawFlags: leftControlDownFlags))
+        XCTAssertEqual(tracker.handleFlagsChanged(keyCode: 59, rawFlags: 0), "Ctrl")
+
+        XCTAssertNil(tracker.handleFlagsChanged(keyCode: 62, rawFlags: rightControlDownFlags))
+        XCTAssertEqual(tracker.handleFlagsChanged(keyCode: 62, rawFlags: 0), "Ctrl")
+    }
+
+    func testModifierStandaloneTrackerSuppressesControlWhenUsedInCombo() {
+        var tracker = ModifierStandaloneTracker()
+
+        XCTAssertNil(tracker.handleFlagsChanged(keyCode: 59, rawFlags: leftControlDownFlags))
+        tracker.consumePendingModifiers(forKeyDownWith: leftControlDownFlags, keyCode: 8)
+
+        XCTAssertNil(tracker.handleFlagsChanged(keyCode: 59, rawFlags: 0))
+    }
+
+    func testModifierStandaloneTrackerSuppressesControlWhenComboOnlyHasGenericControlFlag() {
+        var tracker = ModifierStandaloneTracker()
+
+        XCTAssertNil(tracker.handleFlagsChanged(keyCode: 62, rawFlags: rightControlDownFlags))
+        tracker.consumePendingModifiers(forKeyDownWith: CGEventFlags.maskControl.rawValue, keyCode: 8)
+
+        XCTAssertNil(tracker.handleFlagsChanged(keyCode: 62, rawFlags: 0))
+    }
+
+    func testModifierStandaloneTrackerCommitsSingleFnPressOnRelease() {
+        var tracker = ModifierStandaloneTracker()
+
+        XCTAssertNil(tracker.handleFlagsChanged(keyCode: 63, rawFlags: CGEventFlags.maskSecondaryFn.rawValue))
+        XCTAssertEqual(tracker.handleFlagsChanged(keyCode: 63, rawFlags: 0), "Fn")
+    }
+
+    func testModifierStandaloneTrackerSuppressesFnWhenUsedWithNavigationKey() {
+        var tracker = ModifierStandaloneTracker()
+
+        // Fn+Left 产生 Home(115)，keyboardEventModifierNames 不会带上 Fn
+        XCTAssertNil(tracker.handleFlagsChanged(keyCode: 63, rawFlags: CGEventFlags.maskSecondaryFn.rawValue))
+        tracker.consumePendingModifiers(forKeyDownWith: CGEventFlags.maskSecondaryFn.rawValue, keyCode: 115)
+
+        XCTAssertNil(tracker.handleFlagsChanged(keyCode: 63, rawFlags: 0))
+    }
+
+    func testModifierStandaloneTrackerSuppressesFnWhenUsedWithLetterKey() {
+        var tracker = ModifierStandaloneTracker()
+
+        XCTAssertNil(tracker.handleFlagsChanged(keyCode: 63, rawFlags: CGEventFlags.maskSecondaryFn.rawValue))
+        tracker.consumePendingModifiers(forKeyDownWith: CGEventFlags.maskSecondaryFn.rawValue, keyCode: 0)
+
+        XCTAssertNil(tracker.handleFlagsChanged(keyCode: 63, rawFlags: 0))
+    }
+
+    func testControlAndFnPipelineCountsSinglePressOnceAndComboWithoutDuplicates() {
+        let fn = CGEventFlags.maskSecondaryFn.rawValue
+
+        // 单按 Ctrl
+        XCTAssertEqual(simulateKeyPressCounts([
+            .flags(59, leftControlDownFlags), .flags(59, 0)
+        ]), ["Ctrl": 1])
+
+        // Ctrl+C
+        let ctrlC = simulateKeyPressCounts([
+            .flags(59, leftControlDownFlags), .keyDown(8, "C", leftControlDownFlags), .flags(59, 0)
+        ])
+        XCTAssertEqual(ctrlC, ["Ctrl+C": 1])
+        XCTAssertEqual(keyboardHeatmapCounts(from: ctrlC)["Ctrl"], 1)
+
+        // 按住 Ctrl 连按 C、V：两次组合，Ctrl 不额外计单按
+        let ctrlCV = simulateKeyPressCounts([
+            .flags(62, rightControlDownFlags),
+            .keyDown(8, "C", rightControlDownFlags),
+            .keyDown(9, "V", rightControlDownFlags),
+            .flags(62, 0)
+        ])
+        XCTAssertEqual(ctrlCV, ["Ctrl+C": 1, "Ctrl+V": 1])
+        XCTAssertEqual(keyboardHeatmapCounts(from: ctrlCV)["Ctrl"], 2)
+
+        // 单按 Fn
+        XCTAssertEqual(simulateKeyPressCounts([.flags(63, fn), .flags(63, 0)]), ["Fn": 1])
+
+        // Fn+Left -> Home：只计 Home
+        XCTAssertEqual(simulateKeyPressCounts([
+            .flags(63, fn), .keyDown(115, "Home", fn), .flags(63, 0)
+        ]), ["Home": 1])
+
+        // Ctrl+Fn 同时单按后松开：各计一次
+        XCTAssertEqual(simulateKeyPressCounts([
+            .flags(59, leftControlDownFlags),
+            .flags(63, leftControlDownFlags | fn),
+            .flags(63, leftControlDownFlags),
+            .flags(59, 0)
+        ]), ["Ctrl": 1, "Fn": 1])
+    }
+
     func testModifierStandaloneTrackerReleasesPendingModifierByFamilyWhenReleaseKeyCodeDiffers() {
         var tracker = ModifierStandaloneTracker()
 
@@ -251,5 +359,35 @@ final class StatsModelsTests: XCTestCase {
         let committed = tracker.handleFlagsChanged(keyCode: 56, rawFlags: 0)
 
         XCTAssertEqual(committed, "RightShift")
+    }
+
+    private let leftControlDownFlags = UInt64(NX_DEVICELCTLKEYMASK) | CGEventFlags.maskControl.rawValue
+    private let rightControlDownFlags = UInt64(NX_DEVICERCTLKEYMASK) | CGEventFlags.maskControl.rawValue
+
+    private enum SimulatedKeyEvent {
+        case flags(Int, UInt64)
+        case keyDown(Int, String, UInt64)
+    }
+
+    /// 模拟 RemoteEventProcessor 对 keyDown / flagsChanged 的计数流程
+    private func simulateKeyPressCounts(_ events: [SimulatedKeyEvent]) -> [String: Int] {
+        var tracker = ModifierStandaloneTracker()
+        var counts: [String: Int] = [:]
+
+        for event in events {
+            switch event {
+            case let .flags(keyCode, rawFlags):
+                if let name = tracker.handleFlagsChanged(keyCode: keyCode, rawFlags: rawFlags) {
+                    counts[name, default: 0] += 1
+                }
+            case let .keyDown(keyCode, baseName, rawFlags):
+                tracker.consumePendingModifiers(forKeyDownWith: rawFlags, keyCode: keyCode)
+                let modifiers = keyboardEventModifierNames(rawFlags: rawFlags, keyCode: keyCode)
+                let name = (modifiers + [baseName]).joined(separator: "+")
+                counts[name, default: 0] += 1
+            }
+        }
+
+        return counts
     }
 }

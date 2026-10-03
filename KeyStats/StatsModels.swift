@@ -113,6 +113,10 @@ func standaloneModifierHeatmapKeyName(for keyCode: Int) -> String? {
         return "LeftOption"
     case 61:
         return "RightOption"
+    case 59, 62:
+        return "Ctrl"
+    case 63, 179:
+        return "Fn"
     default:
         return nil
     }
@@ -122,6 +126,8 @@ private enum StandaloneModifierFamily {
     case shift
     case option
     case command
+    case control
+    case function
 }
 
 private func standaloneModifierFamily(for keyCode: Int) -> StandaloneModifierFamily? {
@@ -132,6 +138,10 @@ private func standaloneModifierFamily(for keyCode: Int) -> StandaloneModifierFam
         return .shift
     case 58, 61:
         return .option
+    case 59, 62:
+        return .control
+    case 63, 179:
+        return .function
     default:
         return nil
     }
@@ -151,6 +161,10 @@ private func standaloneModifierFamily(for keyName: String) -> StandaloneModifier
         return .option
     case "LeftOption", "RightOption":
         return .option
+    case "Ctrl":
+        return .control
+    case "Fn":
+        return .function
     default:
         return nil
     }
@@ -167,6 +181,12 @@ private func standaloneModifierKeyName(from rawFlags: UInt64, family: Standalone
     case .command:
         if rawFlags & rightCommandRawMask != 0 { return "RightCmd" }
         if rawFlags & leftCommandRawMask != 0 { return "LeftCmd" }
+    case .control:
+        // 热力图只有一个 Ctrl 键位，左右不拆分
+        if rawFlags & (leftControlRawMask | rightControlRawMask) != 0 { return "Ctrl" }
+        if CGEventFlags(rawValue: rawFlags).contains(.maskControl) { return "Ctrl" }
+    case .function:
+        if CGEventFlags(rawValue: rawFlags).contains(.maskSecondaryFn) { return "Fn" }
     }
 
     return nil
@@ -187,7 +207,7 @@ func isStandaloneModifierPress(rawFlags: UInt64, keyCode: Int) -> Bool {
 
 func isStandaloneHeatmapModifierKey(_ keyName: String) -> Bool {
     switch keyName {
-    case "LeftShift", "RightShift", "LeftOption", "RightOption", "LeftCmd", "RightCmd":
+    case "LeftShift", "RightShift", "LeftOption", "RightOption", "LeftCmd", "RightCmd", "Ctrl", "Fn":
         return true
     default:
         return false
@@ -276,6 +296,12 @@ struct ModifierStandaloneTracker {
 
             guard let family = standaloneModifierFamily(for: modifierKey) else { continue }
             pendingModifierKeys = pendingModifierKeys.filter { standaloneModifierFamily(for: $0) != family }
+        }
+
+        // keyboardEventModifierNames 对方向/导航键会省略 Fn（如 Fn+Left = Home），
+        // 但此时 Fn 仍属于组合键，不能再计为单按
+        if CGEventFlags(rawValue: rawFlags).contains(.maskSecondaryFn) {
+            pendingModifierKeys.remove("Fn")
         }
     }
 
