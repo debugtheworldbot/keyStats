@@ -16,7 +16,7 @@
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <AssemblyName>KeyStats</AssemblyName>
     <RootNamespace>KeyStats</RootNamespace>
-    <Version>1.53</Version>
+    <Version>1.54</Version>
     <Authors>KeyStats</Authors>
     <Product>KeyStats</Product>
     <Description>Keyboard and mouse statistics tracker for Windows</Description>
