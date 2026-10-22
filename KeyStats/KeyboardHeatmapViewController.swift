@@ -1030,12 +1030,12 @@ private final class KeyboardHeatmapView: NSView {
         guard let metrics = renderMetrics() else { return }
 
         let isDarkMode = effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        let labelColor: NSColor = isDarkMode ? .white : .labelColor
         for key in Self.layout {
             let frame = keyFrame(for: key, metrics: metrics)
 
             let count = count(for: key)
             let fillColor = color(for: count, isDarkMode: isDarkMode)
+            let labelColor = HeatmapPalette.legendColor(on: fillColor)
 
             let keyPath = NSBezierPath(roundedRect: frame, xRadius: max(4, metrics.scale * 0.14), yRadius: max(4, metrics.scale * 0.14))
             fillColor.setFill()
@@ -1132,7 +1132,8 @@ private final class KeyboardHeatmapView: NSView {
         )
 
         if let symbolImage = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)?
-            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: symbolPointSize, weight: symbolWeight)) {
+            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: symbolPointSize, weight: symbolWeight)
+                .applying(NSImage.SymbolConfiguration(paletteColors: [textColor]))) {
             symbolImage.draw(in: symbolRect)
         }
 
@@ -1501,6 +1502,21 @@ enum HeatmapPalette {
         let alpha = fromRGB.alphaComponent + (toRGB.alphaComponent - fromRGB.alphaComponent) * progress
 
         return NSColor(calibratedRed: red, green: green, blue: blue, alpha: alpha)
+    }
+
+    /// Selects the higher-contrast foreground for the actual keycap color.
+    static func legendColor(on background: NSColor) -> NSColor {
+        let rgb = background.usingColorSpace(.sRGB) ?? .black
+        func linear(_ component: CGFloat) -> CGFloat {
+            let value = max(0, min(1, component))
+            return value <= 0.04045 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
+        }
+        let luminance = 0.2126 * linear(rgb.redComponent)
+            + 0.7152 * linear(rgb.greenComponent)
+            + 0.0722 * linear(rgb.blueComponent)
+        let blackContrast = (luminance + 0.05) / 0.05
+        let whiteContrast = 1.05 / (luminance + 0.05)
+        return blackContrast >= whiteContrast ? .black : .white
     }
 
     static func color(fromHex hex: String) -> NSColor? {

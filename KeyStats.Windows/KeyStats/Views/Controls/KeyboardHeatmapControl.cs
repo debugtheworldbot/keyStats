@@ -75,8 +75,6 @@ public class KeyboardHeatmapControl : FrameworkElement
         }
 
         var isDarkMode = ThemeManager.Instance.IsDarkTheme;
-        var defaultTextColor = isDarkMode ? Colors.White : ResolveColor("TextPrimaryBrush", Colors.Black);
-        var textBrush = CreateBrush(defaultTextColor);
         var borderColor = isDarkMode
             ? Color.FromArgb(36, 255, 255, 255)
             : Color.FromArgb(23, 0, 0, 0);
@@ -88,10 +86,12 @@ public class KeyboardHeatmapControl : FrameworkElement
             var frame = KeyFrame(key, metrics);
             var count = _keyCounts.TryGetValue(key.Id, out var value) ? value : 0;
             var fillColor = ColorForCount(count, isDarkMode);
+            var textColor = HeatmapPalette.LegendColor(fillColor);
+            var textBrush = CreateBrush(textColor);
             var radius = Math.Max(4, metrics.Scale * 0.14);
 
             drawingContext.DrawRoundedRectangle(CreateBrush(fillColor), borderPen, frame, radius, radius);
-            DrawKeyLegend(drawingContext, key, frame, metrics.Scale, textBrush, defaultTextColor);
+            DrawKeyLegend(drawingContext, key, frame, metrics.Scale, textBrush, textColor);
             DrawCountBadge(drawingContext, count, frame, metrics.Scale, isDarkMode);
         }
     }

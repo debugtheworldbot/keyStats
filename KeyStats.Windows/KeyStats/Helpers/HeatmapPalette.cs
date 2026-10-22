@@ -135,6 +135,23 @@ public static class HeatmapPalette
         }
     }
 
+    /// <summary>为实际键帽底色选择对比度更高的黑色或白色文字。</summary>
+    public static Color LegendColor(Color background)
+    {
+        double Linear(byte component)
+        {
+            var value = component / 255.0;
+            return value <= 0.04045 ? value / 12.92 : Math.Pow((value + 0.055) / 1.055, 2.4);
+        }
+
+        var luminance = 0.2126 * Linear(background.R)
+            + 0.7152 * Linear(background.G)
+            + 0.0722 * Linear(background.B);
+        var blackContrast = (luminance + 0.05) / 0.05;
+        var whiteContrast = 1.05 / (luminance + 0.05);
+        return blackContrast >= whiteContrast ? Colors.Black : Colors.White;
+    }
+
     public static string ToHex(Color color)
     {
         return string.Format(CultureInfo.InvariantCulture, "#{0:X2}{1:X2}{2:X2}", color.R, color.G, color.B);
