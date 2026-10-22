@@ -109,6 +109,20 @@
   <data name="Settings_Language" xml:space="preserve"><value>语言</value></data>
   <data name="Settings_LanguageDescription" xml:space="preserve"><value>应用界面显示语言</value></data>
   <data name="Settings_Language_System" xml:space="preserve"><value>跟随系统</value></data>
+  <data name="Settings_HeatmapColorScheme" xml:space="preserve"><value>热力图配色</value></data>
+  <data name="Settings_HeatmapColorSchemeDesc" xml:space="preserve"><value>键盘热力图的按键颜色</value></data>
+  <data name="Settings_HeatmapColorScheme_Default" xml:space="preserve"><value>默认（蓝色）</value></data>
+  <data name="Settings_HeatmapColorScheme_Warm" xml:space="preserve"><value>暖色（橙红）</value></data>
+  <data name="Settings_HeatmapColorScheme_Spectrum" xml:space="preserve"><value>光谱（蓝黄红）</value></data>
+  <data name="Settings_HeatmapColorScheme_Green" xml:space="preserve"><value>绿色</value></data>
+  <data name="Settings_HeatmapColorScheme_Teal" xml:space="preserve"><value>青色</value></data>
+  <data name="Settings_HeatmapColorScheme_Purple" xml:space="preserve"><value>紫色</value></data>
+  <data name="Settings_HeatmapColorScheme_Rose" xml:space="preserve"><value>玫红</value></data>
+  <data name="Settings_HeatmapColorScheme_Custom" xml:space="preserve"><value>自定义</value></data>
+  <data name="Settings_HeatmapCustomLow" xml:space="preserve"><value>起始色</value></data>
+  <data name="Settings_HeatmapCustomHigh" xml:space="preserve"><value>最高色</value></data>
+  <data name="Settings_HeatmapPreviewLess" xml:space="preserve"><value>少</value></data>
+  <data name="Settings_HeatmapPreviewMore" xml:space="preserve"><value>多</value></data>
   <data name="Language_RestartPromptTitle" xml:space="preserve"><value>需要重启</value></data>
   <data name="Language_RestartPromptMessage" xml:space="preserve"><value>需要重启 KeyStats 才能切换语言。是否立即重启？</value></data>
 

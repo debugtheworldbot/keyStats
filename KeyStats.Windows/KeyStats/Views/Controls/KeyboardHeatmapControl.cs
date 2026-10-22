@@ -99,11 +99,13 @@ public class KeyboardHeatmapControl : FrameworkElement
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         ThemeManager.Instance.ThemeChanged += OnThemeChanged;
+        HeatmapPalette.SchemeChanged += OnThemeChanged;
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
         ThemeManager.Instance.ThemeChanged -= OnThemeChanged;
+        HeatmapPalette.SchemeChanged -= OnThemeChanged;
     }
 
     private void OnThemeChanged()
@@ -334,13 +336,9 @@ public class KeyboardHeatmapControl : FrameworkElement
 
     private Color ColorForCount(int count, bool isDarkMode)
     {
-        var surface = ResolveColor("SurfaceBrush", isDarkMode ? Color.FromRgb(32, 32, 32) : Color.FromRgb(250, 250, 250));
-        var divider = ResolveColor("DividerBrush", isDarkMode ? Color.FromRgb(61, 61, 61) : Color.FromRgb(229, 229, 229));
-        var neutral = Blend(surface, divider, isDarkMode ? 0.22 : 0.10);
-
         if (count <= 0)
         {
-            return neutral;
+            return HeatmapPalette.NeutralColor(isDarkMode);
         }
 
         var normalized = _maxCount > 0
@@ -348,11 +346,7 @@ public class KeyboardHeatmapControl : FrameworkElement
             : 0;
         var eased = Math.Pow(normalized, 0.82);
 
-        var accent = ResolveColor("AccentBrush", isDarkMode ? Color.FromRgb(0, 120, 212) : Color.FromRgb(0, 103, 192));
-        var low = Blend(neutral, accent, isDarkMode ? 0.34 : 0.24);
-        var high = Blend(accent, isDarkMode ? Colors.White : Colors.Black, isDarkMode ? 0.18 : 0.10);
-
-        return Blend(low, high, eased);
+        return HeatmapPalette.ColorFor(eased, isDarkMode);
     }
 
     private static Color ResolveColor(string key, Color fallback)
@@ -367,16 +361,6 @@ public class KeyboardHeatmapControl : FrameworkElement
             return color;
         }
         return fallback;
-    }
-
-    private static Color Blend(Color from, Color to, double t)
-    {
-        var progress = Math.Max(0, Math.Min(1, t));
-        return Color.FromArgb(
-            (byte)Math.Round(from.A + (to.A - from.A) * progress),
-            (byte)Math.Round(from.R + (to.R - from.R) * progress),
-            (byte)Math.Round(from.G + (to.G - from.G) * progress),
-            (byte)Math.Round(from.B + (to.B - from.B) * progress));
     }
 
     private static SolidColorBrush CreateBrush(Color color)

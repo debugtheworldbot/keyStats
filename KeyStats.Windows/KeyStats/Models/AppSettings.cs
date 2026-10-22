@@ -12,6 +12,14 @@ public class AppSettings
     public const int DefaultFloatingStatsFontSize = 12;
     public const int MinimumFloatingStatsFontSize = 9;
     public const int MaximumFloatingStatsFontSize = 22;
+    public const string HeatmapColorSchemeDefault = "default";
+    public const string HeatmapColorSchemeWarm = "warm";
+    public const string HeatmapColorSchemeSpectrum = "spectrum";
+    public const string HeatmapColorSchemeGreen = "green";
+    public const string HeatmapColorSchemeTeal = "teal";
+    public const string HeatmapColorSchemePurple = "purple";
+    public const string HeatmapColorSchemeRose = "rose";
+    public const string HeatmapColorSchemeCustom = "custom";
     private int _floatingStatsFontSize = DefaultFloatingStatsFontSize;
 
     [JsonPropertyName("notificationsEnabled")]
@@ -100,6 +108,15 @@ public class AppSettings
 
     [JsonPropertyName("floatingStatsPositionLocked")]
     public bool FloatingStatsPositionLocked { get; set; }
+
+    [JsonPropertyName("heatmapColorScheme")]
+    public string HeatmapColorScheme { get; set; } = HeatmapColorSchemeDefault;  // "default" | "warm" | "spectrum" | "green" | "teal" | "purple" | "rose" | "custom"
+
+    [JsonPropertyName("heatmapCustomLowColor")]
+    public string HeatmapCustomLowColor { get; set; } = "#FFE082";
+
+    [JsonPropertyName("heatmapCustomHighColor")]
+    public string HeatmapCustomHighColor { get; set; } = "#C62828";
 
     [JsonPropertyName("languagePreference")]
     public string LanguagePreference { get; set; } = "system";  // "system" | "zh-Hans" | "zh-Hant" | "en"

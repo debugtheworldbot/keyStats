@@ -52,6 +52,20 @@ public static class Strings
     public static string Dialog_ImportTitle => Get(nameof(Dialog_ImportTitle));
     public static string Dialog_JsonFilter => Get(nameof(Dialog_JsonFilter));
 
+    public static string Settings_HeatmapColorScheme => Get(nameof(Settings_HeatmapColorScheme));
+    public static string Settings_HeatmapColorSchemeDesc => Get(nameof(Settings_HeatmapColorSchemeDesc));
+    public static string Settings_HeatmapColorScheme_Default => Get(nameof(Settings_HeatmapColorScheme_Default));
+    public static string Settings_HeatmapColorScheme_Warm => Get(nameof(Settings_HeatmapColorScheme_Warm));
+    public static string Settings_HeatmapColorScheme_Spectrum => Get(nameof(Settings_HeatmapColorScheme_Spectrum));
+    public static string Settings_HeatmapColorScheme_Green => Get(nameof(Settings_HeatmapColorScheme_Green));
+    public static string Settings_HeatmapColorScheme_Teal => Get(nameof(Settings_HeatmapColorScheme_Teal));
+    public static string Settings_HeatmapColorScheme_Purple => Get(nameof(Settings_HeatmapColorScheme_Purple));
+    public static string Settings_HeatmapColorScheme_Rose => Get(nameof(Settings_HeatmapColorScheme_Rose));
+    public static string Settings_HeatmapColorScheme_Custom => Get(nameof(Settings_HeatmapColorScheme_Custom));
+    public static string Settings_HeatmapCustomLow => Get(nameof(Settings_HeatmapCustomLow));
+    public static string Settings_HeatmapCustomHigh => Get(nameof(Settings_HeatmapCustomHigh));
+    public static string Settings_HeatmapPreviewLess => Get(nameof(Settings_HeatmapPreviewLess));
+    public static string Settings_HeatmapPreviewMore => Get(nameof(Settings_HeatmapPreviewMore));
     public static string Settings_Language => Get(nameof(Settings_Language));
     public static string Settings_LanguageDescription => Get(nameof(Settings_LanguageDescription));
     public static string Settings_Language_System => Get(nameof(Settings_Language_System));

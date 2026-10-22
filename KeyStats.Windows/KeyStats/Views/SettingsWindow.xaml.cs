@@ -35,6 +35,7 @@ public partial class SettingsWindow : Window
         UpdateMaximumHeight();
         ApplyWindowBackdrop();
         LoadFloatingStatsControls();
+        LoadHeatmapColorSchemeControls();
         if (App.CurrentApp?.SyncCoordinator != null)
         {
             App.CurrentApp.SyncCoordinator.StatusChanged += OnSyncStatusChanged;
@@ -55,7 +56,12 @@ public partial class SettingsWindow : Window
 
     private void OnThemeChanged()
     {
-        Dispatcher.BeginInvoke(new System.Action(ApplyWindowBackdrop));
+        Dispatcher.BeginInvoke(new System.Action(() =>
+        {
+            ApplyWindowBackdrop();
+            // 下拉项色条按深浅色主题分别生成，主题切换后重建
+            LoadHeatmapColorSchemeControls();
+        }));
     }
 
     private void ApplyWindowBackdrop()
@@ -344,6 +350,118 @@ public partial class SettingsWindow : Window
         }
     }
 
+    private bool _isLoadingHeatmapColorScheme = true;
+
+    private void LoadHeatmapColorSchemeControls()
+    {
+        _isLoadingHeatmapColorScheme = true;
+        var settings = StatsManager.Instance.Settings;
+        var isDarkMode = ThemeManager.Instance.IsDarkTheme;
+        var customLow = HeatmapPalette.ParseColor(settings.HeatmapCustomLowColor, HeatmapPalette.DefaultCustomLowColor);
+        var customHigh = HeatmapPalette.ParseColor(settings.HeatmapCustomHighColor, HeatmapPalette.DefaultCustomHighColor);
+
+        HeatmapColorSchemeComboBox.ItemsSource = new[]
+            {
+                (AppSettings.HeatmapColorSchemeDefault, KeyStats.Properties.Strings.Settings_HeatmapColorScheme_Default),
+                (AppSettings.HeatmapColorSchemeWarm, KeyStats.Properties.Strings.Settings_HeatmapColorScheme_Warm),
+                (AppSettings.HeatmapColorSchemeSpectrum, KeyStats.Properties.Strings.Settings_HeatmapColorScheme_Spectrum),
+                (AppSettings.HeatmapColorSchemeGreen, KeyStats.Properties.Strings.Settings_HeatmapColorScheme_Green),
+                (AppSettings.HeatmapColorSchemeTeal, KeyStats.Properties.Strings.Settings_HeatmapColorScheme_Teal),
+                (AppSettings.HeatmapColorSchemePurple, KeyStats.Properties.Strings.Settings_HeatmapColorScheme_Purple),
+                (AppSettings.HeatmapColorSchemeRose, KeyStats.Properties.Strings.Settings_HeatmapColorScheme_Rose),
+                (AppSettings.HeatmapColorSchemeCustom, KeyStats.Properties.Strings.Settings_HeatmapColorScheme_Custom),
+            }
+            .Select(option => new HeatmapSchemeOption(
+                option.Item1,
+                option.Item2,
+                HeatmapPalette.CreatePreviewBrush(option.Item1, customLow, customHigh, isDarkMode)))
+            .ToList();
+        HeatmapColorSchemeComboBox.SelectedValue = settings.HeatmapColorScheme;
+        if (HeatmapColorSchemeComboBox.SelectedIndex < 0)
+        {
+            HeatmapColorSchemeComboBox.SelectedIndex = 0;
+        }
+
+        HeatmapCustomLowSwatch.Background = new SolidColorBrush(customLow);
+        HeatmapCustomHighSwatch.Background = new SolidColorBrush(customHigh);
+        HeatmapCustomColorsPanel.Visibility = settings.HeatmapColorScheme == AppSettings.HeatmapColorSchemeCustom
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        _isLoadingHeatmapColorScheme = false;
+    }
+
+    private void HeatmapColorSchemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isLoadingHeatmapColorScheme || HeatmapColorSchemeComboBox.SelectedValue is not string scheme)
+        {
+            return;
+        }
+
+        var settings = StatsManager.Instance.Settings;
+        if (scheme == settings.HeatmapColorScheme)
+        {
+            return;
+        }
+
+        settings.HeatmapColorScheme = scheme;
+        StatsManager.Instance.SaveSettings();
+        HeatmapCustomColorsPanel.Visibility = scheme == AppSettings.HeatmapColorSchemeCustom
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        HeatmapPalette.NotifySchemeChanged();
+        App.CurrentApp?.TrackClick("settings_heatmap_color_scheme", new System.Collections.Generic.Dictionary<string, object?>
+        {
+            ["scheme"] = scheme
+        });
+    }
+
+    private void HeatmapCustomLowColor_Click(object sender, RoutedEventArgs e)
+    {
+        PickHeatmapCustomColor(isLow: true);
+    }
+
+    private void HeatmapCustomHighColor_Click(object sender, RoutedEventArgs e)
+    {
+        PickHeatmapCustomColor(isLow: false);
+    }
+
+    private void PickHeatmapCustomColor(bool isLow)
+    {
+        var settings = StatsManager.Instance.Settings;
+        var current = isLow
+            ? HeatmapPalette.ParseColor(settings.HeatmapCustomLowColor, HeatmapPalette.DefaultCustomLowColor)
+            : HeatmapPalette.ParseColor(settings.HeatmapCustomHighColor, HeatmapPalette.DefaultCustomHighColor);
+
+        using var dialog = new Forms.ColorDialog
+        {
+            AnyColor = true,
+            FullOpen = true,
+            Color = System.Drawing.Color.FromArgb(current.R, current.G, current.B)
+        };
+        if (dialog.ShowDialog(new Win32WindowOwner(new WindowInteropHelper(this).Handle)) != Forms.DialogResult.OK)
+        {
+            return;
+        }
+
+        var hex = HeatmapPalette.ToHex(Color.FromRgb(dialog.Color.R, dialog.Color.G, dialog.Color.B));
+        if (isLow)
+        {
+            settings.HeatmapCustomLowColor = hex;
+        }
+        else
+        {
+            settings.HeatmapCustomHighColor = hex;
+        }
+        StatsManager.Instance.SaveSettings();
+        // 刷新下拉项里「自定义」的色条和色块
+        LoadHeatmapColorSchemeControls();
+        HeatmapPalette.NotifySchemeChanged();
+        App.CurrentApp?.TrackClick("settings_heatmap_custom_color", new System.Collections.Generic.Dictionary<string, object?>
+        {
+            ["slot"] = isLow ? "low" : "high"
+        });
+    }
+
     private bool _isInitializingLanguage = true;
 
     private void LanguageComboBox_Loaded(object sender, RoutedEventArgs e)
@@ -415,6 +533,32 @@ public partial class SettingsWindow : Window
             System.Console.WriteLine($"RestartApp: relaunch failed: {ex}");
         }
         Application.Current.Shutdown();
+    }
+
+    private sealed class HeatmapSchemeOption
+    {
+        public HeatmapSchemeOption(string id, string label, Brush previewBrush)
+        {
+            Id = id;
+            Label = label;
+            PreviewBrush = previewBrush;
+        }
+
+        public string Id { get; }
+
+        public string Label { get; }
+
+        public Brush PreviewBrush { get; }
+    }
+
+    private sealed class Win32WindowOwner : Forms.IWin32Window
+    {
+        public Win32WindowOwner(System.IntPtr handle)
+        {
+            Handle = handle;
+        }
+
+        public System.IntPtr Handle { get; }
     }
 
     private sealed class FloatingMetricOption

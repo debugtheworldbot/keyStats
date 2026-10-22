@@ -109,6 +109,20 @@
   <data name="Settings_Language" xml:space="preserve"><value>Language</value></data>
   <data name="Settings_LanguageDescription" xml:space="preserve"><value>Display language for the app interface</value></data>
   <data name="Settings_Language_System" xml:space="preserve"><value>System</value></data>
+  <data name="Settings_HeatmapColorScheme" xml:space="preserve"><value>Heatmap Colors</value></data>
+  <data name="Settings_HeatmapColorSchemeDesc" xml:space="preserve"><value>Color palette for the keyboard heatmap</value></data>
+  <data name="Settings_HeatmapColorScheme_Default" xml:space="preserve"><value>Default (Blue)</value></data>
+  <data name="Settings_HeatmapColorScheme_Warm" xml:space="preserve"><value>Warm (Orange-Red)</value></data>
+  <data name="Settings_HeatmapColorScheme_Spectrum" xml:space="preserve"><value>Spectrum (Blue-Yellow-Red)</value></data>
+  <data name="Settings_HeatmapColorScheme_Green" xml:space="preserve"><value>Green</value></data>
+  <data name="Settings_HeatmapColorScheme_Teal" xml:space="preserve"><value>Teal</value></data>
+  <data name="Settings_HeatmapColorScheme_Purple" xml:space="preserve"><value>Purple</value></data>
+  <data name="Settings_HeatmapColorScheme_Rose" xml:space="preserve"><value>Rose</value></data>
+  <data name="Settings_HeatmapColorScheme_Custom" xml:space="preserve"><value>Custom</value></data>
+  <data name="Settings_HeatmapCustomLow" xml:space="preserve"><value>Low color</value></data>
+  <data name="Settings_HeatmapCustomHigh" xml:space="preserve"><value>High color</value></data>
+  <data name="Settings_HeatmapPreviewLess" xml:space="preserve"><value>Less</value></data>
+  <data name="Settings_HeatmapPreviewMore" xml:space="preserve"><value>More</value></data>
   <data name="Language_RestartPromptTitle" xml:space="preserve"><value>Restart Required</value></data>
   <data name="Language_RestartPromptMessage" xml:space="preserve"><value>KeyStats needs to restart to apply the new language. Restart now?</value></data>
 
