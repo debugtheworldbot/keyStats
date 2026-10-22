@@ -62,6 +62,11 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
     private var clickThresholdStepper: NSStepper!
     private var dynamicIconOptionsContainer: NSStackView!
     private var notificationThresholdContainer: NSStackView!
+    private var heatmapColorSchemePopUp: NSPopUpButton!
+    private var heatmapCustomColorsContainer: NSStackView!
+    private var heatmapCustomLowColorWell: NSColorWell!
+    private var heatmapCustomHighColorWell: NSColorWell!
+    private var heatmapPalettePreviewView: HeatmapPalettePreviewView!
 
     private var cardViews: [NSView] = []
     private var dividerViews: [NSView] = []
@@ -378,6 +383,9 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
         let notificationSection = makeSection(titleKey: "settings.section.notifications", content: notificationStack)
         addArrangedSubviewFillingWidth(notificationSection, to: contentStack)
 
+        let heatmapSection = makeSection(titleKey: "settings.section.heatmap", content: makeHeatmapColorSchemeStack())
+        addArrangedSubviewFillingWidth(heatmapSection, to: contentStack)
+
         syncStatusLabel = NSTextField(wrappingLabelWithString: "")
         syncStatusLabel.textColor = .secondaryLabelColor
         syncStatusLabel.maximumNumberOfLines = 0
@@ -452,6 +460,67 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
             contentStack.trailingAnchor.constraint(equalTo: documentView.trailingAnchor, constant: -20),
             contentStack.bottomAnchor.constraint(equalTo: documentView.bottomAnchor, constant: -24)
         ])
+    }
+
+    private func makeHeatmapColorSchemeStack() -> NSStackView {
+        heatmapColorSchemePopUp = NSPopUpButton()
+        heatmapColorSchemePopUp.controlSize = .small
+        heatmapColorSchemePopUp.font = NSFont.systemFont(ofSize: 12)
+        for scheme in HeatmapColorScheme.allCases {
+            heatmapColorSchemePopUp.addItem(withTitle: scheme.localizedTitle)
+            heatmapColorSchemePopUp.lastItem?.representedObject = scheme.rawValue
+            heatmapColorSchemePopUp.lastItem?.image = HeatmapPalette.thumbnailImage(for: scheme)
+        }
+        heatmapColorSchemePopUp.target = self
+        heatmapColorSchemePopUp.action = #selector(heatmapColorSchemeChanged)
+
+        let schemeRow = makeLabeledRow(title: NSLocalizedString("settings.heatmapColorScheme", comment: ""),
+                                       control: heatmapColorSchemePopUp)
+
+        heatmapCustomLowColorWell = makeHeatmapColorWell()
+        heatmapCustomHighColorWell = makeHeatmapColorWell()
+        let customColorsStack = makeOptionSeparatedStack([
+            makeLabeledRow(title: NSLocalizedString("settings.heatmapCustomLowColor", comment: ""),
+                           control: heatmapCustomLowColorWell),
+            makeLabeledRow(title: NSLocalizedString("settings.heatmapCustomHighColor", comment: ""),
+                           control: heatmapCustomHighColorWell)
+        ], spacing: 6)
+        heatmapCustomColorsContainer = makeVerticalStack(spacing: 6)
+        addArrangedSubviewFillingWidth(makeOptionDividerContainer(), to: heatmapCustomColorsContainer)
+        addArrangedSubviewFillingWidth(makeIndentedContainer(customColorsStack, indent: 22), to: heatmapCustomColorsContainer)
+
+        let lessLabel = NSTextField(labelWithString: NSLocalizedString("settings.heatmapPreview.less", comment: ""))
+        let moreLabel = NSTextField(labelWithString: NSLocalizedString("settings.heatmapPreview.more", comment: ""))
+        for label in [lessLabel, moreLabel] {
+            label.font = NSFont.systemFont(ofSize: 11)
+            label.textColor = .secondaryLabelColor
+            label.setContentHuggingPriority(.required, for: .horizontal)
+        }
+        heatmapPalettePreviewView = HeatmapPalettePreviewView(frame: .zero)
+        heatmapPalettePreviewView.translatesAutoresizingMaskIntoConstraints = false
+        heatmapPalettePreviewView.heightAnchor.constraint(equalToConstant: 18).isActive = true
+        heatmapPalettePreviewView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        let previewRow = NSStackView(views: [lessLabel, heatmapPalettePreviewView, moreLabel])
+        previewRow.orientation = .horizontal
+        previewRow.alignment = .centerY
+        previewRow.spacing = 8
+
+        let stack = makeVerticalStack(spacing: 8)
+        addArrangedSubviewFillingWidth(schemeRow, to: stack)
+        addArrangedSubviewFillingWidth(heatmapCustomColorsContainer, to: stack)
+        addArrangedSubviewFillingWidth(makeOptionDividerContainer(), to: stack)
+        addArrangedSubviewFillingWidth(previewRow, to: stack)
+        return stack
+    }
+
+    private func makeHeatmapColorWell() -> NSColorWell {
+        let colorWell = NSColorWell(frame: NSRect(x: 0, y: 0, width: 44, height: 22))
+        colorWell.target = self
+        colorWell.action = #selector(heatmapCustomColorChanged(_:))
+        colorWell.translatesAutoresizingMaskIntoConstraints = false
+        colorWell.widthAnchor.constraint(equalToConstant: 44).isActive = true
+        colorWell.heightAnchor.constraint(equalToConstant: 22).isActive = true
+        return colorWell
     }
 
     private func makeSection(titleKey: String, content: NSView) -> NSView {
@@ -719,7 +788,18 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
         showThresholdsButton.state = notificationsEnabled ? .on : .off
         notificationThresholdContainer.isHidden = !notificationsEnabled
         updateThresholdUI()
+        updateHeatmapColorSchemeState()
         updateSyncState()
+    }
+
+    private func updateHeatmapColorSchemeState() {
+        let scheme = HeatmapPalette.scheme
+        if let item = heatmapColorSchemePopUp.itemArray.first(where: { ($0.representedObject as? String) == scheme.rawValue }) {
+            heatmapColorSchemePopUp.select(item)
+        }
+        heatmapCustomLowColorWell.color = HeatmapPalette.customLowColor
+        heatmapCustomHighColorWell.color = HeatmapPalette.customHighColor
+        heatmapCustomColorsContainer.isHidden = scheme != .custom
     }
 
     private func updateSyncState() {
@@ -1080,6 +1160,31 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
         guard let rawValue = dynamicIconColorStylePopUp.selectedItem?.representedObject as? String else { return }
         UserDefaults.standard.set(rawValue, forKey: dynamicIconColorStyleKey)
         StatsManager.shared.menuBarUpdateHandler?()
+    }
+
+    @objc private func heatmapColorSchemeChanged() {
+        guard let rawValue = heatmapColorSchemePopUp.selectedItem?.representedObject as? String,
+              let scheme = HeatmapColorScheme(rawValue: rawValue),
+              scheme != HeatmapPalette.scheme else { return }
+        HeatmapPalette.scheme = scheme
+        heatmapCustomColorsContainer.isHidden = scheme != .custom
+        if scheme != .custom {
+            heatmapCustomLowColorWell.deactivate()
+            heatmapCustomHighColorWell.deactivate()
+        }
+        AppDelegate.trackClick("setting_heatmap_color_scheme", properties: ["scheme": rawValue])
+    }
+
+    @objc private func heatmapCustomColorChanged(_ sender: NSColorWell) {
+        if sender === heatmapCustomLowColorWell {
+            HeatmapPalette.customLowColor = sender.color
+        } else {
+            HeatmapPalette.customHighColor = sender.color
+        }
+        // 自定义项的色条缩略图需按新颜色重建
+        if let item = heatmapColorSchemePopUp.itemArray.first(where: { ($0.representedObject as? String) == HeatmapColorScheme.custom.rawValue }) {
+            item.image = HeatmapPalette.thumbnailImage(for: .custom)
+        }
     }
 
     @objc private func toggleLaunchAtLogin() {

@@ -381,3 +381,19 @@
 "hourly.summary.metric" = "Synced total: %ld · This Mac: %ld · Busiest hour: %@";
 "hourly.detail.metric" = "%@ · Synced total: %@ · This Mac: %@";
 "hourly.import.differentTimeZones" = "These hourly records use different time zones and cannot be merged accurately. Use Replace to restore the backup instead.";
+
+/* Heatmap color scheme */
+"settings.section.heatmap" = "Heatmap Colors";
+"settings.heatmapColorScheme" = "Key Colors";
+"settings.heatmapColorScheme.default" = "Default (Blue)";
+"settings.heatmapColorScheme.warm" = "Warm (Orange-Red)";
+"settings.heatmapColorScheme.spectrum" = "Spectrum (Blue-Yellow-Red)";
+"settings.heatmapColorScheme.green" = "Green";
+"settings.heatmapColorScheme.teal" = "Teal";
+"settings.heatmapColorScheme.purple" = "Purple";
+"settings.heatmapColorScheme.rose" = "Rose";
+"settings.heatmapColorScheme.custom" = "Custom";
+"settings.heatmapCustomLowColor" = "Start Color";
+"settings.heatmapCustomHighColor" = "Peak Color";
+"settings.heatmapPreview.less" = "Less";
+"settings.heatmapPreview.more" = "More";

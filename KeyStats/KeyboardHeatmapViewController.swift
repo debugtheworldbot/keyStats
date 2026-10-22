@@ -994,8 +994,28 @@ private final class KeyboardHeatmapView: NSView {
         return formatter
     }()
 
+    private var colorSchemeObserver: NSObjectProtocol?
+
     override var isFlipped: Bool {
         true
+    }
+
+    deinit {
+        if let observer = colorSchemeObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard window != nil, colorSchemeObserver == nil else { return }
+        colorSchemeObserver = NotificationCenter.default.addObserver(
+            forName: .heatmapColorSchemeDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.needsDisplay = true
+        }
     }
 
     func apply(keyCounts: [String: Int]) {
@@ -1296,14 +1316,8 @@ private final class KeyboardHeatmapView: NSView {
     }
 
     private func color(for count: Int, isDarkMode: Bool) -> NSColor {
-        let surfaceColor = isDarkMode ? NSColor.windowBackgroundColor : NSColor.controlBackgroundColor
-        let neutralColor = surfaceColor.blended(withFraction: isDarkMode ? 0.22 : 0.10, of: .separatorColor)
-            ?? (isDarkMode
-                ? NSColor(calibratedRed: 0.20, green: 0.22, blue: 0.25, alpha: 1)
-                : NSColor(calibratedRed: 0.93, green: 0.94, blue: 0.96, alpha: 1))
-
         if count <= 0 {
-            return neutralColor
+            return HeatmapPalette.neutralColor(isDarkMode: isDarkMode)
         }
 
         let normalized = maxCount > 0
@@ -1311,16 +1325,172 @@ private final class KeyboardHeatmapView: NSView {
             : 0
         let eased = pow(normalized, 0.82)
 
-        let accentColor = NSColor.controlAccentColor
-        let lowColor = neutralColor.blended(withFraction: isDarkMode ? 0.34 : 0.24, of: accentColor)
-            ?? blendColor(from: neutralColor, to: accentColor, t: isDarkMode ? 0.34 : 0.24)
-        let highColor = accentColor.blended(withFraction: isDarkMode ? 0.18 : 0.10, of: isDarkMode ? .white : .black)
-            ?? blendColor(from: accentColor, to: isDarkMode ? .white : .black, t: isDarkMode ? 0.18 : 0.10)
+        return HeatmapPalette.color(intensity: eased, isDarkMode: isDarkMode)
+    }
+}
 
-        return blendColor(from: lowColor, to: highColor, t: eased)
+// MARK: - Heatmap Palette
+
+extension Notification.Name {
+    static let heatmapColorSchemeDidChange = Notification.Name("heatmapColorSchemeDidChange")
+}
+
+enum HeatmapColorScheme: String, CaseIterable {
+    case `default`
+    case warm
+    case spectrum
+    case green
+    case teal
+    case purple
+    case rose
+    case custom
+
+    var localizedTitle: String {
+        NSLocalizedString("settings.heatmapColorScheme.\(rawValue)", comment: "")
+    }
+}
+
+/// 键盘热力图配色：预置色板 + 用户自定义起止色。色值与 Windows 端 HeatmapPalette.cs 保持一致。
+enum HeatmapPalette {
+    static let schemeKey = "heatmapColorScheme"
+    static let customLowColorKey = "heatmapCustomLowColor"
+    static let customHighColorKey = "heatmapCustomHighColor"
+    static let defaultCustomLowHex = "#FFE082"
+    static let defaultCustomHighHex = "#C62828"
+
+    private static let presetStops: [HeatmapColorScheme: (light: [NSColor], dark: [NSColor])] = [
+        .warm: (
+            light: [rgb(255, 196, 92), rgb(251, 140, 60), rgb(229, 57, 53)],
+            dark: [rgb(196, 132, 40), rgb(226, 110, 38), rgb(222, 64, 56)]
+        ),
+        .spectrum: (
+            light: [rgb(100, 181, 246), rgb(255, 202, 40), rgb(229, 57, 53)],
+            dark: [rgb(30, 136, 229), rgb(253, 216, 53), rgb(239, 83, 80)]
+        ),
+        .green: (
+            light: [rgb(129, 199, 132), rgb(67, 160, 71), rgb(27, 94, 32)],
+            dark: [rgb(46, 125, 50), rgb(67, 160, 71), rgb(129, 199, 132)]
+        ),
+        .teal: (
+            light: [rgb(128, 222, 234), rgb(0, 172, 193), rgb(0, 96, 100)],
+            dark: [rgb(0, 96, 100), rgb(0, 151, 167), rgb(77, 208, 225)]
+        ),
+        .purple: (
+            light: [rgb(206, 147, 216), rgb(142, 36, 170), rgb(74, 20, 140)],
+            dark: [rgb(106, 27, 154), rgb(156, 39, 176), rgb(206, 147, 216)]
+        ),
+        .rose: (
+            light: [rgb(248, 187, 208), rgb(236, 64, 122), rgb(173, 20, 87)],
+            dark: [rgb(136, 14, 79), rgb(216, 27, 96), rgb(244, 143, 177)]
+        )
+    ]
+
+    // MARK: Settings
+
+    static var scheme: HeatmapColorScheme {
+        get {
+            let rawValue = UserDefaults.standard.string(forKey: schemeKey) ?? HeatmapColorScheme.default.rawValue
+            return HeatmapColorScheme(rawValue: rawValue) ?? .default
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: schemeKey)
+            notifyChange()
+        }
     }
 
-    private func blendColor(from: NSColor, to: NSColor, t: CGFloat) -> NSColor {
+    static var customLowColor: NSColor {
+        get { storedColor(forKey: customLowColorKey, fallbackHex: defaultCustomLowHex) }
+        set {
+            UserDefaults.standard.set(hexString(from: newValue), forKey: customLowColorKey)
+            notifyChange()
+        }
+    }
+
+    static var customHighColor: NSColor {
+        get { storedColor(forKey: customHighColorKey, fallbackHex: defaultCustomHighHex) }
+        set {
+            UserDefaults.standard.set(hexString(from: newValue), forKey: customHighColorKey)
+            notifyChange()
+        }
+    }
+
+    static func notifyChange() {
+        NotificationCenter.default.post(name: .heatmapColorSchemeDidChange, object: nil)
+    }
+
+    // MARK: Colors
+
+    /// 按键次数为 0 时的底色。需在目标 appearance 下调用（如 draw(_:) 内）。
+    static func neutralColor(isDarkMode: Bool) -> NSColor {
+        let surfaceColor = isDarkMode ? NSColor.windowBackgroundColor : NSColor.controlBackgroundColor
+        return surfaceColor.blended(withFraction: isDarkMode ? 0.22 : 0.10, of: .separatorColor)
+            ?? (isDarkMode
+                ? NSColor(calibratedRed: 0.20, green: 0.22, blue: 0.25, alpha: 1)
+                : NSColor(calibratedRed: 0.93, green: 0.94, blue: 0.96, alpha: 1))
+    }
+
+    /// 按当前设置取色，intensity 为 0~1 的热度。
+    static func color(intensity: CGFloat, isDarkMode: Bool) -> NSColor {
+        color(for: scheme, intensity: intensity, isDarkMode: isDarkMode)
+    }
+
+    static func color(for scheme: HeatmapColorScheme, intensity: CGFloat, isDarkMode: Bool) -> NSColor {
+        let neutral = HeatmapPalette.neutralColor(isDarkMode: isDarkMode)
+
+        switch scheme {
+        case .default:
+            // 默认：跟随系统强调色（保持原有配色不变）
+            let accentColor = NSColor.controlAccentColor
+            let lowColor = neutral.blended(withFraction: isDarkMode ? 0.34 : 0.24, of: accentColor)
+                ?? blend(from: neutral, to: accentColor, t: isDarkMode ? 0.34 : 0.24)
+            let highColor = accentColor.blended(withFraction: isDarkMode ? 0.18 : 0.10, of: isDarkMode ? .white : .black)
+                ?? blend(from: accentColor, to: isDarkMode ? .white : .black, t: isDarkMode ? 0.18 : 0.10)
+            return blend(from: lowColor, to: highColor, t: intensity)
+        case .custom:
+            let low = customLowColor
+            let high = customHighColor
+            return threeStopColor(neutral: neutral,
+                                  low: low,
+                                  mid: blend(from: low, to: high, t: 0.5),
+                                  high: high,
+                                  intensity: intensity,
+                                  isDarkMode: isDarkMode)
+        default:
+            guard let stops = presetStops[scheme] else {
+                return color(for: .default, intensity: intensity, isDarkMode: isDarkMode)
+            }
+            let colors = isDarkMode ? stops.dark : stops.light
+            return threeStopColor(neutral: neutral,
+                                  low: colors[0],
+                                  mid: colors[1],
+                                  high: colors[2],
+                                  intensity: intensity,
+                                  isDarkMode: isDarkMode)
+        }
+    }
+
+    /// 设置页下拉项里的色条缩略图；在绘制时按当前 appearance 取色，深浅色切换后自动正确。
+    static func thumbnailImage(for scheme: HeatmapColorScheme, size: NSSize = NSSize(width: 36, height: 10)) -> NSImage {
+        let image = NSImage(size: size, flipped: false) { rect in
+            let isDarkMode = NSAppearance.currentDrawing().bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            let steps = 6
+            var colors: [NSColor] = []
+            var locations: [CGFloat] = []
+            for index in 0...steps {
+                let t = CGFloat(index) / CGFloat(steps)
+                colors.append(HeatmapPalette.color(for: scheme, intensity: max(0.05, t), isDarkMode: isDarkMode))
+                locations.append(t)
+            }
+            let path = NSBezierPath(roundedRect: rect, xRadius: 2.5, yRadius: 2.5)
+            locations.withUnsafeBufferPointer { buffer in
+                NSGradient(colors: colors, atLocations: buffer.baseAddress, colorSpace: .deviceRGB)?.draw(in: path, angle: 0)
+            }
+            return true
+        }
+        return image
+    }
+
+    static func blend(from: NSColor, to: NSColor, t: CGFloat) -> NSColor {
         let progress = max(0, min(1, t))
         let fromRGB = from.usingColorSpace(.deviceRGB) ?? from
         let toRGB = to.usingColorSpace(.deviceRGB) ?? to
@@ -1331,5 +1501,109 @@ private final class KeyboardHeatmapView: NSView {
         let alpha = fromRGB.alphaComponent + (toRGB.alphaComponent - fromRGB.alphaComponent) * progress
 
         return NSColor(calibratedRed: red, green: green, blue: blue, alpha: alpha)
+    }
+
+    static func color(fromHex hex: String) -> NSColor? {
+        var value = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        if value.hasPrefix("#") {
+            value.removeFirst()
+        }
+        guard value.count == 6, let rgbValue = UInt32(value, radix: 16) else { return nil }
+        return NSColor(srgbRed: CGFloat((rgbValue >> 16) & 0xFF) / 255.0,
+                       green: CGFloat((rgbValue >> 8) & 0xFF) / 255.0,
+                       blue: CGFloat(rgbValue & 0xFF) / 255.0,
+                       alpha: 1)
+    }
+
+    static func hexString(from color: NSColor) -> String {
+        let srgb = color.usingColorSpace(.sRGB) ?? color.usingColorSpace(.deviceRGB) ?? NSColor.black
+        let red = Int((max(0, min(1, srgb.redComponent)) * 255).rounded())
+        let green = Int((max(0, min(1, srgb.greenComponent)) * 255).rounded())
+        let blue = Int((max(0, min(1, srgb.blueComponent)) * 255).rounded())
+        return String(format: "#%02X%02X%02X", red, green, blue)
+    }
+
+    private static func storedColor(forKey key: String, fallbackHex: String) -> NSColor {
+        if let stored = UserDefaults.standard.string(forKey: key), let parsed = HeatmapPalette.color(fromHex: stored) {
+            return parsed
+        }
+        return HeatmapPalette.color(fromHex: fallbackHex) ?? .black
+    }
+
+    private static func threeStopColor(neutral: NSColor,
+                                       low lowStop: NSColor,
+                                       mid: NSColor,
+                                       high: NSColor,
+                                       intensity: CGFloat,
+                                       isDarkMode: Bool) -> NSColor {
+        // 低频键与底色混合，避免只按过一两次的键过于抢眼
+        let low = blend(from: neutral, to: lowStop, t: isDarkMode ? 0.45 : 0.40)
+        return intensity < 0.5
+            ? blend(from: low, to: mid, t: intensity / 0.5)
+            : blend(from: mid, to: high, t: (intensity - 0.5) / 0.5)
+    }
+
+    private static func rgb(_ red: CGFloat, _ green: CGFloat, _ blue: CGFloat) -> NSColor {
+        NSColor(srgbRed: red / 255.0, green: green / 255.0, blue: blue / 255.0, alpha: 1)
+    }
+}
+
+/// 设置页的色阶预览条：第一格为无按键底色，其余从低到高热度。
+final class HeatmapPalettePreviewView: NSView {
+    private let cellCount = 8
+    private var schemeObserver: NSObjectProtocol?
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        schemeObserver = NotificationCenter.default.addObserver(
+            forName: .heatmapColorSchemeDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.needsDisplay = true
+        }
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    deinit {
+        if let observer = schemeObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
+    override var intrinsicContentSize: NSSize {
+        NSSize(width: NSView.noIntrinsicMetric, height: 18)
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+
+        let isDarkMode = effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        let gap: CGFloat = 4
+        let cellWidth = (bounds.width - gap * CGFloat(cellCount - 1)) / CGFloat(cellCount)
+        guard cellWidth > 0 else { return }
+
+        let borderColor = isDarkMode ? NSColor.white.withAlphaComponent(0.14) : NSColor.black.withAlphaComponent(0.09)
+        for index in 0..<cellCount {
+            let rect = NSRect(x: CGFloat(index) * (cellWidth + gap), y: 0, width: cellWidth, height: bounds.height)
+                .insetBy(dx: 0.5, dy: 0.5)
+            let fillColor: NSColor = index == 0
+                ? HeatmapPalette.neutralColor(isDarkMode: isDarkMode)
+                : HeatmapPalette.color(intensity: CGFloat(index) / CGFloat(cellCount - 1), isDarkMode: isDarkMode)
+            let path = NSBezierPath(roundedRect: rect, xRadius: 4, yRadius: 4)
+            fillColor.setFill()
+            path.fill()
+            borderColor.setStroke()
+            path.lineWidth = 0.8
+            path.stroke()
+        }
     }
 }

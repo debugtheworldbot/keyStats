@@ -381,3 +381,19 @@
 "hourly.summary.metric" = "总数：%ld · 本设备：%ld · 最活跃时段：%@";
 "hourly.detail.metric" = "%@ · 总数：%@ · 本设备：%@";
 "hourly.import.differentTimeZones" = "小时记录的时区不同，无法准确合并。请使用覆盖导入恢复备份。";
+
+/* Heatmap color scheme */
+"settings.section.heatmap" = "热力图配色";
+"settings.heatmapColorScheme" = "键盘热力图的按键颜色";
+"settings.heatmapColorScheme.default" = "默认（蓝色）";
+"settings.heatmapColorScheme.warm" = "暖色（橙红）";
+"settings.heatmapColorScheme.spectrum" = "光谱（蓝黄红）";
+"settings.heatmapColorScheme.green" = "绿色";
+"settings.heatmapColorScheme.teal" = "青色";
+"settings.heatmapColorScheme.purple" = "紫色";
+"settings.heatmapColorScheme.rose" = "玫红";
+"settings.heatmapColorScheme.custom" = "自定义";
+"settings.heatmapCustomLowColor" = "起始色";
+"settings.heatmapCustomHighColor" = "最高色";
+"settings.heatmapPreview.less" = "少";
+"settings.heatmapPreview.more" = "多";
