@@ -1,13 +1,23 @@
 import Foundation
 import CoreGraphics
+import AppKit
 
 enum PayloadBuilder {
     static func build(from event: CGEvent, type: CGEventType) -> [String: Any]? {
         var p: [String: Any] = [
             HelperPayloadFields.type: NSNumber(value: type.rawValue),
-            HelperPayloadFields.monotonicTime: NSNumber(value: ProcessInfo.processInfo.systemUptime),
-            HelperPayloadFields.sourcePID: NSNumber(value: event.getIntegerValueField(.eventSourceUnixProcessID))
+            HelperPayloadFields.monotonicTime: NSNumber(value: ProcessInfo.processInfo.systemUptime)
         ]
+
+        // Capture the receiving app before XPC delivery; the foreground app may change
+        // before the main process handles this payload. The source PID identifies the
+        // event producer (often an input helper), not the app receiving the input.
+        if let app = NSWorkspace.shared.frontmostApplication,
+           app.activationPolicy == .regular,
+           let bundleID = app.bundleIdentifier {
+            p[HelperPayloadFields.foregroundBundleID] = bundleID
+            p[HelperPayloadFields.foregroundName] = app.localizedName ?? ""
+        }
 
         switch type {
         case .keyDown, .flagsChanged:

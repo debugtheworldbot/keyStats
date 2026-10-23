@@ -25,7 +25,6 @@ final class RemoteEventProcessor: NSObject, KeyStatsEventSinkProtocol {
         guard let typeRaw = (payload[HelperPayloadFields.type] as? NSNumber)?.uint32Value,
               let type = CGEventType(rawValue: typeRaw) else { return }
 
-        let pid = (payload[HelperPayloadFields.sourcePID] as? NSNumber)?.int32Value ?? 0
         let stats = StatsManager.shared
 
         switch type {
@@ -43,7 +42,7 @@ final class RemoteEventProcessor: NSObject, KeyStatsEventSinkProtocol {
             modifierLock.unlock()
 
             let name = decoder.keyName(keyCode: keyCode, keyboardType: keyboardType, flagsRaw: flagsRaw)
-            stats.incrementKeyPresses(keyName: name, appIdentity: appIdentity(forPID: pid))
+            stats.incrementKeyPresses(keyName: name, appIdentity: appIdentity(from: payload))
 
         case .flagsChanged:
             guard let keyCode = (payload[HelperPayloadFields.keyCode] as? NSNumber)?.intValue,
@@ -51,7 +50,7 @@ final class RemoteEventProcessor: NSObject, KeyStatsEventSinkProtocol {
             else { return }
 
             if keyCode == 57 {  // CapsLock
-                stats.incrementKeyPresses(keyName: "CapsLock", appIdentity: appIdentity(forPID: pid))
+                stats.incrementKeyPresses(keyName: "CapsLock", appIdentity: appIdentity(from: payload))
                 return
             }
 
@@ -59,12 +58,12 @@ final class RemoteEventProcessor: NSObject, KeyStatsEventSinkProtocol {
             let modifierName = modifierTracker.handleFlagsChanged(keyCode: keyCode, rawFlags: flagsRaw)
             modifierLock.unlock()
             if let modifierName {
-                stats.incrementKeyPresses(keyName: modifierName, appIdentity: appIdentity(forPID: pid))
+                stats.incrementKeyPresses(keyName: modifierName, appIdentity: appIdentity(from: payload))
             }
 
         case .leftMouseDown, .rightMouseDown, .otherMouseDown:
             let role = payload[HelperPayloadFields.buttonRole] as? String
-            let ident = appIdentity(forPID: pid)
+            let ident = appIdentity(from: payload)
             switch role {
             case ButtonRole.primary: stats.incrementLeftClicks(appIdentity: ident)
             case ButtonRole.secondary: stats.incrementRightClicks(appIdentity: ident)
@@ -77,7 +76,7 @@ final class RemoteEventProcessor: NSObject, KeyStatsEventSinkProtocol {
             let dx = (payload[HelperPayloadFields.scrollDX] as? NSNumber)?.doubleValue ?? 0
             let dy = (payload[HelperPayloadFields.scrollDY] as? NSNumber)?.doubleValue ?? 0
             let total = sqrt(dx * dx + dy * dy)
-            stats.addScrollDistance(total * 10, appIdentity: appIdentity(forPID: pid))
+            stats.addScrollDistance(total * 10, appIdentity: appIdentity(from: payload))
 
         case .mouseMoved, .leftMouseDragged, .rightMouseDragged:
             guard let x = (payload[HelperPayloadFields.locationX] as? NSNumber)?.doubleValue,
@@ -103,9 +102,12 @@ final class RemoteEventProcessor: NSObject, KeyStatsEventSinkProtocol {
         }
     }
 
-    private func appIdentity(forPID pid: pid_t) -> AppIdentity? {
+    private func appIdentity(from payload: [String: Any]) -> AppIdentity? {
         guard StatsManager.shared.appStatsEnabled else { return nil }
-        return AppActivityTracker.shared.appIdentity(forPID: pid)
+        guard let bundleID = payload[HelperPayloadFields.foregroundBundleID] as? String,
+              !bundleID.isEmpty else { return nil }
+        let name = payload[HelperPayloadFields.foregroundName] as? String ?? ""
+        return AppIdentity(bundleId: bundleID, displayName: name)
     }
 }
 

@@ -14,6 +14,7 @@ final class EventTapController {
 
     private let mouseSampleInterval: TimeInterval = 1.0 / 30.0
     private var lastMouseSampleTime: TimeInterval = 0
+    private var eventDeduplicator = InputEventDeduplicator()
     private let lock = NSLock()
 
     private static let eventMask: CGEventMask = {
@@ -81,11 +82,35 @@ final class EventTapController {
         runLoopSource = nil
         sink = nil
         lastMouseSampleTime = 0
+        eventDeduplicator = InputEventDeduplicator()
     }
 
     private func handle(type: CGEventType, event: CGEvent) {
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
             if let t = tap { CGEvent.tapEnable(tap: t, enable: true) }
+            return
+        }
+
+        // A posted copy of a hardware event may pass this listen-only tap again.
+        // Require the original timestamp and flags, not just nearby arrival times.
+        // A newly generated synthetic event remains countable.
+        let now = ProcessInfo.processInfo.systemUptime
+        let sourcePID = event.getIntegerValueField(.eventSourceUnixProcessID)
+        let detail: Int64
+        switch type {
+        case .keyDown, .flagsChanged:
+            detail = event.getIntegerValueField(.keyboardEventKeycode)
+        case .leftMouseDown, .rightMouseDown, .otherMouseDown:
+            detail = event.getIntegerValueField(.mouseEventButtonNumber)
+        case .scrollWheel:
+            // Scroll utilities may reverse the direction in the posted copy.
+            detail = 0
+        default:
+            detail = 0
+        }
+        if eventDeduplicator.shouldDrop(type: type.rawValue, detail: detail,
+                                        sourcePID: sourcePID, eventTimestamp: event.timestamp,
+                                        flags: event.flags.rawValue, time: now) {
             return
         }
 

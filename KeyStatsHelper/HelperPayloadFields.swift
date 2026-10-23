@@ -12,7 +12,8 @@ enum HelperPayloadFields {
     static let locationY = "locationY"
     static let scrollDX = "scrollDX"
     static let scrollDY = "scrollDY"
-    static let sourcePID = "sourcePID"
+    static let foregroundBundleID = "foregroundBundleID"
+    static let foregroundName = "foregroundName"
     static let monotonicTime = "monotonicTime"
 }
 

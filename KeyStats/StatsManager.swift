@@ -1464,7 +1464,9 @@ extension StatsManager {
             date: normalizedDate,
             totalKeyPresses: max(0, daily.keyPresses),
             keyCounts: aggregated,
-            apps: daily.keyboardHeatmapApps
+            apps: daily.keyboardHeatmapApps.filter {
+                AppActivityTracker.shared.isUserFacing(bundleID: $0.bundleId)
+            }
         )
     }
     
@@ -1833,6 +1835,7 @@ extension StatsManager {
     private func mergeAppStats(from daily: DailyStats, into totals: inout [String: AppStats]) {
         guard !daily.appStats.isEmpty else { return }
         for (bundleId, appStats) in daily.appStats {
+            guard AppActivityTracker.shared.isUserFacing(bundleID: bundleId) else { continue }
             var total = totals[bundleId] ?? AppStats(bundleId: bundleId, displayName: appStats.displayName)
             if !appStats.displayName.isEmpty {
                 total.displayName = appStats.displayName
