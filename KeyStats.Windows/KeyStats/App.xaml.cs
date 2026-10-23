@@ -127,6 +127,7 @@ public partial class App : System.Windows.Application
             _syncCoordinator.Start();
             InitializeAnalytics(statsManager);
             InputMonitorService.Instance.StartMonitoring();
+            AchievementService.Instance.Start();
 
             Console.WriteLine("Creating tray icon...");
             _trayIconViewModel = new TrayIconViewModel();
@@ -672,6 +673,7 @@ public partial class App : System.Windows.Application
         _floatingStatsWindow?.Close();
         _floatingStatsWindow = null;
         InputMonitorService.Instance.StopMonitoring();
+        AchievementService.Instance.Stop();
         _syncCoordinator?.Dispose();
         _syncCoordinator = null;
         StatsManager.Instance.Dispose();

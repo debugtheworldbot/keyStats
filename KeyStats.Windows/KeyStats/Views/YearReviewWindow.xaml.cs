@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Threading;
 using KeyStats.Helpers;
 using KeyStats.Models;
@@ -20,6 +21,7 @@ public partial class YearReviewWindow : Window
     private readonly bool _isInitialized;
     private Dictionary<DateTime, DailyStats> _history = new();
     private int _personaRangeIndex = 2;
+    private int _hourlyRangeIndex = 2;
     private RangeOption _selectedRange = new(PastYearRangeId, Strings.YearReview_RangePast12Months);
     private readonly DispatcherTimer _refreshTimer = new() { Interval = TimeSpan.FromSeconds(5) };
 
@@ -34,9 +36,14 @@ public partial class YearReviewWindow : Window
         LoadHistory();
         LoadRangeOptions();
         PersonaMonthButton.IsChecked = true;
+        HourlyMonthButton.IsChecked = true;
+        HourlyChart.TooltipFormatter = FormatHourlyTooltip;
         _isInitialized = true;
         RefreshWall();
         RefreshPersona();
+        RefreshHourly();
+        RefreshAchievements();
+        AchievementService.Instance.AchievementsChanged += OnAchievementsChanged;
 
         Loaded += OnLoaded;
         Closed += OnClosed;
@@ -56,6 +63,7 @@ public partial class YearReviewWindow : Window
     {
         ThemeManager.Instance.ThemeChanged -= OnThemeChanged;
         StatsManager.Instance.StatsUpdateRequested -= OnStatsUpdateRequested;
+        AchievementService.Instance.AchievementsChanged -= OnAchievementsChanged;
         _refreshTimer.Stop();
         _refreshTimer.Tick -= OnRefreshTimerTick;
     }
@@ -84,6 +92,8 @@ public partial class YearReviewWindow : Window
         LoadHistory();
         RefreshWall();
         RefreshPersona();
+        RefreshHourly();
+        RefreshAchievements();
     }
 
     private void ApplyWindowBackdrop()
@@ -333,12 +343,17 @@ public partial class YearReviewWindow : Window
             return;
         }
 
-        var isWall = WallTabButton.IsChecked == true;
-        WallPanel.Visibility = isWall ? Visibility.Visible : Visibility.Collapsed;
-        PersonaPanel.Visibility = isWall ? Visibility.Collapsed : Visibility.Visible;
+        var tab = WallTabButton.IsChecked == true ? "wall"
+            : PersonaTabButton.IsChecked == true ? "persona"
+            : HourlyTabButton.IsChecked == true ? "hourly"
+            : "achievements";
+        WallPanel.Visibility = tab == "wall" ? Visibility.Visible : Visibility.Collapsed;
+        PersonaPanel.Visibility = tab == "persona" ? Visibility.Visible : Visibility.Collapsed;
+        HourlyPanel.Visibility = tab == "hourly" ? Visibility.Visible : Visibility.Collapsed;
+        AchievementsPanel.Visibility = tab == "achievements" ? Visibility.Visible : Visibility.Collapsed;
         App.CurrentApp?.TrackClick("year_review_tab", new Dictionary<string, object?>
         {
-            ["tab"] = isWall ? "wall" : "persona"
+            ["tab"] = tab
         });
     }
 
@@ -394,6 +409,200 @@ public partial class YearReviewWindow : Window
         {
             ["range"] = index switch { 0 => "today", 1 => "week", 2 => "month", _ => "all" }
         });
+    }
+
+    private void OnAchievementsChanged()
+    {
+        Dispatcher.BeginInvoke(new Action(RefreshAchievements));
+    }
+
+    private bool IsHourlyClicksMetric => HourlyClicksButton.IsChecked == true;
+
+    private void RefreshHourly()
+    {
+        if (!_isInitialized)
+        {
+            return;
+        }
+
+        var today = DateTime.Today;
+        var start = StartOfPeriod(_hourlyRangeIndex, today);
+        var days = _history
+            .Where(pair => pair.Key >= start && pair.Key <= today && HourlyActivityAnalyzer.HasHourlyData(pair.Value))
+            .Select(pair => IsHourlyClicksMetric ? pair.Value.HourlyClicks : pair.Value.HourlyKeyPresses)
+            .ToList();
+        var result = HourlyActivityAnalyzer.Analyze(days);
+
+        var hasData = result.DayCount > 0;
+        HourlyChartPanel.Visibility = hasData ? Visibility.Visible : Visibility.Collapsed;
+        HourlyEmptyText.Visibility = hasData ? Visibility.Collapsed : Visibility.Visible;
+        HourlyChart.Apply(result.HourlyAverages, result.PeakHour);
+
+        HourlyPeakText.Text = result.PeakHour >= 0 ? FormatHourRange(result.PeakHour) : "—";
+        NightRatioText.Text = result.Total > 0 ? Percent(result.NightRatio) : "—";
+        HourlyDayCountText.Text = FormatDays(result.DayCount);
+        ChronotypeText.Text = ChronotypeName(result.Chronotype);
+        ChronotypeDescText.Text = ChronotypeDescription(result.Chronotype);
+    }
+
+    private static DateTime StartOfPeriod(int rangeIndex, DateTime today) => rangeIndex switch
+    {
+        0 => today,
+        1 => today.AddDays(-6),
+        2 => today.AddDays(-29),
+        _ => DateTime.MinValue
+    };
+
+    private static string FormatHourRange(int hour)
+    {
+        return string.Format(CultureInfo.InvariantCulture, Strings.Hourly_HourRangeFormat, hour, (hour + 1) % 24);
+    }
+
+    private string FormatHourlyTooltip(int hour, double value)
+    {
+        var format = IsHourlyClicksMetric ? Strings.Hourly_TooltipClicksFormat : Strings.Hourly_TooltipKeysFormat;
+        return string.Format(CultureInfo.CurrentCulture, format, FormatHourRange(hour), Math.Round(value));
+    }
+
+    private static string ChronotypeName(Chronotype chronotype) => chronotype switch
+    {
+        Chronotype.NightOwl => Strings.Chronotype_NightOwl,
+        Chronotype.EarlyBird => Strings.Chronotype_EarlyBird,
+        Chronotype.AfternoonPerson => Strings.Chronotype_AfternoonPerson,
+        Chronotype.EveningPerson => Strings.Chronotype_EveningPerson,
+        _ => "—"
+    };
+
+    private static string ChronotypeDescription(Chronotype chronotype) => chronotype switch
+    {
+        Chronotype.NightOwl => Strings.Chronotype_NightOwlDesc,
+        Chronotype.EarlyBird => Strings.Chronotype_EarlyBirdDesc,
+        Chronotype.AfternoonPerson => Strings.Chronotype_AfternoonPersonDesc,
+        Chronotype.EveningPerson => Strings.Chronotype_EveningPersonDesc,
+        _ => Strings.Chronotype_NotEnough
+    };
+
+    private void HourlyRange_Checked(object sender, RoutedEventArgs e)
+    {
+        if (sender is not RadioButton button || !int.TryParse(button.Tag as string, out var index))
+        {
+            return;
+        }
+
+        _hourlyRangeIndex = index;
+        if (!_isInitialized)
+        {
+            return;
+        }
+
+        RefreshHourly();
+        App.CurrentApp?.TrackClick("year_review_hourly_range", new Dictionary<string, object?>
+        {
+            ["range"] = index switch { 0 => "today", 1 => "week", 2 => "month", _ => "all" }
+        });
+    }
+
+    private void HourlyMetric_Checked(object sender, RoutedEventArgs e)
+    {
+        if (!_isInitialized)
+        {
+            return;
+        }
+
+        RefreshHourly();
+        App.CurrentApp?.TrackClick("year_review_hourly_metric", new Dictionary<string, object?>
+        {
+            ["metric"] = IsHourlyClicksMetric ? "clicks" : "keys"
+        });
+    }
+
+    private void RefreshAchievements()
+    {
+        if (!_isInitialized)
+        {
+            return;
+        }
+
+        var service = AchievementService.Instance;
+        var progress = AchievementEvaluator.Evaluate(_history.Values, StatsManager.Instance.GetMetersPerPixel());
+        var culture = CultureInfo.CurrentCulture;
+        var cards = progress.Select(item =>
+        {
+            var unlockDate = item.IsUnlocked ? service.GetUnlockDate(item) : null;
+            return new AchievementCard(
+                AchievementService.GetName(item.Definition.Id),
+                AchievementService.GetDescription(item.Definition),
+                GlyphFor(item.Definition.Category),
+                item.IsUnlocked,
+                unlockDate.HasValue
+                    ? string.Format(culture, Strings.Achievement_UnlockedOnFormat,
+                        unlockDate.Value.ToString(Strings.Achievement_DateFormat, CultureInfo.CurrentUICulture))
+                    : string.Empty,
+                item.Definition.Target > 0 ? Math.Min(1, item.Current / item.Definition.Target) : 0,
+                FormatProgress(item));
+        }).ToList();
+
+        AchievementsList.ItemsSource = cards;
+        AchievementSummaryText.Text = string.Format(culture, Strings.Achievement_UnlockedSummaryFormat,
+            cards.Count(card => card.IsUnlocked), cards.Count);
+        AchievementStreakText.Text = string.Format(culture, Strings.Achievement_CurrentStreakFormat,
+            AchievementEvaluator.CurrentStreak(_history, DateTime.Today));
+    }
+
+    private static string FormatProgress(AchievementProgress item)
+    {
+        var culture = CultureInfo.CurrentCulture;
+        var current = Math.Min(item.Current, item.Definition.Target);
+        return item.Definition.Category switch
+        {
+            AchievementCategory.MouseDistanceKm => $"{current.ToString("0.0", culture)} / {item.Definition.Target.ToString("0.###", culture)} km",
+            AchievementCategory.PeakKps => $"{current.ToString("0.0", culture)} / {item.Definition.Target.ToString("N0", culture)}",
+            _ => $"{current.ToString("N0", culture)} / {item.Definition.Target.ToString("N0", culture)}"
+        };
+    }
+
+    private static string GlyphFor(AchievementCategory category) => category switch
+    {
+        AchievementCategory.TotalKeys => "",
+        AchievementCategory.DailyKeys => "",
+        AchievementCategory.TotalClicks => "",
+        AchievementCategory.Streak => "",
+        AchievementCategory.ActiveDays => "",
+        AchievementCategory.PeakKps => "",
+        AchievementCategory.MouseDistanceKm => "",
+        _ => ""
+    };
+
+    private sealed class AchievementCard
+    {
+        public AchievementCard(string name, string description, string glyph, bool isUnlocked, string unlockedText, double progress, string progressText)
+        {
+            Name = name;
+            Description = description;
+            Glyph = glyph;
+            IsUnlocked = isUnlocked;
+            UnlockedText = unlockedText;
+            ProgressText = progressText;
+            FilledWidth = new GridLength(Math.Max(0, progress), GridUnitType.Star);
+            RemainingWidth = new GridLength(Math.Max(0, 1 - progress), GridUnitType.Star);
+        }
+
+        public string Name { get; }
+        public string Description { get; }
+        public string Glyph { get; }
+        public bool IsUnlocked { get; }
+        public bool IsLocked => !IsUnlocked;
+        public string UnlockedText { get; }
+        public string ProgressText { get; }
+        public GridLength FilledWidth { get; }
+        public GridLength RemainingWidth { get; }
+        public double CardOpacity => IsUnlocked ? 1.0 : 0.78;
+        public Brush BadgeBackground => IsUnlocked
+            ? (Brush)Application.Current.Resources["AccentBrush"]
+            : (Brush)Application.Current.Resources["SubtleFillBrush"];
+        public Brush BadgeForeground => IsUnlocked
+            ? Brushes.White
+            : (Brush)Application.Current.Resources["TextSecondaryBrush"];
     }
 
     private sealed class RangeOption
