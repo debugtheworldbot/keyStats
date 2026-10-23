@@ -45,6 +45,7 @@ class StatsPopoverViewController: NSViewController {
     private var settingsButton: NSButton!
     private var appStatsButton: NSButton!
     private var allTimeStatsButton: NSButton!
+    private var yearReviewButton: NSButton!
     private var keyboardHeatmapButton: NSButton!
     private var pendingStatsRefresh = false
     private var statsUpdateToken: UUID?
@@ -442,6 +443,25 @@ class StatsPopoverViewController: NSViewController {
             allTimeStatsButton.heightAnchor.constraint(equalToConstant: 28)
         ])
 
+        yearReviewButton = makeSymbolButton(systemName: "calendar",
+                                            fallbackTitle: NSLocalizedString("yearReview.button", comment: ""),
+                                            pointSize: 16,
+                                            weight: .semibold,
+                                            action: #selector(showYearReview))
+        yearReviewButton.toolTip = NSLocalizedString("yearReview.button", comment: "")
+        yearReviewButton.setAccessibilityLabel(NSLocalizedString("yearReview.button", comment: ""))
+        yearReviewButton.imageScaling = .scaleProportionallyDown
+        yearReviewButton.setContentHuggingPriority(.required, for: .horizontal)
+        yearReviewButton.setContentCompressionResistancePriority(.required, for: .horizontal)
+        if let hoverButton = yearReviewButton as? HoverIconButton {
+            hoverButton.padding = 4
+            hoverButton.cornerRadius = 6
+        }
+        NSLayoutConstraint.activate([
+            yearReviewButton.widthAnchor.constraint(equalToConstant: 28),
+            yearReviewButton.heightAnchor.constraint(equalToConstant: 28)
+        ])
+
         let footerStack = NSStackView()
         footerStack.orientation = .horizontal
         footerStack.alignment = .centerY
@@ -458,9 +478,11 @@ class StatsPopoverViewController: NSViewController {
         footerStack.addArrangedSubview(settingsButton)
         footerStack.addArrangedSubview(appStatsButton)
         footerStack.addArrangedSubview(allTimeStatsButton)
+        footerStack.addArrangedSubview(yearReviewButton)
         footerStack.setCustomSpacing(6, after: settingsButton)
         footerStack.setCustomSpacing(6, after: appStatsButton)
         footerStack.setCustomSpacing(6, after: allTimeStatsButton)
+        footerStack.setCustomSpacing(6, after: yearReviewButton)
         footerStack.addArrangedSubview(footerSpacer)
         footerStack.addArrangedSubview(buttonStack)
 
@@ -895,6 +917,12 @@ class StatsPopoverViewController: NSViewController {
     @objc private func showAllTimeStats() {
         AppDelegate.trackClick("open_all_time_stats")
         AllTimeStatsWindowController.shared.show()
+        view.window?.performClose(nil)
+    }
+
+    @objc private func showYearReview() {
+        AppDelegate.trackClick("open_year_review")
+        YearReviewWindowController.shared.show()
         view.window?.performClose(nil)
     }
 
