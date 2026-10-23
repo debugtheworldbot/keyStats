@@ -123,6 +123,57 @@
   <data name="Settings_HeatmapCustomHigh" xml:space="preserve"><value>High color</value></data>
   <data name="Settings_HeatmapPreviewLess" xml:space="preserve"><value>Less</value></data>
   <data name="Settings_HeatmapPreviewMore" xml:space="preserve"><value>More</value></data>
+  <data name="YearReview_WindowTitle" xml:space="preserve"><value>Year in Review - KeyStats</value></data>
+  <data name="YearReview_HeaderTitle" xml:space="preserve"><value>Year in Review</value></data>
+  <data name="YearReview_HeaderSubtitle" xml:space="preserve"><value>Your daily activity wall and keyboard personality.</value></data>
+  <data name="YearReview_TabWall" xml:space="preserve"><value>Activity Wall</value></data>
+  <data name="YearReview_TabPersona" xml:space="preserve"><value>Keyboard Personality</value></data>
+  <data name="YearReview_RangePast12Months" xml:space="preserve"><value>Past 12 months</value></data>
+  <data name="YearReview_RangeYearFormat" xml:space="preserve"><value>{0}</value></data>
+  <data name="YearReview_MetricKeys" xml:space="preserve"><value>Key presses</value></data>
+  <data name="YearReview_MetricClicks" xml:space="preserve"><value>Clicks</value></data>
+  <data name="YearReview_Total" xml:space="preserve"><value>Total</value></data>
+  <data name="YearReview_ActiveDays" xml:space="preserve"><value>Active days</value></data>
+  <data name="YearReview_CurrentStreak" xml:space="preserve"><value>Current streak</value></data>
+  <data name="YearReview_LongestStreak" xml:space="preserve"><value>Longest streak</value></data>
+  <data name="YearReview_BestDay" xml:space="preserve"><value>Best day</value></data>
+  <data name="YearReview_DaysFormat" xml:space="preserve"><value>{0:N0} days</value></data>
+  <data name="YearReview_ShortDateFormat" xml:space="preserve"><value>MMM d</value></data>
+  <data name="YearReview_TooltipDateFormat" xml:space="preserve"><value>ddd, MMM d, yyyy</value></data>
+  <data name="YearReview_TooltipKeysFormat" xml:space="preserve"><value>{0} · {1:N0} key presses</value></data>
+  <data name="YearReview_TooltipClicksFormat" xml:space="preserve"><value>{0} · {1:N0} clicks</value></data>
+  <data name="YearReview_PersonaLabel" xml:space="preserve"><value>Your keyboard personality</value></data>
+  <data name="YearReview_PersonaNotEnough" xml:space="preserve"><value>Not enough data yet. Type a bit more and check back.</value></data>
+  <data name="YearReview_Persona_ShortcutMaster" xml:space="preserve"><value>Shortcut Master</value></data>
+  <data name="YearReview_Persona_ShortcutMasterDesc" xml:space="preserve"><value>Hands never leave the keyboard; the mouse is just decoration.</value></data>
+  <data name="YearReview_Persona_CopyPasteEngineer" xml:space="preserve"><value>Copy-Paste Engineer</value></data>
+  <data name="YearReview_Persona_CopyPasteEngineerDesc" xml:space="preserve"><value>A mover of code and an artist of efficiency.</value></data>
+  <data name="YearReview_Persona_Perfectionist" xml:space="preserve"><value>Perfectionist</value></data>
+  <data name="YearReview_Persona_PerfectionistDesc" xml:space="preserve"><value>Every word gets weighed again and again.</value></data>
+  <data name="YearReview_Persona_ArrowKeyWalker" xml:space="preserve"><value>Arrow Key Walker</value></data>
+  <data name="YearReview_Persona_ArrowKeyWalkerDesc" xml:space="preserve"><value>The cursor dances at your fingertips.</value></data>
+  <data name="YearReview_Persona_MousePerson" xml:space="preserve"><value>Mouse Person</value></data>
+  <data name="YearReview_Persona_MousePersonDesc" xml:space="preserve"><value>Click, click, click: everything under control.</value></data>
+  <data name="YearReview_Persona_KeyboardPurist" xml:space="preserve"><value>Keyboard Purist</value></data>
+  <data name="YearReview_Persona_KeyboardPuristDesc" xml:space="preserve"><value>If the keyboard can do it, the mouse stays put.</value></data>
+  <data name="YearReview_Persona_BalancedPlayer" xml:space="preserve"><value>Balanced Player</value></data>
+  <data name="YearReview_Persona_BalancedPlayerDesc" xml:space="preserve"><value>Keyboard and mouse in perfect balance.</value></data>
+  <data name="YearReview_MetricShortcutRatio" xml:space="preserve"><value>Shortcut ratio</value></data>
+  <data name="YearReview_MetricShortcutDetailFormat" xml:space="preserve"><value>{0:N0} shortcuts</value></data>
+  <data name="YearReview_MetricRegret" xml:space="preserve"><value>Regret index</value></data>
+  <data name="YearReview_MetricRegretDetailFormat" xml:space="preserve"><value>Backspace and Delete: {0:N0}</value></data>
+  <data name="YearReview_MetricCopyPaste" xml:space="preserve"><value>Copy / Paste</value></data>
+  <data name="YearReview_MetricCopyPasteValueFormat" xml:space="preserve"><value>Copy {0:N0} · Paste {1:N0}</value></data>
+  <data name="YearReview_MetricUndo" xml:space="preserve"><value>Undo</value></data>
+  <data name="YearReview_MetricArrow" xml:space="preserve"><value>Arrow keys</value></data>
+  <data name="YearReview_MetricArrowDetailFormat" xml:space="preserve"><value>{0:N0} presses</value></data>
+  <data name="YearReview_MetricClickRatio" xml:space="preserve"><value>Clicks vs keys</value></data>
+  <data name="YearReview_MetricClickRatioValueFormat" xml:space="preserve"><value>{0:N0} clicks per 100 keys</value></data>
+  <data name="YearReview_MetricTopKeys" xml:space="preserve"><value>Top keys</value></data>
+  <data name="YearReview_MetricTopKeysDetail" xml:space="preserve"><value>Space excluded</value></data>
+  <data name="Stats_YearReview" xml:space="preserve"><value>Year in Review</value></data>
+  <data name="Tray_YearReview" xml:space="preserve"><value>Year in Review</value></data>
+  <data name="YearReview_PersonaTotalsFormat" xml:space="preserve"><value>Based on {0:N0} key presses · {1:N0} clicks</value></data>
   <data name="Language_RestartPromptTitle" xml:space="preserve"><value>Restart Required</value></data>
   <data name="Language_RestartPromptMessage" xml:space="preserve"><value>KeyStats needs to restart to apply the new language. Restart now?</value></data>
 

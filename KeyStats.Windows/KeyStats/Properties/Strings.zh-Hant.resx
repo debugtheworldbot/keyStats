@@ -123,6 +123,57 @@
   <data name="Settings_HeatmapCustomHigh" xml:space="preserve"><value>最高色</value></data>
   <data name="Settings_HeatmapPreviewLess" xml:space="preserve"><value>少</value></data>
   <data name="Settings_HeatmapPreviewMore" xml:space="preserve"><value>多</value></data>
+  <data name="YearReview_WindowTitle" xml:space="preserve"><value>年度回顧 - KeyStats</value></data>
+  <data name="YearReview_HeaderTitle" xml:space="preserve"><value>年度回顧</value></data>
+  <data name="YearReview_HeaderSubtitle" xml:space="preserve"><value>每天的活躍貢獻牆，以及你的鍵盤人格。</value></data>
+  <data name="YearReview_TabWall" xml:space="preserve"><value>貢獻牆</value></data>
+  <data name="YearReview_TabPersona" xml:space="preserve"><value>鍵盤人格</value></data>
+  <data name="YearReview_RangePast12Months" xml:space="preserve"><value>過去 12 個月</value></data>
+  <data name="YearReview_RangeYearFormat" xml:space="preserve"><value>{0} 年</value></data>
+  <data name="YearReview_MetricKeys" xml:space="preserve"><value>按鍵次數</value></data>
+  <data name="YearReview_MetricClicks" xml:space="preserve"><value>滑鼠點擊</value></data>
+  <data name="YearReview_Total" xml:space="preserve"><value>總計</value></data>
+  <data name="YearReview_ActiveDays" xml:space="preserve"><value>活躍天數</value></data>
+  <data name="YearReview_CurrentStreak" xml:space="preserve"><value>目前連續</value></data>
+  <data name="YearReview_LongestStreak" xml:space="preserve"><value>最長連續</value></data>
+  <data name="YearReview_BestDay" xml:space="preserve"><value>最高單日</value></data>
+  <data name="YearReview_DaysFormat" xml:space="preserve"><value>{0:N0} 天</value></data>
+  <data name="YearReview_ShortDateFormat" xml:space="preserve"><value>M月d日</value></data>
+  <data name="YearReview_TooltipDateFormat" xml:space="preserve"><value>yyyy年M月d日 ddd</value></data>
+  <data name="YearReview_TooltipKeysFormat" xml:space="preserve"><value>{0} · {1:N0} 次按鍵</value></data>
+  <data name="YearReview_TooltipClicksFormat" xml:space="preserve"><value>{0} · {1:N0} 次點擊</value></data>
+  <data name="YearReview_PersonaLabel" xml:space="preserve"><value>你的鍵盤人格</value></data>
+  <data name="YearReview_PersonaNotEnough" xml:space="preserve"><value>資料還不夠，多敲一會兒再來看看吧</value></data>
+  <data name="YearReview_Persona_ShortcutMaster" xml:space="preserve"><value>快捷鍵大師</value></data>
+  <data name="YearReview_Persona_ShortcutMasterDesc" xml:space="preserve"><value>手不離鍵盤，滑鼠只是擺設</value></data>
+  <data name="YearReview_Persona_CopyPasteEngineer" xml:space="preserve"><value>複製貼上工程師</value></data>
+  <data name="YearReview_Persona_CopyPasteEngineerDesc" xml:space="preserve"><value>程式碼的搬運工，效率的藝術家</value></data>
+  <data name="YearReview_Persona_Perfectionist" xml:space="preserve"><value>完美主義者</value></data>
+  <data name="YearReview_Persona_PerfectionistDesc" xml:space="preserve"><value>每個字都要反覆斟酌</value></data>
+  <data name="YearReview_Persona_ArrowKeyWalker" xml:space="preserve"><value>方向鍵行者</value></data>
+  <data name="YearReview_Persona_ArrowKeyWalkerDesc" xml:space="preserve"><value>游標在指尖上下翻飛</value></data>
+  <data name="YearReview_Persona_MousePerson" xml:space="preserve"><value>滑鼠流</value></data>
+  <data name="YearReview_Persona_MousePersonDesc" xml:space="preserve"><value>點點點，一切盡在掌握</value></data>
+  <data name="YearReview_Persona_KeyboardPurist" xml:space="preserve"><value>鍵盤流</value></data>
+  <data name="YearReview_Persona_KeyboardPuristDesc" xml:space="preserve"><value>能用鍵盤解決的絕不碰滑鼠</value></data>
+  <data name="YearReview_Persona_BalancedPlayer" xml:space="preserve"><value>均衡型選手</value></data>
+  <data name="YearReview_Persona_BalancedPlayerDesc" xml:space="preserve"><value>鍵鼠雙修，張弛有度</value></data>
+  <data name="YearReview_MetricShortcutRatio" xml:space="preserve"><value>快捷鍵佔比</value></data>
+  <data name="YearReview_MetricShortcutDetailFormat" xml:space="preserve"><value>共 {0:N0} 次組合鍵</value></data>
+  <data name="YearReview_MetricRegret" xml:space="preserve"><value>後悔指數</value></data>
+  <data name="YearReview_MetricRegretDetailFormat" xml:space="preserve"><value>退格和刪除共 {0:N0} 次</value></data>
+  <data name="YearReview_MetricCopyPaste" xml:space="preserve"><value>複製 / 貼上</value></data>
+  <data name="YearReview_MetricCopyPasteValueFormat" xml:space="preserve"><value>複製 {0:N0} · 貼上 {1:N0}</value></data>
+  <data name="YearReview_MetricUndo" xml:space="preserve"><value>復原次數</value></data>
+  <data name="YearReview_MetricArrow" xml:space="preserve"><value>方向鍵佔比</value></data>
+  <data name="YearReview_MetricArrowDetailFormat" xml:space="preserve"><value>共 {0:N0} 次</value></data>
+  <data name="YearReview_MetricClickRatio" xml:space="preserve"><value>鍵鼠比</value></data>
+  <data name="YearReview_MetricClickRatioValueFormat" xml:space="preserve"><value>每 100 次按鍵點擊 {0:N0} 次</value></data>
+  <data name="YearReview_MetricTopKeys" xml:space="preserve"><value>最常用的鍵</value></data>
+  <data name="YearReview_MetricTopKeysDetail" xml:space="preserve"><value>不含空白鍵</value></data>
+  <data name="Stats_YearReview" xml:space="preserve"><value>年度回顧</value></data>
+  <data name="Tray_YearReview" xml:space="preserve"><value>年度回顧</value></data>
+  <data name="YearReview_PersonaTotalsFormat" xml:space="preserve"><value>基於 {0:N0} 次按鍵 · {1:N0} 次點擊</value></data>
   <data name="Language_RestartPromptTitle" xml:space="preserve"><value>需要重新啟動</value></data>
   <data name="Language_RestartPromptMessage" xml:space="preserve"><value>KeyStats 需要重新啟動才能套用新的語言。要立即重新啟動嗎？</value></data>
 

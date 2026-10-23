@@ -39,6 +39,7 @@ public partial class App : System.Windows.Application
     private AppStatsWindow? _appStatsWindow;
     private KeyboardHeatmapWindow? _keyboardHeatmapWindow;
     private KeyHistoryWindow? _keyHistoryWindow;
+    private YearReviewWindow? _yearReviewWindow;
     private SyncSettingsWindow? _syncSettingsWindow;
     private FloatingStatsWindow? _floatingStatsWindow;
     private MenuItem? _floatingStatsMenuItem;
@@ -226,6 +227,14 @@ public partial class App : System.Windows.Application
             ShowKeyHistoryWindow();
         };
         menu.Items.Add(keyHistoryItem);
+
+        var yearReviewItem = new System.Windows.Controls.MenuItem { Header = KeyStats.Properties.Strings.Tray_YearReview };
+        yearReviewItem.Click += (s, e) =>
+        {
+            TrackClick("context_menu_year_review");
+            ShowYearReviewWindow();
+        };
+        menu.Items.Add(yearReviewItem);
 
         menu.Items.Add(new System.Windows.Controls.Separator());
 
@@ -473,6 +482,20 @@ public partial class App : System.Windows.Application
         _keyHistoryWindow.Closed += (_, _) => _keyHistoryWindow = null;
         _keyHistoryWindow.Show();
         _keyHistoryWindow.Activate();
+    }
+
+    public void ShowYearReviewWindow()
+    {
+        if (_yearReviewWindow != null && _yearReviewWindow.IsVisible)
+        {
+            _yearReviewWindow.Activate();
+            return;
+        }
+
+        _yearReviewWindow = new YearReviewWindow();
+        _yearReviewWindow.Closed += (_, _) => _yearReviewWindow = null;
+        _yearReviewWindow.Show();
+        _yearReviewWindow.Activate();
     }
 
     public void ExportData()
