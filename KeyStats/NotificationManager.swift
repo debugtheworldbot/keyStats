@@ -34,6 +34,31 @@ final class NotificationManager {
         center.add(request, withCompletionHandler: nil)
     }
 
+    /// 成就解锁通知。尚未询问过授权时先请求授权，授权后再发送，避免第一条通知被丢弃。
+    func sendAchievementNotification(identifier: String, title: String, body: String) {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+        let request = UNNotificationRequest(identifier: "achievement.\(identifier)", content: content, trigger: nil)
+
+        center.getNotificationSettings { [weak self] settings in
+            guard let self = self else { return }
+            switch settings.authorizationStatus {
+            case .notDetermined:
+                self.center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
+                    if granted {
+                        self.center.add(request, withCompletionHandler: nil)
+                    }
+                }
+            case .denied:
+                return
+            default:
+                self.center.add(request, withCompletionHandler: nil)
+            }
+        }
+    }
+
     private func thresholdBody(for metric: Metric, count: Int) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal

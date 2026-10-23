@@ -50,7 +50,9 @@ let package = Package(
                 "KeyboardHeatmapWindowController.swift",
                 "StatsPopoverViewController.swift",
                 "SettingsWindowController.swift",
-                "MainWindowViewController.swift"
+                "MainWindowViewController.swift",
+                "YearReviewWindowController.swift",
+                "AchievementManager.swift"
             ],
             sources: [
                 "AppStats.swift",
@@ -61,14 +63,15 @@ let package = Package(
                 "Sync/SyncCrypto.swift",
                 "Sync/SyncStorage.swift",
                 "Sync/SyncTransport.swift",
-                "Sync/DisplayStatsAggregator.swift"
+                "Sync/DisplayStatsAggregator.swift",
+                "YearReviewModels.swift"
             ]
         ),
         .testTarget(
             name: "KeyStatsCoreTests",
             dependencies: ["KeyStatsCore"],
             path: "KeyStatsTests",
-            sources: ["HourlyStatsTests.swift", "AppStatsTests.swift", "StatsModelsTests.swift", "UpdateCheckCoordinatorTests.swift", "SyncCoreTests.swift"]
+            sources: ["HourlyStatsTests.swift", "AppStatsTests.swift", "StatsModelsTests.swift", "UpdateCheckCoordinatorTests.swift", "SyncCoreTests.swift", "YearReviewModelsTests.swift", "ActivityInsightsTests.swift"]
         )
     ]
 )

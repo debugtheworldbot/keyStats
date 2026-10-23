@@ -123,6 +123,108 @@
   <data name="Settings_HeatmapCustomHigh" xml:space="preserve"><value>High color</value></data>
   <data name="Settings_HeatmapPreviewLess" xml:space="preserve"><value>Less</value></data>
   <data name="Settings_HeatmapPreviewMore" xml:space="preserve"><value>More</value></data>
+  <data name="YearReview_WindowTitle" xml:space="preserve"><value>Year in Review - KeyStats</value></data>
+  <data name="YearReview_HeaderTitle" xml:space="preserve"><value>Year in Review</value></data>
+  <data name="YearReview_HeaderSubtitle" xml:space="preserve"><value>Your daily activity wall and keyboard personality.</value></data>
+  <data name="YearReview_TabWall" xml:space="preserve"><value>Activity Wall</value></data>
+  <data name="YearReview_TabPersona" xml:space="preserve"><value>Keyboard Personality</value></data>
+  <data name="YearReview_RangePast12Months" xml:space="preserve"><value>Past 12 months</value></data>
+  <data name="YearReview_RangeYearFormat" xml:space="preserve"><value>{0}</value></data>
+  <data name="YearReview_MetricKeys" xml:space="preserve"><value>Key presses</value></data>
+  <data name="YearReview_MetricClicks" xml:space="preserve"><value>Clicks</value></data>
+  <data name="YearReview_Total" xml:space="preserve"><value>Total</value></data>
+  <data name="YearReview_ActiveDays" xml:space="preserve"><value>Active days</value></data>
+  <data name="YearReview_CurrentStreak" xml:space="preserve"><value>Current streak</value></data>
+  <data name="YearReview_LongestStreak" xml:space="preserve"><value>Longest streak</value></data>
+  <data name="YearReview_BestDay" xml:space="preserve"><value>Best day</value></data>
+  <data name="YearReview_DaysFormat" xml:space="preserve"><value>{0:N0} days</value></data>
+  <data name="YearReview_ShortDateFormat" xml:space="preserve"><value>MMM d</value></data>
+  <data name="YearReview_TooltipDateFormat" xml:space="preserve"><value>ddd, MMM d, yyyy</value></data>
+  <data name="YearReview_TooltipKeysFormat" xml:space="preserve"><value>{0} · {1:N0} key presses</value></data>
+  <data name="YearReview_TooltipClicksFormat" xml:space="preserve"><value>{0} · {1:N0} clicks</value></data>
+  <data name="YearReview_PersonaLabel" xml:space="preserve"><value>Your keyboard personality</value></data>
+  <data name="YearReview_PersonaNotEnough" xml:space="preserve"><value>Not enough data yet. Type a bit more and check back.</value></data>
+  <data name="YearReview_Persona_ShortcutMaster" xml:space="preserve"><value>Shortcut Master</value></data>
+  <data name="YearReview_Persona_ShortcutMasterDesc" xml:space="preserve"><value>Hands never leave the keyboard; the mouse is just decoration.</value></data>
+  <data name="YearReview_Persona_CopyPasteEngineer" xml:space="preserve"><value>Copy-Paste Engineer</value></data>
+  <data name="YearReview_Persona_CopyPasteEngineerDesc" xml:space="preserve"><value>A mover of code and an artist of efficiency.</value></data>
+  <data name="YearReview_Persona_Perfectionist" xml:space="preserve"><value>Perfectionist</value></data>
+  <data name="YearReview_Persona_PerfectionistDesc" xml:space="preserve"><value>Every word gets weighed again and again.</value></data>
+  <data name="YearReview_Persona_ArrowKeyWalker" xml:space="preserve"><value>Arrow Key Walker</value></data>
+  <data name="YearReview_Persona_ArrowKeyWalkerDesc" xml:space="preserve"><value>The cursor dances at your fingertips.</value></data>
+  <data name="YearReview_Persona_MousePerson" xml:space="preserve"><value>Mouse Person</value></data>
+  <data name="YearReview_Persona_MousePersonDesc" xml:space="preserve"><value>Click, click, click: everything under control.</value></data>
+  <data name="YearReview_Persona_KeyboardPurist" xml:space="preserve"><value>Keyboard Purist</value></data>
+  <data name="YearReview_Persona_KeyboardPuristDesc" xml:space="preserve"><value>If the keyboard can do it, the mouse stays put.</value></data>
+  <data name="YearReview_Persona_BalancedPlayer" xml:space="preserve"><value>Balanced Player</value></data>
+  <data name="YearReview_Persona_BalancedPlayerDesc" xml:space="preserve"><value>Keyboard and mouse in perfect balance.</value></data>
+  <data name="YearReview_MetricShortcutRatio" xml:space="preserve"><value>Shortcut ratio</value></data>
+  <data name="YearReview_MetricShortcutDetailFormat" xml:space="preserve"><value>{0:N0} shortcuts</value></data>
+  <data name="YearReview_MetricRegret" xml:space="preserve"><value>Regret index</value></data>
+  <data name="YearReview_MetricRegretDetailFormat" xml:space="preserve"><value>Backspace and Delete: {0:N0}</value></data>
+  <data name="YearReview_MetricCopyPaste" xml:space="preserve"><value>Copy / Paste</value></data>
+  <data name="YearReview_MetricCopyPasteValueFormat" xml:space="preserve"><value>Copy {0:N0} · Paste {1:N0}</value></data>
+  <data name="YearReview_MetricUndo" xml:space="preserve"><value>Undo</value></data>
+  <data name="YearReview_MetricArrow" xml:space="preserve"><value>Arrow keys</value></data>
+  <data name="YearReview_MetricArrowDetailFormat" xml:space="preserve"><value>{0:N0} presses</value></data>
+  <data name="YearReview_MetricClickRatio" xml:space="preserve"><value>Clicks vs keys</value></data>
+  <data name="YearReview_MetricClickRatioValueFormat" xml:space="preserve"><value>{0:N0} clicks per 100 keys</value></data>
+  <data name="YearReview_MetricTopKeys" xml:space="preserve"><value>Top keys</value></data>
+  <data name="YearReview_MetricTopKeysDetail" xml:space="preserve"><value>Space excluded</value></data>
+  <data name="Stats_YearReview" xml:space="preserve"><value>Year in Review</value></data>
+  <data name="Tray_YearReview" xml:space="preserve"><value>Year in Review</value></data>
+  <data name="YearReview_PersonaTotalsFormat" xml:space="preserve"><value>Based on {0:N0} key presses · {1:N0} clicks</value></data>
+  <data name="YearReview_TabHourly" xml:space="preserve"><value>Active Hours</value></data>
+  <data name="YearReview_TabAchievements" xml:space="preserve"><value>Achievements</value></data>
+  <data name="Hourly_PeakHour" xml:space="preserve"><value>Peak hour</value></data>
+  <data name="Hourly_Chronotype" xml:space="preserve"><value>Chronotype</value></data>
+  <data name="Hourly_NightRatio" xml:space="preserve"><value>Night share</value></data>
+  <data name="Hourly_DayCount" xml:space="preserve"><value>Days tracked</value></data>
+  <data name="Hourly_DayCountDetail" xml:space="preserve"><value>Days with hourly data</value></data>
+  <data name="Hourly_ChartCaption" xml:space="preserve"><value>Average per day, by hour</value></data>
+  <data name="Hourly_Empty" xml:space="preserve"><value>Hourly tracking starts now. Check back in a while.</value></data>
+  <data name="Hourly_HourRangeFormat" xml:space="preserve"><value>{0:00}:00–{1:00}:00</value></data>
+  <data name="Hourly_TooltipKeysFormat" xml:space="preserve"><value>{0} · {1:N0} key presses per day</value></data>
+  <data name="Hourly_TooltipClicksFormat" xml:space="preserve"><value>{0} · {1:N0} clicks per day</value></data>
+  <data name="Chronotype_NotEnough" xml:space="preserve"><value>Not enough data yet</value></data>
+  <data name="Chronotype_NightOwl" xml:space="preserve"><value>Night Owl</value></data>
+  <data name="Chronotype_NightOwlDesc" xml:space="preserve"><value>Wide awake after dark; ideas arrive at night.</value></data>
+  <data name="Chronotype_EarlyBird" xml:space="preserve"><value>Early Bird</value></data>
+  <data name="Chronotype_EarlyBirdDesc" xml:space="preserve"><value>The morning is where the magic happens.</value></data>
+  <data name="Chronotype_AfternoonPerson" xml:space="preserve"><value>Afternoon Person</value></data>
+  <data name="Chronotype_AfternoonPersonDesc" xml:space="preserve"><value>Full power right after lunch.</value></data>
+  <data name="Chronotype_EveningPerson" xml:space="preserve"><value>Evening Person</value></data>
+  <data name="Chronotype_EveningPersonDesc" xml:space="preserve"><value>The real work starts after hours.</value></data>
+  <data name="Achievement_UnlockedSummaryFormat" xml:space="preserve"><value>{0} of {1} unlocked</value></data>
+  <data name="Achievement_CurrentStreakFormat" xml:space="preserve"><value>Current streak: {0:N0} days</value></data>
+  <data name="Achievement_UnlockedOnFormat" xml:space="preserve"><value>Unlocked {0}</value></data>
+  <data name="Achievement_DateFormat" xml:space="preserve"><value>MMM d, yyyy</value></data>
+  <data name="Achievement_keys_100k" xml:space="preserve"><value>Warming Up</value></data>
+  <data name="Achievement_keys_1m" xml:space="preserve"><value>Millionaire</value></data>
+  <data name="Achievement_keys_10m" xml:space="preserve"><value>Legend</value></data>
+  <data name="Achievement_day_10k" xml:space="preserve"><value>10K Day</value></data>
+  <data name="Achievement_day_30k" xml:space="preserve"><value>Keyboard Storm</value></data>
+  <data name="Achievement_day_50k" xml:space="preserve"><value>Human Typewriter</value></data>
+  <data name="Achievement_clicks_100k" xml:space="preserve"><value>Click Expert</value></data>
+  <data name="Achievement_clicks_1m" xml:space="preserve"><value>Click Harvester</value></data>
+  <data name="Achievement_streak_7" xml:space="preserve"><value>Week Streak</value></data>
+  <data name="Achievement_streak_30" xml:space="preserve"><value>Month Streak</value></data>
+  <data name="Achievement_streak_100" xml:space="preserve"><value>100-Day Streak</value></data>
+  <data name="Achievement_active_100" xml:space="preserve"><value>100 Active Days</value></data>
+  <data name="Achievement_active_365" xml:space="preserve"><value>Year-Round</value></data>
+  <data name="Achievement_kps_10" xml:space="preserve"><value>Quick Fingers</value></data>
+  <data name="Achievement_kps_15" xml:space="preserve"><value>Lightning Fingers</value></data>
+  <data name="Achievement_marathon" xml:space="preserve"><value>Mouse Marathon</value></data>
+  <data name="Achievement_Desc_TotalKeys" xml:space="preserve"><value>Reach {0} total key presses</value></data>
+  <data name="Achievement_Desc_DailyKeys" xml:space="preserve"><value>Press {0} keys in a single day</value></data>
+  <data name="Achievement_Desc_TotalClicks" xml:space="preserve"><value>Reach {0} total clicks</value></data>
+  <data name="Achievement_Desc_Streak" xml:space="preserve"><value>Stay active {0} days in a row</value></data>
+  <data name="Achievement_Desc_ActiveDays" xml:space="preserve"><value>Be active on {0} days</value></data>
+  <data name="Achievement_Desc_PeakKps" xml:space="preserve"><value>Hit a peak of {0} keys per second</value></data>
+  <data name="Achievement_Desc_MouseDistance" xml:space="preserve"><value>Move the mouse {0} km in total</value></data>
+  <data name="Notif_AchievementUnlockedFormat" xml:space="preserve"><value>🏆 Achievement unlocked: {0}</value></data>
+  <data name="NotifSettings_AchievementEnable" xml:space="preserve"><value>Achievement notifications</value></data>
+  <data name="NotifSettings_AchievementDesc" xml:space="preserve"><value>Show a notification when you unlock an achievement</value></data>
   <data name="Language_RestartPromptTitle" xml:space="preserve"><value>Restart Required</value></data>
   <data name="Language_RestartPromptMessage" xml:space="preserve"><value>KeyStats needs to restart to apply the new language. Restart now?</value></data>
 
