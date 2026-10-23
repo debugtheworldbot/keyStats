@@ -51,7 +51,8 @@ let package = Package(
                 "StatsPopoverViewController.swift",
                 "SettingsWindowController.swift",
                 "MainWindowViewController.swift",
-                "YearReviewWindowController.swift"
+                "YearReviewWindowController.swift",
+                "AchievementManager.swift"
             ],
             sources: [
                 "AppStats.swift",
@@ -70,7 +71,7 @@ let package = Package(
             name: "KeyStatsCoreTests",
             dependencies: ["KeyStatsCore"],
             path: "KeyStatsTests",
-            sources: ["HourlyStatsTests.swift", "AppStatsTests.swift", "StatsModelsTests.swift", "UpdateCheckCoordinatorTests.swift", "SyncCoreTests.swift", "YearReviewModelsTests.swift"]
+            sources: ["HourlyStatsTests.swift", "AppStatsTests.swift", "StatsModelsTests.swift", "UpdateCheckCoordinatorTests.swift", "SyncCoreTests.swift", "YearReviewModelsTests.swift", "ActivityInsightsTests.swift"]
         )
     ]
 )

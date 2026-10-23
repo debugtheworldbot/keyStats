@@ -390,3 +390,305 @@ enum ContributionWallBuilder {
         calendar.dateComponents([.day], from: calendar.startOfDay(for: from), to: calendar.startOfDay(for: to)).day ?? 0
     }
 }
+
+// MARK: - 活跃时段
+
+enum HourlyActivityMetric {
+    case keyPresses
+    case clicks
+}
+
+/// 某一天按本地钟点汇总的 24 格计数（下标 = 小时）。
+struct HourlyDayCounts: Equatable {
+    var keys: [Int]
+    var clicks: [Int]
+
+    init(keys: [Int] = Array(repeating: 0, count: 24), clicks: [Int] = Array(repeating: 0, count: 24)) {
+        self.keys = HourlyDayCounts.normalized(keys)
+        self.clicks = HourlyDayCounts.normalized(clicks)
+    }
+
+    /// 按键与点击两项合计 > 0 才算「有小时数据」的一天（与当前指标无关）。
+    var hasData: Bool {
+        saturatingNonnegativeSum(keys + clicks) > 0
+    }
+
+    func values(for metric: HourlyActivityMetric) -> [Int] {
+        metric == .keyPresses ? keys : clicks
+    }
+
+    /// 长度不是 24 时视为全 0；负数按 0 处理。
+    static func normalized(_ values: [Int]) -> [Int] {
+        guard values.count == 24 else { return Array(repeating: 0, count: 24) }
+        return values.map { max(0, $0) }
+    }
+}
+
+enum Chronotype: String, CaseIterable {
+    case nightOwl
+    case earlyBird
+    case afternoonPerson
+    case eveningPerson
+}
+
+struct HourlyActivitySummary: Equatable {
+    /// 参与统计的天数（有小时数据的天，即使当前指标全 0 也计入）。
+    let dayCount: Int
+    /// 当前指标的逐小时之和。
+    let hourlyTotals: [Int]
+    /// 逐小时日均 = 逐小时之和 / dayCount。
+    let hourlyAverages: [Double]
+    let total: Int
+    /// 逐小时之和最大的小时（并列取更早的）；全 0 时为 nil。
+    let peakHour: Int?
+    /// 22:00–05:00 的占比；总量为 0 时为 nil。
+    let nightRatio: Double?
+    /// 作息类型；总量 < `HourlyActivityAnalyzer.minimumTotal` 时为 nil。
+    let chronotype: Chronotype?
+
+    var hasData: Bool { dayCount > 0 }
+}
+
+/// 根据逐小时数据推断作息类型。纯函数，Windows 端使用同一套规则。
+enum HourlyActivityAnalyzer {
+    static let minimumTotal = 200
+    static let nightHours: [Int] = [22, 23, 0, 1, 2, 3, 4]
+    static let morningHours = 5...10
+    static let afternoonHours = 11...17
+    static let eveningHours = 18...21
+
+    static func analyze(days: [HourlyDayCounts], metric: HourlyActivityMetric) -> HourlyActivitySummary {
+        let included = days.filter { $0.hasData }
+        var totals = Array(repeating: 0, count: 24)
+        for day in included {
+            let values = day.values(for: metric)
+            for hour in 0..<24 {
+                totals[hour] = saturatingNonnegativeSum([totals[hour], values[hour]])
+            }
+        }
+
+        let total = saturatingNonnegativeSum(totals)
+        let averages = included.isEmpty
+            ? Array(repeating: 0.0, count: 24)
+            : totals.map { Double($0) / Double(included.count) }
+
+        var peakHour: Int?
+        if total > 0, let maxValue = totals.max() {
+            peakHour = totals.firstIndex(of: maxValue)
+        }
+
+        let nightTotal = saturatingNonnegativeSum(nightHours.map { totals[$0] })
+        let nightRatio: Double? = total > 0 ? Double(nightTotal) / Double(total) : nil
+
+        return HourlyActivitySummary(dayCount: included.count,
+                                     hourlyTotals: totals,
+                                     hourlyAverages: averages,
+                                     total: total,
+                                     peakHour: peakHour,
+                                     nightRatio: nightRatio,
+                                     chronotype: chronotype(totals: totals, total: total, nightTotal: nightTotal))
+    }
+
+    private static func chronotype(totals: [Int], total: Int, nightTotal: Int) -> Chronotype? {
+        guard total >= minimumTotal else { return nil }
+        // 整数比较，避免恰好 20% 时的浮点误差
+        if nightTotal * 5 >= total {
+            return .nightOwl
+        }
+        let morning = saturatingNonnegativeSum(morningHours.map { totals[$0] })
+        let afternoon = saturatingNonnegativeSum(afternoonHours.map { totals[$0] })
+        let evening = saturatingNonnegativeSum(eveningHours.map { totals[$0] })
+        // 并列取更早的时段
+        if morning >= afternoon && morning >= evening {
+            return .earlyBird
+        }
+        return afternoon >= evening ? .afternoonPerson : .eveningPerson
+    }
+}
+
+extension HourlyStats {
+    /// 按记录时区把 [start, end] 内每天拆成 24 格；早于开始记录的日子不返回。
+    /// DST 重复的钟点合并到同一格。
+    func dailyHourCounts(from start: Date, through end: Date, now: Date = Date()) -> [HourlyDayCounts] {
+        let recordingCalendar = calendar
+        let last = min(end, now)
+        var cursor = recordingCalendar.startOfDay(for: max(start, startedAt))
+        var result: [HourlyDayCounts] = []
+        // 上限约 30 年，防止异常数据导致死循环
+        while cursor <= last && result.count < 11_000 {
+            var day = HourlyDayCounts()
+            for point in points(on: cursor, recent24Hours: false, now: now) {
+                guard let counts = point.counts else { continue }
+                let hour = recordingCalendar.component(.hour, from: point.date)
+                guard (0..<24).contains(hour) else { continue }
+                day.keys[hour] = saturatingNonnegativeSum([day.keys[hour], counts.keys])
+                day.clicks[hour] = saturatingNonnegativeSum([day.clicks[hour], counts.clicks])
+            }
+            result.append(day)
+            guard let next = recordingCalendar.date(byAdding: .day, value: 1, to: cursor) else { break }
+            cursor = recordingCalendar.startOfDay(for: next)
+        }
+        return result
+    }
+}
+
+// MARK: - 成就
+
+enum AchievementCategory: String, CaseIterable {
+    case totalKeys
+    case dailyKeys
+    case totalClicks
+    case streak
+    case activeDays
+    case peakKPS
+    case mouseDistance
+}
+
+struct AchievementDefinition: Equatable {
+    let id: String
+    let category: AchievementCategory
+    /// 目标值；鼠标距离单位为公里，其余为次数 / 天数 / 键每秒。
+    let target: Double
+}
+
+enum AchievementCatalog {
+    static let marathonKilometers = 42.195
+
+    static let all: [AchievementDefinition] = [
+        AchievementDefinition(id: "keys_100k", category: .totalKeys, target: 100_000),
+        AchievementDefinition(id: "keys_1m", category: .totalKeys, target: 1_000_000),
+        AchievementDefinition(id: "keys_10m", category: .totalKeys, target: 10_000_000),
+        AchievementDefinition(id: "day_10k", category: .dailyKeys, target: 10_000),
+        AchievementDefinition(id: "day_30k", category: .dailyKeys, target: 30_000),
+        AchievementDefinition(id: "day_50k", category: .dailyKeys, target: 50_000),
+        AchievementDefinition(id: "clicks_100k", category: .totalClicks, target: 100_000),
+        AchievementDefinition(id: "clicks_1m", category: .totalClicks, target: 1_000_000),
+        AchievementDefinition(id: "streak_7", category: .streak, target: 7),
+        AchievementDefinition(id: "streak_30", category: .streak, target: 30),
+        AchievementDefinition(id: "streak_100", category: .streak, target: 100),
+        AchievementDefinition(id: "active_100", category: .activeDays, target: 100),
+        AchievementDefinition(id: "active_365", category: .activeDays, target: 365),
+        AchievementDefinition(id: "kps_10", category: .peakKPS, target: 10),
+        AchievementDefinition(id: "kps_15", category: .peakKPS, target: 15),
+        AchievementDefinition(id: "marathon", category: .mouseDistance, target: marathonKilometers),
+    ]
+}
+
+/// 成就评估所需的单日数据。
+struct AchievementDayInput: Equatable {
+    let date: Date
+    let keyPresses: Int
+    let clicks: Int
+    /// 像素距离，换算公里时乘以「米/像素」校准值。
+    let mouseDistance: Double
+    let peakKPS: Double
+
+    var isActive: Bool { keyPresses > 0 || clicks > 0 }
+}
+
+struct AchievementProgress: Equatable {
+    let definition: AchievementDefinition
+    /// 当前进度：累计类为总和，单日/峰值类为历史最大值，连续为最长连续天数。
+    let current: Double
+    /// 首次达成的日期；未达成为 nil。
+    let unlockedOn: Date?
+
+    var isUnlocked: Bool { unlockedOn != nil }
+
+    var fraction: Double {
+        guard definition.target > 0 else { return 0 }
+        return min(1, max(0, current / definition.target))
+    }
+}
+
+/// 按时间顺序扫描每日数据，计算每个成就的进度和首次达成日期。纯函数，Windows 端规则一致。
+enum AchievementEvaluator {
+    static func evaluate(days: [AchievementDayInput],
+                         metersPerPixel: Double,
+                         definitions: [AchievementDefinition] = AchievementCatalog.all,
+                         calendar: Calendar = .current) -> [AchievementProgress] {
+        let sorted = days.sorted { $0.date < $1.date }
+        var totalKeys = 0.0
+        var totalClicks = 0.0
+        var totalKilometers = 0.0
+        var activeDays = 0.0
+        var maxDailyKeys = 0.0
+        var maxKPS = 0.0
+        var currentStreak = 0
+        var longestStreak = 0
+        var lastActiveDay: Date?
+        var unlocked: [String: Date] = [:]
+        let safeMetersPerPixel = metersPerPixel.isFinite && metersPerPixel > 0 ? metersPerPixel : 0
+
+        func value(for category: AchievementCategory) -> Double {
+            switch category {
+            case .totalKeys: return totalKeys
+            case .dailyKeys: return maxDailyKeys
+            case .totalClicks: return totalClicks
+            case .streak: return Double(longestStreak)
+            case .activeDays: return activeDays
+            case .peakKPS: return maxKPS
+            case .mouseDistance: return totalKilometers
+            }
+        }
+
+        for day in sorted {
+            let dayStart = calendar.startOfDay(for: day.date)
+            totalKeys += Double(max(0, day.keyPresses))
+            totalClicks += Double(max(0, day.clicks))
+            maxDailyKeys = max(maxDailyKeys, Double(max(0, day.keyPresses)))
+            if day.peakKPS.isFinite {
+                maxKPS = max(maxKPS, day.peakKPS)
+            }
+            if day.mouseDistance.isFinite && day.mouseDistance > 0 {
+                totalKilometers += day.mouseDistance * safeMetersPerPixel / 1000
+            }
+
+            if day.isActive {
+                if let last = lastActiveDay {
+                    let gap = daysBetween(last, dayStart, calendar: calendar)
+                    if gap == 1 {
+                        currentStreak += 1
+                    } else if gap > 1 {
+                        // 中间断了一天以上，重新计数
+                        currentStreak = 1
+                    }
+                    // gap == 0：同一天重复的数据，不重复计数
+                    if gap != 0 {
+                        activeDays += 1
+                    }
+                } else {
+                    currentStreak = 1
+                    activeDays += 1
+                }
+                lastActiveDay = dayStart
+                longestStreak = max(longestStreak, currentStreak)
+            }
+
+            for definition in definitions where unlocked[definition.id] == nil {
+                // 公里数是浮点累加，留一点容差，避免恰好达标时因舍入误差漏判
+                if value(for: definition.category) >= definition.target - 1e-9 {
+                    unlocked[definition.id] = dayStart
+                }
+            }
+        }
+
+        return definitions.map { definition in
+            AchievementProgress(definition: definition,
+                                current: value(for: definition.category),
+                                unlockedOn: unlocked[definition.id])
+        }
+    }
+
+    /// 当前连续活跃天数：从今天往回数，今天还没活跃时从昨天开始数。
+    static func currentStreak(days: [AchievementDayInput], today: Date, calendar: Calendar = .current) -> Int {
+        let activeDays = Set(days.filter { $0.isActive }.map { calendar.startOfDay(for: $0.date) })
+        return ContributionWallBuilder.streakEnding(at: today, calendar: calendar) { date in
+            activeDays.contains(calendar.startOfDay(for: date)) ? 1 : 0
+        }
+    }
+
+    private static func daysBetween(_ from: Date, _ to: Date, calendar: Calendar) -> Int {
+        calendar.dateComponents([.day], from: calendar.startOfDay(for: from), to: calendar.startOfDay(for: to)).day ?? 0
+    }
+}

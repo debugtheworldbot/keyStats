@@ -75,6 +75,17 @@ final class YearReviewViewController: NSViewController {
     private var tabControl: NSSegmentedControl!
     private var wallTabView: ContributionWallTabView!
     private var personaTabView: KeyboardPersonaTabView!
+    private var hourlyTabView: HourlyActivityTabView!
+    private var achievementsTabView: AchievementsTabView!
+    private var achievementsObserver: NSObjectProtocol?
+
+    private static let tabAnalyticsValues = ["wall", "persona", "hourly", "achievements"]
+
+    deinit {
+        if let observer = achievementsObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
 
     override func loadView() {
         view = NSView(frame: NSRect(x: 0, y: 0, width: 900, height: 600))
@@ -90,6 +101,8 @@ final class YearReviewViewController: NSViewController {
         let history = StatsManager.shared.yearReviewHistorySnapshot()
         wallTabView.apply(history: history)
         personaTabView.apply(history: history)
+        hourlyTabView.apply(hourly: StatsManager.shared.hourlyStatsSnapshot())
+        achievementsTabView.reload()
     }
 
     private func setupUI() {
@@ -99,7 +112,9 @@ final class YearReviewViewController: NSViewController {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
 
         tabControl = NSSegmentedControl(labels: [yearReviewLocalized("yearReview.tab.wall"),
-                                                 yearReviewLocalized("yearReview.tab.persona")],
+                                                 yearReviewLocalized("yearReview.tab.persona"),
+                                                 yearReviewLocalized("yearReview.tab.hourly"),
+                                                 yearReviewLocalized("yearReview.tab.achievements")],
                                         trackingMode: .selectOne,
                                         target: self,
                                         action: #selector(tabChanged))
@@ -111,11 +126,27 @@ final class YearReviewViewController: NSViewController {
         personaTabView = KeyboardPersonaTabView()
         personaTabView.translatesAutoresizingMaskIntoConstraints = false
         personaTabView.isHidden = true
+        hourlyTabView = HourlyActivityTabView()
+        hourlyTabView.translatesAutoresizingMaskIntoConstraints = false
+        hourlyTabView.isHidden = true
+        achievementsTabView = AchievementsTabView()
+        achievementsTabView.translatesAutoresizingMaskIntoConstraints = false
+        achievementsTabView.isHidden = true
 
         view.addSubview(titleLabel)
         view.addSubview(tabControl)
         view.addSubview(wallTabView)
         view.addSubview(personaTabView)
+        view.addSubview(hourlyTabView)
+        view.addSubview(achievementsTabView)
+
+        achievementsObserver = NotificationCenter.default.addObserver(
+            forName: .achievementsDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.achievementsTabView.reload()
+        }
 
         NSLayoutConstraint.activate([
             titleLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 36),
@@ -126,7 +157,7 @@ final class YearReviewViewController: NSViewController {
             tabControl.leadingAnchor.constraint(greaterThanOrEqualTo: titleLabel.trailingAnchor, constant: 16),
         ])
 
-        for tabView in [wallTabView as NSView, personaTabView as NSView] {
+        for tabView in tabViews {
             NSLayoutConstraint.activate([
                 tabView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 16),
                 tabView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 28),
@@ -136,11 +167,16 @@ final class YearReviewViewController: NSViewController {
         }
     }
 
+    private var tabViews: [NSView] {
+        [wallTabView, personaTabView, hourlyTabView, achievementsTabView]
+    }
+
     @objc private func tabChanged() {
-        let showsWall = tabControl.selectedSegment == 0
-        wallTabView.isHidden = !showsWall
-        personaTabView.isHidden = showsWall
-        AppDelegate.trackClick("year_review_tab", properties: ["tab": showsWall ? "wall" : "persona"])
+        let selected = max(0, min(tabViews.count - 1, tabControl.selectedSegment))
+        for (index, tabView) in tabViews.enumerated() {
+            tabView.isHidden = index != selected
+        }
+        AppDelegate.trackClick("year_review_tab", properties: ["tab": Self.tabAnalyticsValues[selected]])
     }
 }
 
@@ -970,4 +1006,564 @@ final class KeyboardPersonaTabView: NSView {
 
 private final class FlippedDocumentView: NSView {
     override var isFlipped: Bool { true }
+}
+
+// MARK: - Hourly activity tab
+
+private enum YearReviewDayRange: Int, CaseIterable {
+    case today = 0
+    case week
+    case month
+    case all
+
+    var analyticsValue: String {
+        switch self {
+        case .today: return "today"
+        case .week: return "week"
+        case .month: return "month"
+        case .all: return "all"
+        }
+    }
+
+    /// 范围起点；全部历史返回 distantPast。
+    func startDate(today: Date, calendar: Calendar = .current) -> Date {
+        let start = calendar.startOfDay(for: today)
+        switch self {
+        case .today: return start
+        case .week: return calendar.date(byAdding: .day, value: -6, to: start) ?? start
+        case .month: return calendar.date(byAdding: .day, value: -29, to: start) ?? start
+        case .all: return .distantPast
+        }
+    }
+}
+
+private func yearReviewHourRangeText(_ hour: Int) -> String {
+    String(format: "%02ld:00–%02ld:00", hour, (hour + 1) % 24 == 0 ? 24 : hour + 1)
+}
+
+/// 日均值：小于 10 时保留 1 位小数，避免全部显示成 0。
+private func yearReviewFormattedAverage(_ value: Double) -> String {
+    let formatter = NumberFormatter()
+    formatter.numberStyle = .decimal
+    formatter.locale = yearReviewDisplayLocale()
+    formatter.maximumFractionDigits = value > 0 && value < 10 ? 1 : 0
+    return formatter.string(from: NSNumber(value: value)) ?? String(format: "%.0f", value)
+}
+
+final class HourlyActivityTabView: NSView {
+    private var rangeControl: NSSegmentedControl!
+    private var metricControl: NSSegmentedControl!
+    private let peakCard = YearReviewStatCard(title: yearReviewLocalized("yearReview.hourly.peakHour"))
+    private let chronotypeCard = YearReviewStatCard(title: yearReviewLocalized("yearReview.hourly.chronotype"))
+    private let nightCard = YearReviewStatCard(title: yearReviewLocalized("yearReview.hourly.nightRatio"))
+    private let daysCard = YearReviewStatCard(title: yearReviewLocalized("yearReview.hourly.days"))
+    private let chartCard = YearReviewCardView()
+    private let chartView = HourlyActivityChartView()
+    private let emptyLabel = NSTextField(labelWithString: yearReviewLocalized("yearReview.hourly.empty"))
+
+    private var hourly: HourlyStats?
+    private var range: YearReviewDayRange = .month
+    private var metric: HourlyActivityMetric = .keyPresses
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func apply(hourly: HourlyStats) {
+        self.hourly = hourly
+        reload()
+    }
+
+    private func setupUI() {
+        rangeControl = NSSegmentedControl(labels: [yearReviewLocalized("yearReview.persona.range.today"),
+                                                   yearReviewLocalized("yearReview.persona.range.week"),
+                                                   yearReviewLocalized("yearReview.persona.range.month"),
+                                                   yearReviewLocalized("yearReview.persona.range.all")],
+                                          trackingMode: .selectOne,
+                                          target: self,
+                                          action: #selector(rangeChanged))
+        rangeControl.selectedSegment = range.rawValue
+        rangeControl.translatesAutoresizingMaskIntoConstraints = false
+
+        metricControl = NSSegmentedControl(labels: [yearReviewLocalized("yearReview.metric.keyPresses"),
+                                                    yearReviewLocalized("yearReview.metric.clicks")],
+                                           trackingMode: .selectOne,
+                                           target: self,
+                                           action: #selector(metricChanged))
+        metricControl.selectedSegment = 0
+        metricControl.translatesAutoresizingMaskIntoConstraints = false
+
+        let controlsRow = NSStackView(views: [rangeControl, NSView(), metricControl])
+        controlsRow.orientation = .horizontal
+        controlsRow.alignment = .centerY
+        controlsRow.spacing = 12
+        controlsRow.translatesAutoresizingMaskIntoConstraints = false
+
+        let summaryRow = NSStackView(views: [peakCard, chronotypeCard, nightCard, daysCard])
+        summaryRow.orientation = .horizontal
+        summaryRow.distribution = .fillEqually
+        summaryRow.spacing = 10
+        summaryRow.translatesAutoresizingMaskIntoConstraints = false
+
+        chartCard.translatesAutoresizingMaskIntoConstraints = false
+        chartView.translatesAutoresizingMaskIntoConstraints = false
+        emptyLabel.font = NSFont.systemFont(ofSize: 13)
+        emptyLabel.textColor = .secondaryLabelColor
+        emptyLabel.alignment = .center
+        emptyLabel.translatesAutoresizingMaskIntoConstraints = false
+        chartCard.addSubview(chartView)
+        chartCard.addSubview(emptyLabel)
+
+        addSubview(controlsRow)
+        addSubview(summaryRow)
+        addSubview(chartCard)
+
+        NSLayoutConstraint.activate([
+            controlsRow.topAnchor.constraint(equalTo: topAnchor),
+            controlsRow.leadingAnchor.constraint(equalTo: leadingAnchor),
+            controlsRow.trailingAnchor.constraint(equalTo: trailingAnchor),
+
+            summaryRow.topAnchor.constraint(equalTo: controlsRow.bottomAnchor, constant: 14),
+            summaryRow.leadingAnchor.constraint(equalTo: leadingAnchor),
+            summaryRow.trailingAnchor.constraint(equalTo: trailingAnchor),
+            summaryRow.heightAnchor.constraint(equalToConstant: 82),
+
+            chartCard.topAnchor.constraint(equalTo: summaryRow.bottomAnchor, constant: 14),
+            chartCard.leadingAnchor.constraint(equalTo: leadingAnchor),
+            chartCard.trailingAnchor.constraint(equalTo: trailingAnchor),
+            chartCard.bottomAnchor.constraint(equalTo: bottomAnchor),
+
+            chartView.topAnchor.constraint(equalTo: chartCard.topAnchor, constant: 16),
+            chartView.leadingAnchor.constraint(equalTo: chartCard.leadingAnchor, constant: 16),
+            chartView.trailingAnchor.constraint(equalTo: chartCard.trailingAnchor, constant: -16),
+            chartView.bottomAnchor.constraint(equalTo: chartCard.bottomAnchor, constant: -12),
+
+            emptyLabel.centerXAnchor.constraint(equalTo: chartCard.centerXAnchor),
+            emptyLabel.centerYAnchor.constraint(equalTo: chartCard.centerYAnchor),
+            emptyLabel.leadingAnchor.constraint(greaterThanOrEqualTo: chartCard.leadingAnchor, constant: 20),
+            emptyLabel.trailingAnchor.constraint(lessThanOrEqualTo: chartCard.trailingAnchor, constant: -20),
+        ])
+
+        chartView.tooltipProvider = { [weak self] hour, average in
+            self?.tooltipText(hour: hour, average: average) ?? ""
+        }
+    }
+
+    private func reload() {
+        let now = Date()
+        let days = hourly?.dailyHourCounts(from: range.startDate(today: now), through: now, now: now) ?? []
+        let summary = HourlyActivityAnalyzer.analyze(days: days, metric: metric)
+
+        chartView.averages = summary.hourlyAverages
+        chartView.isHidden = !summary.hasData
+        emptyLabel.isHidden = summary.hasData
+
+        if let peakHour = summary.peakHour {
+            peakCard.update(value: yearReviewHourRangeText(peakHour), detail: nil)
+        } else {
+            peakCard.update(value: "—", detail: nil)
+        }
+
+        if let chronotype = summary.chronotype {
+            chronotypeCard.update(value: yearReviewLocalized("yearReview.hourly.chronotype.\(chronotype.rawValue)"),
+                                  detail: yearReviewLocalized("yearReview.hourly.chronotype.\(chronotype.rawValue).comment"))
+        } else {
+            chronotypeCard.update(value: "—",
+                                  detail: summary.total > 0 ? yearReviewLocalized("yearReview.hourly.notEnoughData") : nil)
+        }
+
+        if let nightRatio = summary.nightRatio {
+            nightCard.update(value: yearReviewPercent(nightRatio), detail: yearReviewLocalized("yearReview.hourly.nightRatio.detail"))
+        } else {
+            nightCard.update(value: "—", detail: nil)
+        }
+
+        daysCard.update(value: String(format: yearReviewLocalized("yearReview.daysFormat"), summary.dayCount),
+                        detail: summary.hasData
+                            ? String(format: yearReviewLocalized("yearReview.hourly.daysDetailFormat"), summary.dayCount)
+                            : nil)
+    }
+
+    private func tooltipText(hour: Int, average: Double) -> String {
+        let format = metric == .keyPresses
+            ? yearReviewLocalized("yearReview.hourly.tooltip.keyPressesFormat")
+            : yearReviewLocalized("yearReview.hourly.tooltip.clicksFormat")
+        return String(format: format, yearReviewHourRangeText(hour), yearReviewFormattedAverage(average))
+    }
+
+    @objc private func rangeChanged() {
+        range = YearReviewDayRange(rawValue: rangeControl.selectedSegment) ?? .month
+        reload()
+        AppDelegate.trackClick("year_review_hourly_range", properties: ["range": range.analyticsValue])
+    }
+
+    @objc private func metricChanged() {
+        metric = metricControl.selectedSegment == 1 ? .clicks : .keyPresses
+        reload()
+        AppDelegate.trackClick("year_review_hourly_metric", properties: ["metric": metric == .keyPresses ? "keys" : "clicks"])
+    }
+}
+
+/// 24 小时柱状图：柱色按 value/max 取热力图配色，最高的柱子顶部标数值。
+final class HourlyActivityChartView: NSView, NSViewToolTipOwner {
+    private let axisLabelHeight: CGFloat = 20
+    private let topLabelHeight: CGFloat = 18
+    private let barGapRatio: CGFloat = 0.28
+    private var schemeObserver: NSObjectProtocol?
+
+    var averages: [Double] = Array(repeating: 0, count: 24) {
+        didSet {
+            needsLayout = true
+            needsDisplay = true
+        }
+    }
+
+    /// (小时, 日均值) -> tooltip 文案
+    var tooltipProvider: ((Int, Double) -> String)?
+
+    override var isFlipped: Bool { true }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        schemeObserver = NotificationCenter.default.addObserver(
+            forName: .heatmapColorSchemeDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.needsDisplay = true
+        }
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    deinit {
+        if let observer = schemeObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
+    }
+
+    override func layout() {
+        super.layout()
+        rebuildToolTips()
+    }
+
+    private var slotWidth: CGFloat {
+        max(1, bounds.width / 24)
+    }
+
+    private var plotHeight: CGFloat {
+        max(1, bounds.height - axisLabelHeight - topLabelHeight)
+    }
+
+    private func slotRect(hour: Int) -> NSRect {
+        NSRect(x: CGFloat(hour) * slotWidth, y: topLabelHeight, width: slotWidth, height: plotHeight)
+    }
+
+    private func rebuildToolTips() {
+        removeAllToolTips()
+        guard averages.count == 24 else { return }
+        for hour in 0..<24 {
+            _ = addToolTip(slotRect(hour: hour), owner: self, userData: nil)
+        }
+    }
+
+    func view(_ view: NSView, stringForToolTip tag: NSView.ToolTipTag, point: NSPoint, userData data: UnsafeMutableRawPointer?) -> String {
+        guard averages.count == 24 else { return "" }
+        let hour = max(0, min(23, Int(point.x / slotWidth)))
+        return tooltipProvider?(hour, averages[hour]) ?? ""
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        guard averages.count == 24 else { return }
+
+        let isDarkMode = yearReviewIsDark(self)
+        let maxValue = averages.max() ?? 0
+        let maxHour = maxValue > 0 ? averages.firstIndex(of: maxValue) : nil
+        let labelAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 10),
+            .foregroundColor: NSColor.secondaryLabelColor,
+        ]
+        let valueAttributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .semibold),
+            .foregroundColor: NSColor.labelColor,
+        ]
+
+        // 基线
+        let baselineY = topLabelHeight + plotHeight
+        NSColor.separatorColor.withAlphaComponent(0.4).setFill()
+        NSRect(x: 0, y: baselineY, width: bounds.width, height: 0.5).fill()
+
+        let barWidth = max(2, slotWidth * (1 - barGapRatio))
+        let radius = min(4, barWidth / 3)
+        for hour in 0..<24 {
+            let value = averages[hour]
+            let slot = slotRect(hour: hour)
+            let ratio = maxValue > 0 ? value / maxValue : 0
+            let barHeight = value > 0 ? max(3, CGFloat(ratio) * plotHeight) : 2
+            let rect = NSRect(x: slot.midX - barWidth / 2,
+                              y: baselineY - barHeight,
+                              width: barWidth,
+                              height: barHeight)
+            let fillColor = value > 0
+                ? HeatmapPalette.color(intensity: CGFloat(max(0.08, ratio)), isDarkMode: isDarkMode)
+                : HeatmapPalette.neutralColor(isDarkMode: isDarkMode)
+            fillColor.setFill()
+            NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).fill()
+
+            if hour == maxHour {
+                let text = yearReviewFormattedAverage(value) as NSString
+                let size = text.size(withAttributes: valueAttributes)
+                let x = min(max(0, slot.midX - size.width / 2), bounds.width - size.width)
+                text.draw(at: NSPoint(x: x, y: max(0, rect.minY - size.height - 2)), withAttributes: valueAttributes)
+            }
+
+            if hour % 3 == 0 {
+                let text = "\(hour)" as NSString
+                let size = text.size(withAttributes: labelAttributes)
+                text.draw(at: NSPoint(x: slot.midX - size.width / 2, y: baselineY + (axisLabelHeight - size.height) / 2),
+                          withAttributes: labelAttributes)
+            }
+        }
+    }
+}
+
+// MARK: - Achievements tab
+
+final class AchievementsTabView: NSView {
+    private static let columns = 4
+
+    private let unlockedLabel = NSTextField(labelWithString: "")
+    private let streakLabel = NSTextField(labelWithString: "")
+    private let grid = NSStackView()
+
+    private lazy var unlockDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = yearReviewDisplayLocale()
+        formatter.setLocalizedDateFormatFromTemplate("yMMMd")
+        return formatter
+    }()
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func reload() {
+        let manager = AchievementManager.shared
+        let days = manager.dayInputs()
+        let progress = manager.currentProgress(days: days)
+        let storedDates = manager.unlockedDates
+        let unlockedCount = progress.filter { $0.isUnlocked || storedDates[$0.definition.id] != nil }.count
+
+        unlockedLabel.stringValue = String(format: yearReviewLocalized("yearReview.achievements.unlockedFormat"),
+                                           unlockedCount, progress.count)
+        streakLabel.stringValue = String(format: yearReviewLocalized("yearReview.achievements.currentStreakFormat"),
+                                         AchievementEvaluator.currentStreak(days: days, today: Date()))
+
+        grid.arrangedSubviews.forEach { view in
+            grid.removeArrangedSubview(view)
+            view.removeFromSuperview()
+        }
+
+        var index = 0
+        while index < progress.count {
+            var views: [NSView] = []
+            for column in 0..<Self.columns {
+                let itemIndex = index + column
+                if itemIndex < progress.count {
+                    let item = progress[itemIndex]
+                    // 已记录的解锁日期优先（即首次检测到的日期），否则用评估得到的日期
+                    let unlockedOn = storedDates[item.definition.id] ?? item.unlockedOn
+                    views.append(AchievementCardView(progress: item,
+                                                     unlockedOn: unlockedOn,
+                                                     dateFormatter: unlockDateFormatter))
+                } else {
+                    views.append(NSView())
+                }
+            }
+            let row = NSStackView(views: views)
+            row.orientation = .horizontal
+            row.distribution = .fillEqually
+            row.spacing = 10
+            row.translatesAutoresizingMaskIntoConstraints = false
+            row.heightAnchor.constraint(equalToConstant: 132).isActive = true
+            grid.addArrangedSubview(row)
+            row.widthAnchor.constraint(equalTo: grid.widthAnchor).isActive = true
+            index += Self.columns
+        }
+    }
+
+    private func setupUI() {
+        unlockedLabel.font = NSFont.systemFont(ofSize: 20, weight: .semibold)
+        unlockedLabel.textColor = .labelColor
+        streakLabel.font = NSFont.systemFont(ofSize: 13)
+        streakLabel.textColor = .secondaryLabelColor
+
+        let header = NSStackView(views: [unlockedLabel, NSView(), streakLabel])
+        header.orientation = .horizontal
+        header.alignment = .firstBaseline
+        header.translatesAutoresizingMaskIntoConstraints = false
+
+        grid.orientation = .vertical
+        grid.alignment = .leading
+        grid.spacing = 10
+        grid.translatesAutoresizingMaskIntoConstraints = false
+
+        let scrollView = NSScrollView()
+        scrollView.drawsBackground = false
+        scrollView.hasVerticalScroller = true
+        scrollView.autohidesScrollers = true
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        let documentView = FlippedDocumentView()
+        documentView.translatesAutoresizingMaskIntoConstraints = false
+        documentView.addSubview(grid)
+        scrollView.documentView = documentView
+
+        addSubview(header)
+        addSubview(scrollView)
+
+        NSLayoutConstraint.activate([
+            header.topAnchor.constraint(equalTo: topAnchor),
+            header.leadingAnchor.constraint(equalTo: leadingAnchor),
+            header.trailingAnchor.constraint(equalTo: trailingAnchor),
+
+            scrollView.topAnchor.constraint(equalTo: header.bottomAnchor, constant: 14),
+            scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
+
+            documentView.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
+            documentView.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor),
+            documentView.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor),
+
+            grid.topAnchor.constraint(equalTo: documentView.topAnchor, constant: 2),
+            grid.leadingAnchor.constraint(equalTo: documentView.leadingAnchor),
+            grid.trailingAnchor.constraint(equalTo: documentView.trailingAnchor),
+            grid.bottomAnchor.constraint(equalTo: documentView.bottomAnchor, constant: -4),
+        ])
+    }
+}
+
+/// 单个成就卡片：已解锁显示彩色图标和解锁日期，未解锁显示灰色图标和进度条。
+final class AchievementCardView: YearReviewCardView {
+    init(progress: AchievementProgress, unlockedOn: Date?, dateFormatter: DateFormatter) {
+        super.init(frame: .zero)
+        translatesAutoresizingMaskIntoConstraints = false
+        let definition = progress.definition
+        let isUnlocked = unlockedOn != nil
+
+        let iconView = NSImageView()
+        iconView.image = AchievementCardView.icon(for: definition.category)
+        iconView.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
+        iconView.contentTintColor = isUnlocked ? AchievementCardView.tint(for: definition.category) : .tertiaryLabelColor
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+
+        let nameLabel = NSTextField(labelWithString: AchievementText.name(for: definition))
+        nameLabel.font = NSFont.systemFont(ofSize: 14, weight: .semibold)
+        nameLabel.textColor = isUnlocked ? .labelColor : .secondaryLabelColor
+        nameLabel.lineBreakMode = .byTruncatingTail
+
+        let descriptionLabel = NSTextField(wrappingLabelWithString: AchievementText.description(for: definition))
+        descriptionLabel.font = NSFont.systemFont(ofSize: 11)
+        descriptionLabel.textColor = .secondaryLabelColor
+        descriptionLabel.maximumNumberOfLines = 2
+
+        let footer: NSView
+        if let unlockedOn = unlockedOn {
+            let dateLabel = NSTextField(labelWithString: String(format: yearReviewLocalized("yearReview.achievements.unlockedOnFormat"),
+                                                                dateFormatter.string(from: unlockedOn)))
+            dateLabel.font = NSFont.systemFont(ofSize: 11, weight: .medium)
+            dateLabel.textColor = .controlAccentColor
+            footer = dateLabel
+        } else {
+            let bar = NSProgressIndicator()
+            bar.style = .bar
+            bar.isIndeterminate = false
+            bar.minValue = 0
+            bar.maxValue = 1
+            bar.doubleValue = progress.fraction
+            bar.controlSize = .small
+            bar.translatesAutoresizingMaskIntoConstraints = false
+
+            let progressLabel = NSTextField(labelWithString: String(
+                format: yearReviewLocalized("yearReview.achievements.progressFormat"),
+                AchievementText.formattedValue(min(progress.current, definition.target), category: definition.category),
+                AchievementText.formattedValue(definition.target, category: definition.category)))
+            progressLabel.font = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .regular)
+            progressLabel.textColor = .tertiaryLabelColor
+
+            let stack = NSStackView(views: [bar, progressLabel])
+            stack.orientation = .vertical
+            stack.alignment = .leading
+            stack.spacing = 2
+            bar.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+            footer = stack
+        }
+
+        let stack = NSStackView(views: [iconView, nameLabel, descriptionLabel, NSView(), footer])
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 4
+        stack.setCustomSpacing(8, after: iconView)
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(stack)
+
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: topAnchor, constant: 12),
+            stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14),
+            stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14),
+            stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -12),
+            footer.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            descriptionLabel.widthAnchor.constraint(equalTo: stack.widthAnchor),
+        ])
+        fillAlpha = isUnlocked ? 0.85 : 0.55
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private static func icon(for category: AchievementCategory) -> NSImage? {
+        let name: String
+        switch category {
+        case .totalKeys: name = "keyboard"
+        case .dailyKeys: name = "sun.max.fill"
+        case .totalClicks: name = "cursorarrow.click"
+        case .streak: name = "flame.fill"
+        case .activeDays: name = "checkmark.seal.fill"
+        case .peakKPS: name = "bolt.fill"
+        case .mouseDistance: name = "figure.run"
+        }
+        return NSImage(systemSymbolName: name, accessibilityDescription: nil)
+            ?? NSImage(systemSymbolName: "trophy.fill", accessibilityDescription: nil)
+    }
+
+    private static func tint(for category: AchievementCategory) -> NSColor {
+        switch category {
+        case .totalKeys: return .systemBlue
+        case .dailyKeys: return .systemOrange
+        case .totalClicks: return .systemPurple
+        case .streak: return .systemRed
+        case .activeDays: return .systemGreen
+        case .peakKPS: return .systemYellow
+        case .mouseDistance: return .systemTeal
+        }
+    }
 }
