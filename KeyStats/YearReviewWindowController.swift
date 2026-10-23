@@ -856,7 +856,8 @@ final class KeyboardPersonaTabView: NSView {
             row.distribution = .fillEqually
             row.spacing = 10
             row.translatesAutoresizingMaskIntoConstraints = false
-            row.heightAnchor.constraint(equalToConstant: 76).isActive = true
+            // 卡片「标题 + 数值 + 说明」三行加上下内边距实测需要 84pt，低于此值说明行会被截断
+            row.heightAnchor.constraint(equalToConstant: 84).isActive = true
             rows.append(row)
             index += 2
         }
