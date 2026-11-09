@@ -1389,11 +1389,13 @@ class KeyCountRowView: NSView {
             path.lineJoinStyle = .round
             path.lineCapStyle = .round
 
-            // 使用动态透明度以支持 Dark Mode
+            // 键帽使用明确的中性色，避免依赖系统分隔线颜色的绘制表现。
             let isDarkMode = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-            let fillAlpha: CGFloat = isDarkMode ? 0.6 : 0.6
+            let fillColor = isDarkMode
+                ? NSColor.white.withAlphaComponent(0.12)
+                : NSColor.black.withAlphaComponent(0.06)
 
-            NSColor.separatorColor.withAlphaComponent(fillAlpha).setFill()
+            fillColor.setFill()
             path.fill()
 
             content(rect)
