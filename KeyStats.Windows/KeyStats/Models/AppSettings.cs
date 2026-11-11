@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace KeyStats.Models;
@@ -117,6 +118,17 @@ public class AppSettings
 
     [JsonPropertyName("heatmapCustomHighColor")]
     public string HeatmapCustomHighColor { get; set; } = "#C62828";
+
+    // 已解锁的成就：id → 首次达成日期（yyyy-MM-dd）
+    [JsonPropertyName("unlockedAchievements")]
+    public Dictionary<string, string> UnlockedAchievements { get; set; } = new();
+
+    // 首次评估时静默补记已达成的成就，之后新解锁的才发通知
+    [JsonPropertyName("achievementsInitialized")]
+    public bool AchievementsInitialized { get; set; }
+
+    [JsonPropertyName("achievementNotificationsEnabled")]
+    public bool AchievementNotificationsEnabled { get; set; } = true;
 
     [JsonPropertyName("languagePreference")]
     public string LanguagePreference { get; set; } = "system";  // "system" | "zh-Hans" | "zh-Hant" | "en"

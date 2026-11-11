@@ -79,7 +79,9 @@ public sealed class DisplayStatsAggregator
             ScrollDistance = Math.Max(0, source.ScrollDistance),
             PeakKPS = Math.Max(0, source.PeakKPS),
             PeakCPS = Math.Max(0, source.PeakCPS),
-            AppStats = source.AppStats.ToDictionary(pair => pair.Key, pair => new AppStats(pair.Value))
+            AppStats = source.AppStats.ToDictionary(pair => pair.Key, pair => new AppStats(pair.Value)),
+            HourlyKeyPresses = DailyStats.NormalizeHourly(source.HourlyKeyPresses),
+            HourlyClicks = DailyStats.NormalizeHourly(source.HourlyClicks)
         };
     }
 

@@ -40,6 +40,16 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="{x:Static p:Strings.Stats_TodayHeader}" FontSize="14" FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimaryBrush}"/>
+                <Button Grid.Column="1" Style="{DynamicResource GhostButton}"
+                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                        Padding="8,3" Margin="0,0,6,0"
+                        Click="OpenYearReview_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE787;" FontFamily="Segoe MDL2 Assets" FontSize="11"
+                                   Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <TextBlock Text="{x:Static p:Strings.Stats_YearReview}" FontSize="11" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
                 <ToggleButton x:Name="PeakToggle" Grid.Column="2"
                               IsChecked="{Binding IsPeakPopupOpen, Mode=TwoWay}"
                               Background="Transparent" BorderThickness="0"

@@ -38,6 +38,21 @@ public class NotificationService
         }
     }
 
+    public void SendAchievementNotification(string name, string description)
+    {
+        try
+        {
+            new ToastContentBuilder()
+                .AddText(string.Format(KeyStats.Properties.Strings.Notif_AchievementUnlockedFormat, name))
+                .AddText(description)
+                .Show();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error showing notification: {ex.Message}");
+        }
+    }
+
     public void ClearNotifications()
     {
         try

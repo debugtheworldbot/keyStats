@@ -55,6 +55,7 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
     private var syncStatusLabel: NSTextField!
     private var manageSyncButton: NSButton!
     private var showThresholdsButton: NSSwitch!
+    private var achievementNotificationsButton: NSSwitch!
     private var thresholdStack: NSStackView!
     private var keyPressThresholdField: NSTextField!
     private var keyPressThresholdStepper: NSStepper!
@@ -276,6 +277,7 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
         appStatsEnabledButton = makeSwitch(action: #selector(toggleAppStatsEnabled))
         launchAtLoginButton = makeSwitch(action: #selector(toggleLaunchAtLogin))
         showThresholdsButton = makeSwitch(action: #selector(toggleShowThresholds))
+        achievementNotificationsButton = makeSwitch(action: #selector(toggleAchievementNotifications))
         dynamicIconColorButton = makeSwitch(action: #selector(toggleDynamicIconColor))
 
         dynamicIconColorHelpButton = NSButton()
@@ -379,6 +381,8 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
         addArrangedSubviewFillingWidth(makeOptionDividerContainer(), to: notificationThresholdContainer)
         addArrangedSubviewFillingWidth(thresholdIndentStack, to: notificationThresholdContainer)
         addArrangedSubviewFillingWidth(notificationThresholdContainer, to: notificationStack)
+        addArrangedSubviewFillingWidth(makeOptionDividerContainer(), to: notificationStack)
+        addArrangedSubviewFillingWidth(makeSwitchRow(titleKey: "setting.achievementNotifications", toggle: achievementNotificationsButton), to: notificationStack)
 
         let notificationSection = makeSection(titleKey: "settings.section.notifications", content: notificationStack)
         addArrangedSubviewFillingWidth(notificationSection, to: contentStack)
@@ -787,6 +791,7 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
         let notificationsEnabled = StatsManager.shared.notificationsEnabled
         showThresholdsButton.state = notificationsEnabled ? .on : .off
         notificationThresholdContainer.isHidden = !notificationsEnabled
+        achievementNotificationsButton.state = AchievementManager.shared.notificationsEnabled ? .on : .off
         updateThresholdUI()
         updateHeatmapColorSchemeState()
         updateSyncState()
@@ -1126,6 +1131,15 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
         if enabled {
             requestNotificationPermissionIfNeeded()
         }
+    }
+
+    @objc private func toggleAchievementNotifications() {
+        let enabled = achievementNotificationsButton.state == .on
+        AchievementManager.shared.notificationsEnabled = enabled
+        if enabled {
+            NotificationManager.shared.requestAuthorizationIfNeeded()
+        }
+        AppDelegate.trackClick("setting_achievement_notifications", properties: ["enabled": enabled])
     }
 
     @objc private func toggleShowKeyPresses() {

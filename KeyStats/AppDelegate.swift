@@ -41,6 +41,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         applyAppIcon()
         _ = UpdateManager.shared
         SyncCoordinator.shared.start()
+        AchievementManager.shared.start()
 
         setupWindowMenu()
 
@@ -52,6 +53,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         HelperXPCClient.shared.stopMonitoring()
         HelperXPCClient.shared.disconnect()
         permissionCheckTimer?.invalidate()
+        AchievementManager.shared.stop()
         StatsManager.shared.flushPendingSave()
     }
     
