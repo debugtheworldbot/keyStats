@@ -270,8 +270,10 @@
                          Background="Transparent"
                          BorderThickness="0"
                          Padding="0"
-                         VirtualizingStackPanel.IsVirtualizing="False"
-                         ScrollViewer.CanContentScroll="False"
+                         VirtualizingStackPanel.IsVirtualizing="True"
+                         VirtualizingStackPanel.VirtualizationMode="Recycling"
+                         VirtualizingStackPanel.ScrollUnit="Pixel"
+                         ScrollViewer.CanContentScroll="True"
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                          ScrollViewer.VerticalScrollBarVisibility="Auto">
                     <ListBox.Resources>

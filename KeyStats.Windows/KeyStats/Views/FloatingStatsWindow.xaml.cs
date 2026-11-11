@@ -45,6 +45,7 @@ public partial class FloatingStatsWindow : Window
         SourceInitialized += OnSourceInitialized;
         Loaded += OnLoaded;
         Closed += OnClosed;
+        IsVisibleChanged += (_, _) => _viewModel.SetActive(IsVisible);
         LocationChanged += OnLocationChanged;
         SizeChanged += OnSizeChanged;
         ThemeManager.Instance.ThemeChanged += OnThemeChanged;

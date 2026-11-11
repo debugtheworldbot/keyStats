@@ -15,6 +15,8 @@ public partial class AppStatsWindow : Window
         _viewModel = (AppStatsViewModel)DataContext;
         Loaded += OnLoaded;
         Closed += OnClosed;
+        IsVisibleChanged += (_, _) => UpdateRefreshState();
+        StateChanged += (_, _) => UpdateRefreshState();
         ThemeManager.Instance.ThemeChanged += OnThemeChanged;
     }
 
@@ -22,6 +24,11 @@ public partial class AppStatsWindow : Window
     {
         ApplyWindowBackdrop();
         App.CurrentApp?.TrackPageView("app_stats");
+    }
+
+    private void UpdateRefreshState()
+    {
+        _viewModel.SetActive(IsVisible && WindowState != WindowState.Minimized);
     }
 
     private void OnThemeChanged()

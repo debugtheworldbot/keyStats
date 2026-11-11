@@ -70,6 +70,16 @@ dotnet build -c Release
 
 输出文件位于 `bin/Release/net48/` 目录。
 
+### UI 性能回归检查
+
+对已有 Release 构建运行：
+
+```powershell
+.\scripts\Test-UiPerformance.ps1
+```
+
+该检查在独立进程中使用内存中的测试数据，验证刷新合并、隐藏/重开、图表绘制和卸载回收，不安装输入钩子，也不读取或写入个人统计数据。可用 `-AppDirectory` 指定构建目录，`-Dotnet` 指定 SDK 的 `dotnet.exe` 路径。
+
 ### 打包发布
 
 #### 使用打包脚本（推荐）

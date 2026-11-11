@@ -54,6 +54,9 @@ public class StatsPopupViewModel : ViewModelBase
     private string _historySummary = string.Format(KeyStats.Properties.Strings.History_TotalFormat, "0");
     private ObservableCollection<ChartDataPoint> _chartData = new();
     private ObservableCollection<ChartDataPoint>? _localChartData;
+    private readonly StatsRefreshScheduler _refreshScheduler;
+    private bool _isActive;
+    private bool _isCleanedUp;
 
     public string KeyPresses
     {
@@ -218,26 +221,37 @@ public class StatsPopupViewModel : ViewModelBase
     {
         QuitCommand = new RelayCommand(Quit);
 
-        UpdateStats();
-        UpdateKeyBreakdown();
-        UpdateAppStats();
-        UpdateHistorySection();
+        _refreshScheduler = new StatsRefreshScheduler(fullRefresh =>
+        {
+            if (fullRefresh) RefreshAllSections();
+            else
+            {
+                UpdateStats();
+                if (SelectedMetricIndex == 2) UpdateHistorySection();
+            }
+        });
+    }
 
-        StatsManager.Instance.StatsChanged += OnStatsChanged;
+    /// <summary>Suspends hidden/minimized windows and catches up when shown again.</summary>
+    public void SetActive(bool active)
+    {
+        if (_isCleanedUp || _isActive == active) return;
+        _isActive = active;
+        _refreshScheduler.SetActive(active);
+        if (active)
+        {
+            StatsManager.Instance.StatsChanged += OnStatsChanged;
+            RefreshAllSections();
+        }
+        else
+        {
+            StatsManager.Instance.StatsChanged -= OnStatsChanged;
+        }
     }
 
     private void OnStatsChanged(StatsManager.StatsUpdateKind updateKind)
     {
-        Application.Current?.Dispatcher.Invoke(() =>
-        {
-            if (updateKind == StatsManager.StatsUpdateKind.MouseDistanceOnly)
-            {
-                UpdateStats();
-                return;
-            }
-
-            RefreshAllSections();
-        });
+        _refreshScheduler.Request(updateKind == StatsManager.StatsUpdateKind.Full);
     }
 
     private void RefreshAllSections()
@@ -250,8 +264,8 @@ public class StatsPopupViewModel : ViewModelBase
 
     private void UpdateStats()
     {
-        var stats = StatsManager.Instance.CurrentStats;
         var manager = StatsManager.Instance;
+        var stats = manager.GetCurrentStatsSnapshot();
 
         KeyPresses = stats.KeyPresses.ToString("N0");
         TotalClicks = stats.TotalClicks.ToString("N0");
@@ -262,7 +276,7 @@ public class StatsPopupViewModel : ViewModelBase
         SideForwardClicks = stats.SideForwardClicks.ToString("N0");
         IsSideClickRowVisible = (stats.SideBackClicks + stats.SideForwardClicks) > 0;
         MouseDistance = manager.FormatMouseDistance(stats.MouseDistance);
-        ScrollDistance = stats.FormattedScrollDistance;
+        ScrollDistance = manager.FormatScrollDistance(stats.ScrollDistance);
         PeakKPS = stats.PeakKPS > 0
             ? Math.Round(stats.PeakKPS, MidpointRounding.AwayFromZero).ToString("N0")
             : "0";
@@ -276,32 +290,27 @@ public class StatsPopupViewModel : ViewModelBase
         var items = StatsManager.Instance.GetKeyPressBreakdownSorted();
         var manager = StatsManager.Instance;
 
-        Column1Items.Clear();
-        Column2Items.Clear();
-        Column3Items.Clear();
-
         var limitedItems = items.Take(15).ToList();
+        var columns = new[] { Column1Items, Column2Items, Column3Items };
 
         for (int i = 0; i < limitedItems.Count; i++)
         {
-            var item = new KeyCountItem
-            {
-                Key = limitedItems[i].Key,
-                Count = manager.FormatNumber(limitedItems[i].Count)
-            };
+            var column = columns[i / 5];
+            var row = i % 5;
+            var key = limitedItems[i].Key;
+            var count = manager.FormatNumber(limitedItems[i].Count);
+            if (row < column.Count && column[row].Key == key && column[row].Count == count) continue;
+            var item = new KeyCountItem { Key = key, Count = count };
+            if (row < column.Count) column[row] = item;
+            else column.Add(item);
+        }
 
-            var columnIndex = i / 5;
-            switch (columnIndex)
+        for (var i = 0; i < columns.Length; i++)
+        {
+            var count = Math.Max(0, Math.Min(5, limitedItems.Count - i * 5));
+            while (columns[i].Count > count)
             {
-                case 0:
-                    Column1Items.Add(item);
-                    break;
-                case 1:
-                    Column2Items.Add(item);
-                    break;
-                case 2:
-                    Column3Items.Add(item);
-                    break;
+                columns[i].RemoveAt(columns[i].Count - 1);
             }
         }
     }
@@ -311,17 +320,29 @@ public class StatsPopupViewModel : ViewModelBase
         var manager = StatsManager.Instance;
         var sortedApps = manager.GetAppStatsSorted(int.MaxValue);
 
-        AppStatsItems.Clear();
-
-        foreach (var app in sortedApps)
+        for (var i = 0; i < sortedApps.Count; i++)
         {
-            AppStatsItems.Add(new AppStatsItem
+            var app = sortedApps[i];
+            var keys = manager.FormatNumber(app.KeyPresses);
+            var clicks = manager.FormatNumber(app.TotalClicks);
+            var icon = AppIconHelper.GetAppIcon(app.AppName, app.DisplayName);
+            if (i < AppStatsItems.Count && AppStatsItems[i].Name == app.DisplayName &&
+                AppStatsItems[i].KeyPresses == keys && AppStatsItems[i].Clicks == clicks &&
+                ReferenceEquals(AppStatsItems[i].Icon, icon)) continue;
+
+            var item = new AppStatsItem
             {
                 Name = app.DisplayName,
-                KeyPresses = manager.FormatNumber(app.KeyPresses),
-                Clicks = manager.FormatNumber(app.TotalClicks),
-                Icon = AppIconHelper.GetAppIcon(app.AppName, app.DisplayName)
-            });
+                KeyPresses = keys,
+                Clicks = clicks,
+                Icon = icon
+            };
+            if (i < AppStatsItems.Count) AppStatsItems[i] = item;
+            else AppStatsItems.Add(item);
+        }
+        while (AppStatsItems.Count > sortedApps.Count)
+        {
+            AppStatsItems.RemoveAt(AppStatsItems.Count - 1);
         }
     }
 
@@ -345,16 +366,33 @@ public class StatsPopupViewModel : ViewModelBase
 
         var trendSeries = StatsManager.Instance.GetHistoryTrendSeries(range, metric);
 
-        ChartData = new ObservableCollection<ChartDataPoint>(
-            trendSeries.Display.Select(point => new ChartDataPoint { Date = point.Date, Value = point.Value }));
-        LocalChartData = trendSeries.Local == null
-            ? null
-            : new ObservableCollection<ChartDataPoint>(
-                trendSeries.Local.Select(point => new ChartDataPoint { Date = point.Date, Value = point.Value }));
+        if (!MatchesSeries(ChartData, trendSeries.Display))
+            ChartData = CreateSeries(trendSeries.Display);
+        if (!MatchesSeries(LocalChartData, trendSeries.Local))
+            LocalChartData = trendSeries.Local == null ? null : CreateSeries(trendSeries.Local);
 
         var total = trendSeries.Display.Sum(x => x.Value);
         var formatted = StatsManager.Instance.FormatHistoryValue(metric, total);
         HistorySummary = string.Format(KeyStats.Properties.Strings.History_TotalFormat, formatted);
+    }
+
+    private static bool MatchesSeries(
+        ObservableCollection<ChartDataPoint>? current,
+        List<(DateTime Date, double Value)>? next)
+    {
+        if (current == null || next == null) return current == null && next == null;
+        if (current.Count != next.Count) return false;
+        for (var i = 0; i < current.Count; i++)
+        {
+            if (current[i].Date != next[i].Date || current[i].Value != next[i].Value) return false;
+        }
+        return true;
+    }
+
+    private static ObservableCollection<ChartDataPoint> CreateSeries(List<(DateTime Date, double Value)> points)
+    {
+        return new ObservableCollection<ChartDataPoint>(
+            points.Select(point => new ChartDataPoint { Date = point.Date, Value = point.Value }));
     }
 
     private void Quit()
@@ -367,6 +405,9 @@ public class StatsPopupViewModel : ViewModelBase
 
     public void Cleanup()
     {
-        StatsManager.Instance.StatsChanged -= OnStatsChanged;
+        if (_isCleanedUp) return;
+        SetActive(false);
+        _isCleanedUp = true;
+        _refreshScheduler.Dispose();
     }
 }
