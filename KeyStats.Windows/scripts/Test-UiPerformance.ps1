@@ -3,7 +3,9 @@
 param(
     [string]$AppDirectory = (Join-Path $PSScriptRoot '../KeyStats/bin/Release/net48'),
     [string]$Dotnet = 'dotnet',
-    [string]$CompilerPath = ''
+    [string]$CompilerPath = '',
+    [switch]$MeasureFloatingRendering,
+    [string]$ArtifactsDirectory = ''
 )
 $ErrorActionPreference = 'Stop'
 $AppDirectory = (Resolve-Path -LiteralPath $AppDirectory).Path
@@ -33,8 +35,38 @@ try {
         "/out:$testExe" @references "/reference:$testDirectory/KeyStats.exe" `
         (Join-Path $PSScriptRoot 'tests/UiPerformanceSmokeTest.cs')
     if ($LASTEXITCODE -ne 0) { throw 'UI regression test compilation failed.' }
-    & $testExe
-    if ($LASTEXITCODE -ne 0) { throw 'UI performance regression test failed.' }
+    if ($MeasureFloatingRendering) {
+        # Each mode gets a fresh process: D3D caches otherwise contaminate the comparison.
+        # Only the real floating window is created, using synthetic in-memory statistics.
+        foreach ($mode in @('default', 'software')) {
+            $stdout = Join-Path $testDirectory ($mode + '.txt')
+            $stderr = Join-Path $testDirectory ($mode + '.err')
+            $probe = Start-Process -FilePath $testExe -ArgumentList '--render-probe', $mode `
+                -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
+            try {
+                Start-Sleep -Seconds 6
+                # GPU counters are optional (not available on every Windows installation).
+                Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUProcessMemory -ErrorAction SilentlyContinue |
+                    Where-Object Name -match ('pid_' + $probe.Id + '_') |
+                    Select-Object @{Name = 'RenderMode'; Expression = { $mode }}, SharedUsage, TotalCommitted | Format-Table
+                if (!$probe.WaitForExit(30000)) { throw 'Floating rendering probe timed out.' }
+                Get-Content -LiteralPath $stdout
+                if ($probe.ExitCode -ne 0) { throw (Get-Content -LiteralPath $stderr -Raw) }
+            }
+            finally {
+                if (!$probe.HasExited) { Stop-Process -Id $probe.Id }
+                $probe.Dispose()
+            }
+        }
+        if ($ArtifactsDirectory) {
+            New-Item -ItemType Directory -Path $ArtifactsDirectory -Force | Out-Null
+            Copy-Item -Path (Join-Path $testDirectory 'floating-*.png') -Destination $ArtifactsDirectory
+        }
+    }
+    else {
+        & $testExe
+        if ($LASTEXITCODE -ne 0) { throw 'UI performance regression test failed.' }
+    }
 }
 finally {
     # Only remove the unique directory created by this invocation.

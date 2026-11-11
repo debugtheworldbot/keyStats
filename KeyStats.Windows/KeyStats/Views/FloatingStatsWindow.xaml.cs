@@ -74,6 +74,13 @@ public partial class FloatingStatsWindow : Window
 
     private void OnSourceInitialized(object? sender, EventArgs e)
     {
+        // This tiny, infrequently updated layered window does not need a D3D
+        // render target. Keep the override local so charts retain GPU rendering.
+        if (PresentationSource.FromVisual(this) is HwndSource source)
+        {
+            source.CompositionTarget.RenderMode = RenderMode.SoftwareOnly;
+        }
+
         NativeInterop.HideWindowFromSwitcher(new WindowInteropHelper(this).Handle);
         ApplySurface();
     }

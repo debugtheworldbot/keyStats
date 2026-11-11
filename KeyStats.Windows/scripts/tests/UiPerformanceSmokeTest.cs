@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -8,11 +10,16 @@ using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using KeyStats.Helpers;
 using KeyStats.Models;
 using KeyStats.Services;
 using KeyStats.ViewModels;
+using KeyStats.Views;
 using KeyStats.Views.Controls;
 
 internal static class UiPerformanceSmokeTest
@@ -21,7 +28,7 @@ internal static class UiPerformanceSmokeTest
     private static int _assertions;
 
     [STAThread]
-    private static int Main()
+    private static int Main(string[] args)
     {
         try
         {
@@ -34,10 +41,17 @@ internal static class UiPerformanceSmokeTest
             SetField(manager, "<Settings>k__BackingField", new AppSettings());
             singleton.SetValue(null, manager);
 
+            if (args.Length == 2 && args[0] == "--render-probe")
+            {
+                MeasureFloatingRendering(manager, args[1]);
+                return 0;
+            }
+
             TestScheduler();
             TestPopup(manager);
             TestOtherViewModels(manager);
             TestChartSubscriptions();
+            TestFloatingRendering(manager);
             singleton.SetValue(null, null);
             Console.WriteLine($"PASS: {_assertions} UI performance assertions; no hooks or user-data files used.");
             return 0;
@@ -47,6 +61,123 @@ internal static class UiPerformanceSmokeTest
             Console.Error.WriteLine(ex);
             return 1;
         }
+    }
+
+    private static void ApplyTestTheme(bool dark)
+    {
+        typeof(ThemeManager).GetMethod(dark ? "ApplyDarkTheme" : "ApplyLightTheme",
+            BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, new object[] { Application.Current.Resources });
+    }
+
+    private static void TestFloatingRendering(StatsManager manager)
+    {
+        // Plain Application avoids App.OnStartup, hooks, analytics and real settings.
+        var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+        SetField(manager, "_isDisposed", true); // Ignore all debounced settings writes.
+        var themeSubscribers = SubscriberCount(ThemeManager.Instance, "ThemeChanged");
+        var window = new FloatingStatsWindow();
+        try
+        {
+            ApplyTestTheme(false);
+            window.Show();
+            Pump(100);
+            var source = (HwndSource)PresentationSource.FromVisual(window);
+            Check(source.CompositionTarget.RenderMode == RenderMode.SoftwareOnly, "floating window uses software rendering");
+            Check(RenderOptions.ProcessRenderMode == RenderMode.Default, "floating window does not disable process GPU rendering");
+            var otherWindow = new Window { Width = 100, Height = 100, Left = -32000, Top = -32000, ShowInTaskbar = false };
+            otherWindow.Show();
+            Check(((HwndSource)PresentationSource.FromVisual(otherWindow)).CompositionTarget.RenderMode == RenderMode.Default,
+                "other windows retain their default rendering mode");
+            otherWindow.Close();
+
+            foreach (var dark in new[] { false, true })
+            {
+                ApplyTestTheme(dark);
+                Pump(100);
+                var border = (Border)window.FindName("RootBorder");
+                var surface = (SolidColorBrush)border.Background;
+                Check(surface.Color.A > 0 && surface.Color.A < 255, "floating theme preserves translucency");
+                Check(dark ? surface.Color.R < 100 : surface.Color.R > 200, "floating surface follows light/dark theme");
+                var bitmap = new RenderTargetBitmap((int)Math.Ceiling(window.ActualWidth), (int)Math.Ceiling(window.ActualHeight), 96, 96, PixelFormats.Pbgra32);
+                bitmap.Render(border);
+                Check(bitmap.PixelWidth > 0 && bitmap.PixelHeight > 0, "floating window renders both themes");
+            }
+
+            window.Hide();
+            manager.CurrentStats.KeyPresses = 123456;
+            window.Show();
+            Pump(100);
+            Check(((FloatingStatsViewModel)window.DataContext).PrimaryValue == manager.FormatNumber(123456), "floating window catches up after hide/show");
+            foreach (var layout in new[] { AppSettings.FloatingStatsSingleRowLayoutMode, AppSettings.FloatingStatsDoubleRowLayoutMode })
+            {
+                manager.Settings.FloatingStatsLayoutMode = layout;
+                manager.Settings.FloatingStatsFontSize = AppSettings.MaximumFloatingStatsFontSize;
+                window.ApplyBehaviorSettings();
+                Pump(100);
+                Check(window.ActualWidth > 0 && window.ActualHeight > 0, "floating layouts resize at maximum font size");
+            }
+        }
+        finally
+        {
+            window.Close();
+            Pump(100);
+            SetField(manager, "_isDisposed", false);
+        }
+        Check(SubscriberCount(ThemeManager.Instance, "ThemeChanged") == themeSubscribers, "floating close releases theme subscription");
+        Check(SubscriberCount(manager, "StatsChanged") == 0, "floating close releases statistics subscription");
+        GC.KeepAlive(app);
+    }
+
+    private static void MeasureFloatingRendering(StatsManager manager, string mode)
+    {
+        if (mode != "default" && mode != "software") throw new ArgumentException("Unknown render mode.");
+        var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+        SetField(manager, "_isDisposed", true);
+        ApplyTestTheme(false);
+        var window = new FloatingStatsWindow();
+        // Override after the production SourceInitialized handler for an A/B comparison.
+        window.SourceInitialized += (_, _) => ((HwndSource)PresentationSource.FromVisual(window)).CompositionTarget.RenderMode =
+            mode == "software" ? RenderMode.SoftwareOnly : RenderMode.Default;
+        window.Show();
+        Pump(1000);
+        var process = Process.GetCurrentProcess();
+        var cpuStart = process.TotalProcessorTime;
+        var stopwatch = Stopwatch.StartNew();
+        var updates = 0;
+        var displayedChanges = 0;
+        var viewModel = (FloatingStatsViewModel)window.DataContext;
+        viewModel.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(FloatingStatsViewModel.PrimaryValue)) displayedChanges++; };
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+        timer.Tick += (_, _) =>
+        {
+            // Change the compact K/M text on every tick, not just the full tooltip.
+            manager.CurrentStats.KeyPresses = 12345 + 137 * updates++;
+            Notify(manager);
+        };
+        timer.Start();
+        Pump(12000);
+        timer.Stop();
+        Pump(400);
+        Check(((FloatingStatsViewModel)window.DataContext).PrimaryValue == manager.FormatNumber(manager.CurrentStats.KeyPresses),
+            "render probe projects the final changing value");
+        Check(displayedChanges >= 20, "render probe exercises repeated text rendering");
+        process.Refresh();
+        Console.WriteLine($"{mode}: private={process.PrivateMemorySize64 / 1048576.0:F1} MiB; workingSet={process.WorkingSet64 / 1048576.0:F1} MiB; CPU={(process.TotalProcessorTime - cpuStart).TotalSeconds:F3}s/{stopwatch.Elapsed.TotalSeconds:F1}s; notifications={updates}; displayedChanges={displayedChanges}");
+        foreach (var dark in new[] { false, true })
+        {
+            ApplyTestTheme(dark);
+            Pump(100);
+            var border = (Border)window.FindName("RootBorder");
+            var bitmap = new RenderTargetBitmap((int)Math.Ceiling(border.ActualWidth * 4), (int)Math.Ceiling(border.ActualHeight * 4), 384, 384, PixelFormats.Pbgra32);
+            bitmap.Render(border);
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(bitmap));
+            using var stream = File.Create(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"floating-{mode}-{(dark ? "dark" : "light")}.png"));
+            encoder.Save(stream);
+        }
+        window.Close();
+        Pump(100);
+        GC.KeepAlive(app);
     }
 
     private static void TestScheduler()
