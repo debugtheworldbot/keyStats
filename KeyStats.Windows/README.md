@@ -70,24 +70,6 @@ dotnet build -c Release
 
 输出文件位于 `bin/Release/net48/` 目录。
 
-### UI 性能回归检查
-
-对已有 Release 构建运行：
-
-```powershell
-.\scripts\Test-UiPerformance.ps1
-```
-
-该检查在独立进程中使用内存中的测试数据，验证刷新合并、隐藏/重开、图表绘制和卸载回收，不安装输入钩子，也不读取或写入个人统计数据。可用 `-AppDirectory` 指定构建目录，`-Dotnet` 指定 SDK 的 `dotnet.exe` 路径。
-
-可使用真实悬浮窗对比默认渲染和软件渲染的内存、GPU 资源与 CPU 开销（会短暂显示测试悬浮窗）：
-
-```powershell
-.\scripts\Test-UiPerformance.ps1 -MeasureFloatingRendering -ArtifactsDirectory "$env:TEMP\KeyStatsRenderProbe"
-```
-
-两种模式分别在全新进程中运行，用模拟数据每秒更新四次，输出私有提交内存、总工作集、进程 CPU 时间，以及系统支持时的 GPU 共享内存；可选目录保存浅色/深色预览。数值会受显卡、驱动和 DPI 影响，不能直接等同于完整应用的任务管理器读数。常驻悬浮窗使用窗口级软件渲染，以减少小型透明窗口的 D3D 资源开销，其他窗口保留默认渲染。
-
 ### 打包发布
 
 #### 使用打包脚本（推荐）
