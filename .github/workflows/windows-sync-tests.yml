@@ -33,3 +33,6 @@ jobs:
           dotnet-version: '8.0.x'
       - name: Run Windows sync tests
         run: dotnet test KeyStats.Windows/KeyStats.Sync.Tests/KeyStats.Sync.Tests.csproj --configuration Release --verbosity normal
+      - name: Check Windows UI refresh and chart lifetimes
+        shell: pwsh
+        run: ./KeyStats.Windows/scripts/Test-UiPerformance.ps1

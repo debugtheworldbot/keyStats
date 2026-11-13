@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using KeyStats.Helpers;
@@ -37,6 +36,9 @@ public class AppStatsRowItem
 public class AppStatsViewModel : ViewModelBase
 {
     private const double LabelInsideThreshold = 0.45;
+    private readonly StatsRefreshScheduler _refreshScheduler;
+    private bool _isActive;
+    private bool _isCleanedUp;
 
     private int _selectedRangeIndex;
     private SortMetric _sortMetric = SortMetric.Keys;
@@ -110,18 +112,34 @@ public class AppStatsViewModel : ViewModelBase
     {
         SortCommand = new RelayCommand(OnSortRequested);
         RefreshHeaders();
-        RefreshData();
-        StatsManager.Instance.StatsUpdateRequested += OnStatsUpdateRequested;
+        _refreshScheduler = new StatsRefreshScheduler(_ => RefreshData());
+    }
+
+    /// <summary>Pauses live projections while the detail window is hidden or minimized.</summary>
+    public void SetActive(bool active)
+    {
+        if (_isCleanedUp || _isActive == active) return;
+        _isActive = active;
+        _refreshScheduler.SetActive(active);
+        if (active)
+        {
+            StatsManager.Instance.StatsUpdateRequested += OnStatsUpdateRequested;
+            RefreshData();
+        }
+        else StatsManager.Instance.StatsUpdateRequested -= OnStatsUpdateRequested;
     }
 
     public void Cleanup()
     {
-        StatsManager.Instance.StatsUpdateRequested -= OnStatsUpdateRequested;
+        if (_isCleanedUp) return;
+        SetActive(false);
+        _isCleanedUp = true;
+        _refreshScheduler.Dispose();
     }
 
     private void OnStatsUpdateRequested()
     {
-        Application.Current?.Dispatcher.Invoke(RefreshData);
+        _refreshScheduler.Request();
     }
 
     private void OnSortRequested(object? parameter)

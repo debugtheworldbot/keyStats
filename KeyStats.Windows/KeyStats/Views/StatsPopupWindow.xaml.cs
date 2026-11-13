@@ -49,6 +49,8 @@ public partial class StatsPopupWindow : Window
         Loaded += OnLoaded;
         Closed += OnClosed;
         Closing += OnClosing;
+        IsVisibleChanged += OnRefreshVisibilityChanged;
+        StateChanged += OnRefreshStateChanged;
         LocationChanged += OnWindowBoundsChanged;
         SizeChanged += OnWindowBoundsChanged;
         SourceInitialized += OnSourceInitialized;
@@ -183,6 +185,21 @@ public partial class StatsPopupWindow : Window
         ThemeManager.Instance.ThemeChanged -= OnThemeChanged;
 
         _viewModel.Cleanup();
+    }
+
+    private void OnRefreshVisibilityChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        UpdateRefreshState();
+    }
+
+    private void OnRefreshStateChanged(object? sender, EventArgs e)
+    {
+        UpdateRefreshState();
+    }
+
+    private void UpdateRefreshState()
+    {
+        _viewModel.SetActive(IsVisible && WindowState != WindowState.Minimized);
     }
 
     private void OnThemeChanged()
