@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Windows;
+using KeyStats.Helpers;
 using KeyStats.Services;
 
 namespace KeyStats.ViewModels;
@@ -42,13 +43,31 @@ public sealed class FloatingStatsViewModel : ViewModelBase
     private string _secondaryValue = "0";
     private string _secondaryFullValue = "0";
     private bool _isCleanedUp;
+    private bool _isActive;
+    private readonly StatsRefreshScheduler _refreshScheduler;
 
     public FloatingStatsViewModel()
     {
         NormalizeMetricSettings();
-        Refresh();
-        StatsManager.Instance.StatsChanged += OnStatsChanged;
+        _refreshScheduler = new StatsRefreshScheduler(_ => Refresh());
         MetricSettingsChanged += OnMetricSettingsChanged;
+    }
+
+    /// <summary>Refreshes only while the floating window is visible.</summary>
+    public void SetActive(bool active)
+    {
+        if (_isCleanedUp || _isActive == active) return;
+        _isActive = active;
+        _refreshScheduler.SetActive(active);
+        if (active)
+        {
+            StatsManager.Instance.StatsChanged += OnStatsChanged;
+            Refresh();
+        }
+        else
+        {
+            StatsManager.Instance.StatsChanged -= OnStatsChanged;
+        }
     }
 
     public static IReadOnlyList<string> AvailableMetricIds => MetricIds;
@@ -192,8 +211,9 @@ public sealed class FloatingStatsViewModel : ViewModelBase
             return;
         }
 
+        SetActive(false);
         _isCleanedUp = true;
-        StatsManager.Instance.StatsChanged -= OnStatsChanged;
+        _refreshScheduler.Dispose();
         MetricSettingsChanged -= OnMetricSettingsChanged;
     }
 
@@ -234,14 +254,7 @@ public sealed class FloatingStatsViewModel : ViewModelBase
 
     private void OnStatsChanged(StatsManager.StatsUpdateKind _)
     {
-        var dispatcher = Application.Current?.Dispatcher;
-        if (dispatcher == null || dispatcher.CheckAccess())
-        {
-            Refresh();
-            return;
-        }
-
-        dispatcher.BeginInvoke(new Action(Refresh));
+        _refreshScheduler.Request();
     }
 
     private void OnMetricSettingsChanged()
@@ -258,7 +271,7 @@ public sealed class FloatingStatsViewModel : ViewModelBase
 
     private void Refresh()
     {
-        if (_isCleanedUp)
+        if (_isCleanedUp || !_isActive)
         {
             return;
         }

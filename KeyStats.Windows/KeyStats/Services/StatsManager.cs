@@ -22,6 +22,8 @@ public class StatsManager : IDisposable
             LeftClicks = stats.LeftClicks;
             RightClicks = stats.RightClicks;
             MiddleClicks = stats.MiddleClicks;
+            SideBackClicks = stats.SideBackClicks;
+            SideForwardClicks = stats.SideForwardClicks;
             MouseDistance = stats.MouseDistance;
             ScrollDistance = stats.ScrollDistance;
             PeakKPS = stats.PeakKPS;
@@ -33,6 +35,8 @@ public class StatsManager : IDisposable
         public int LeftClicks { get; }
         public int RightClicks { get; }
         public int MiddleClicks { get; }
+        public int SideBackClicks { get; }
+        public int SideForwardClicks { get; }
         public double MouseDistance { get; }
         public double ScrollDistance { get; }
         public double PeakKPS { get; }
