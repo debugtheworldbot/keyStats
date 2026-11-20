@@ -47,6 +47,64 @@ public class DailyStats
     [JsonPropertyName("appStats")]
     public Dictionary<string, AppStats> AppStats { get; set; } = new();
 
+    // 按本地时间小时（0-23）的计数；旧数据没有这两个字段，读出来按全 0 处理
+    [JsonPropertyName("hourlyKeyPresses")]
+    public int[] HourlyKeyPresses { get; set; } = new int[HoursPerDay];
+
+    [JsonPropertyName("hourlyClicks")]
+    public int[] HourlyClicks { get; set; } = new int[HoursPerDay];
+
+    public const int HoursPerDay = 24;
+
+    /// <summary>返回长度固定为 24 的副本，null 或长度不对时补齐 / 截断，负数归零。</summary>
+    public static int[] NormalizeHourly(int[]? source)
+    {
+        var result = new int[HoursPerDay];
+        if (source == null)
+        {
+            return result;
+        }
+
+        for (var hour = 0; hour < HoursPerDay && hour < source.Length; hour++)
+        {
+            result[hour] = Math.Max(0, source[hour]);
+        }
+        return result;
+    }
+
+    public static int[] SumHourly(int[]? left, int[]? right)
+    {
+        var a = NormalizeHourly(left);
+        var b = NormalizeHourly(right);
+        var result = new int[HoursPerDay];
+        for (var hour = 0; hour < HoursPerDay; hour++)
+        {
+            var total = (long)a[hour] + b[hour];
+            result[hour] = total >= int.MaxValue ? int.MaxValue : (int)total;
+        }
+        return result;
+    }
+
+    public void RecordHourlyKeyPress(int hour)
+    {
+        HourlyKeyPresses = IncrementHour(HourlyKeyPresses, hour);
+    }
+
+    public void RecordHourlyClick(int hour)
+    {
+        HourlyClicks = IncrementHour(HourlyClicks, hour);
+    }
+
+    private static int[] IncrementHour(int[]? buckets, int hour)
+    {
+        var target = buckets != null && buckets.Length == HoursPerDay ? buckets : NormalizeHourly(buckets);
+        if (hour >= 0 && hour < HoursPerDay && target[hour] < int.MaxValue)
+        {
+            target[hour]++;
+        }
+        return target;
+    }
+
     [JsonIgnore]
     public int TotalClicks => LeftClicks + RightClicks + MiddleClicks + SideBackClicks + SideForwardClicks;
 

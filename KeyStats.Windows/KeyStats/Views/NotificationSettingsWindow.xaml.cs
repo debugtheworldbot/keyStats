@@ -64,7 +64,20 @@ public partial class NotificationSettingsWindow : Window
         EnableCheckBox.IsChecked = settings.NotificationsEnabled;
         KeyPressThresholdBox.Text = settings.KeyPressNotifyThreshold.ToString();
         ClickThresholdBox.Text = settings.ClickNotifyThreshold.ToString();
+        AchievementCheckBox.IsChecked = settings.AchievementNotificationsEnabled;
         UpdateFieldsEnabled();
+    }
+
+    private void OnAchievementSettingChanged(object sender, RoutedEventArgs e)
+    {
+        if (_isLoading) return;
+        var enabled = AchievementCheckBox.IsChecked == true;
+        StatsManager.Instance.Settings.AchievementNotificationsEnabled = enabled;
+        StatsManager.Instance.SaveSettings();
+        App.CurrentApp?.TrackClick("settings_achievement_notifications", new System.Collections.Generic.Dictionary<string, object?>
+        {
+            ["enabled"] = enabled
+        });
     }
 
     private void UpdateFieldsEnabled()

@@ -1692,6 +1692,11 @@ extension StatsManager {
         )
     }
 
+    /// 年度回顾用：本机历史（含今天）与已同步设备汇总后的按天数据，key 为 yyyy-MM-dd。
+    func yearReviewHistorySnapshot() -> [String: DailyStats] {
+        displayHistorySnapshot()
+    }
+
     private func displayHistorySnapshot() -> [String: DailyStats] {
         let local = localSyncHistorySnapshot()
         let syncState = SyncCoordinator.shared.state
