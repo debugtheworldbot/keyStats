@@ -1,6 +1,6 @@
 "permission.title" = "需要輔助功能權限";
 "permission.message" = "KeyStats 需要輔助功能權限來統計鍵盤和鼠標活動。\n\n點擊“打開授權引導”後，系統會打開“隱私與安全性 > 輔助功能”。請在列表中找到 KeyStatsHelper 並打開開關完成授權。";
-"permission.reinstallTip" = "授權一次即可，今後版本升級不會再要求重新授權。";
+"permission.reinstallTip" = "如果 KeyStatsHelper 的開關已開啟但仍提示授權，請選取該項目，點擊「−」將它移除。然後回到 KeyStats，再次點擊「打開授權引導」，並重新開啟 KeyStatsHelper 的權限。";
 "permission.openSettings" = "打開授權引導";
 "permission.later" = "稍後";
 "button.permission" = "獲取權限";

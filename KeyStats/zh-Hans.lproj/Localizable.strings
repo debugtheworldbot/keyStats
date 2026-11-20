@@ -1,6 +1,6 @@
 "permission.title" = "需要辅助功能权限";
 "permission.message" = "KeyStats 需要辅助功能权限来统计键盘和鼠标活动。\n\n点击“打开授权引导”后，系统会打开“隐私与安全性 > 辅助功能”。请在列表中找到 KeyStatsHelper 并打开开关完成授权。";
-"permission.reinstallTip" = "授权一次即可，今后版本升级不会再要求重新授权。";
+"permission.reinstallTip" = "如果 KeyStatsHelper 的开关已开启但仍提示授权，请选中该条目，点击「−」将其移除。然后回到 KeyStats，再次点击「打开授权引导」，并重新开启 KeyStatsHelper 的权限。";
 "permission.openSettings" = "打开授权引导";
 "permission.later" = "稍后";
 "button.permission" = "获取权限";
