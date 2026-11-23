@@ -123,6 +123,7 @@ public class StatsManager : IDisposable
     private void SetupInputMonitor()
     {
         var monitor = InputMonitorService.Instance;
+        monitor.SetIgnoreBlockedKeyboardEvents(Settings.IgnoreBlockedKeyboardEvents);
         monitor.KeyPressed += OnKeyPressed;
         monitor.LeftMouseClicked += OnLeftClick;
         monitor.RightMouseClicked += OnRightClick;
@@ -689,6 +690,17 @@ public class StatsManager : IDisposable
         }
 
         return new();
+    }
+
+    public void UpdateIgnoreBlockedKeyboardEvents(bool ignore)
+    {
+        lock (_lock)
+        {
+            Settings.IgnoreBlockedKeyboardEvents = ignore;
+            InputMonitorService.Instance.SetIgnoreBlockedKeyboardEvents(ignore);
+        }
+
+        SaveSettings();
     }
 
     public void SaveSettings()

@@ -190,6 +190,18 @@
             </StackPanel>
         </Border>
 
+        <Border Style="{DynamicResource CardBorder}" Margin="0,0,0,8" Padding="14,12">
+            <StackPanel>
+                <CheckBox x:Name="IgnoreBlockedKeyboardEventsCheckBox"
+                          Content="{x:Static p:Strings.Settings_IgnoreBlockedKeyboardEvents}"
+                          Foreground="{DynamicResource TextPrimaryBrush}"
+                          Click="IgnoreBlockedKeyboardEvents_Click"/>
+                <TextBlock Text="{x:Static p:Strings.Settings_IgnoreBlockedKeyboardEventsDesc}"
+                           Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"
+                           Margin="0,4,0,0" TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+
         <Border Style="{DynamicResource CardBorder}" Margin="0,0,0,4" Padding="14,12">
             <Grid>
                 <Grid.ColumnDefinitions>

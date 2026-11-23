@@ -58,6 +58,9 @@ public class AppSettings
     [JsonPropertyName("mouseDistanceUnit")]
     public string MouseDistanceUnit { get; set; } = "auto"; // auto | px
 
+    [JsonPropertyName("ignoreBlockedKeyboardEvents")]
+    public bool IgnoreBlockedKeyboardEvents { get; set; }
+
     [JsonPropertyName("keyHistorySelectedRangeIndex")]
     public int KeyHistorySelectedRangeIndex { get; set; } = 1;
 

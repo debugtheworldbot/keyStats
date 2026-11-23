@@ -19,6 +19,7 @@ public class InputMonitorService : IDisposable
     private NativeInterop.LowLevelMouseProc? _mouseProc;
 
     private bool _isMonitoring;
+    private volatile bool _ignoreBlockedKeyboardEvents;
     private readonly HashSet<int> _pressedKeys = new(); // Tracks currently held keys to avoid double-counting on key repeats.
     private readonly double _mouseSampleInterval = 1.0 / 30.0; // 30 FPS
     private DateTime _lastMouseSampleTime = DateTime.MinValue;
@@ -51,6 +52,11 @@ public class InputMonitorService : IDisposable
     public event Action<double, string, string>? MouseScrolled;
 
     private InputMonitorService() { }
+
+    internal void SetIgnoreBlockedKeyboardEvents(bool ignore)
+    {
+        _ignoreBlockedKeyboardEvents = ignore;
+    }
 
     public void StartMonitoring()
     {
@@ -251,6 +257,12 @@ public class InputMonitorService : IDisposable
 
     private IntPtr KeyboardHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
     {
+        var ignoreBlocked = _ignoreBlockedKeyboardEvents;
+        // A remapper can consume the original event and send a new one through the hook chain.
+        var nextResult = ignoreBlocked
+            ? NativeInterop.CallNextHookEx(_keyboardHookId, nCode, wParam, lParam)
+            : IntPtr.Zero;
+
         if (nCode >= 0)
         {
             Interlocked.Exchange(ref _lastHookCallbackTick, Environment.TickCount);
@@ -259,7 +271,8 @@ public class InputMonitorService : IDisposable
             var hookStruct = Marshal.PtrToStructure<NativeInterop.KBDLLHOOKSTRUCT>(lParam);
             var vkCode = (int)hookStruct.vkCode;
 
-            if (message == NativeInterop.WM_KEYDOWN || message == NativeInterop.WM_SYSKEYDOWN)
+            if (nextResult == IntPtr.Zero &&
+                (message == NativeInterop.WM_KEYDOWN || message == NativeInterop.WM_SYSKEYDOWN))
             {
                 bool isNewKey;
                 lock (_pressedKeys)
@@ -284,6 +297,7 @@ public class InputMonitorService : IDisposable
             }
             else if (message == NativeInterop.WM_KEYUP || message == NativeInterop.WM_SYSKEYUP)
             {
+                // A previously counted key can still be held when filtering is enabled.
                 lock (_pressedKeys)
                 {
                     _pressedKeys.Remove(vkCode);
@@ -291,7 +305,9 @@ public class InputMonitorService : IDisposable
             }
         }
 
-        return NativeInterop.CallNextHookEx(_keyboardHookId, nCode, wParam, lParam);
+        return ignoreBlocked
+            ? nextResult
+            : NativeInterop.CallNextHookEx(_keyboardHookId, nCode, wParam, lParam);
     }
 
     private IntPtr MouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
