@@ -275,6 +275,8 @@ struct MenuBarStatusSwiftUIView: View {
                             .renderingMode(.template)
                             .frame(width: 18, height: 18, alignment: .center)
                             .foregroundStyle(iconTint)
+                            // 仅颜色变化时菜单栏不会重绘，按颜色重建图标以强制刷新
+                            .id(iconTintIdentity)
                     }
 
                     if let dotColor = dotColor {
@@ -310,6 +312,11 @@ struct MenuBarStatusSwiftUIView: View {
         .padding(.horizontal, horizontalPadding)
         .padding(.vertical, 2)
         .frame(minHeight: 20, alignment: .center)
+    }
+
+    private var iconTintIdentity: String {
+        guard viewModel.colorStyle == .icon, let color = viewModel.iconColor else { return "default" }
+        return color.description
     }
 
     private var iconTint: Color {
@@ -445,6 +452,7 @@ class MenuBarStatusView: NSView {
             self.showsColorDot = showsColorDot || (style == .dot && color != nil)
         }
 
+        let colorChanged = viewModel.iconColor != color || viewModel.colorStyle != style
         if Thread.isMainThread {
             updateBlock()
         } else {
@@ -456,6 +464,13 @@ class MenuBarStatusView: NSView {
         invalidateIntrinsicContentSize()
         hostingView?.invalidateIntrinsicContentSize()
         needsLayout = true
+        if colorChanged {
+            DispatchQueue.main.async { [weak self] in
+                self?.hostingView?.needsDisplay = true
+                self?.needsDisplay = true
+                self?.displayIfNeeded()
+            }
+        }
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
