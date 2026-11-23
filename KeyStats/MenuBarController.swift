@@ -436,26 +436,41 @@ class MenuBarStatusView: NSView {
     }
 
     func updateIconColor(_ color: NSColor?, style: DynamicIconColorStyle, isMinimalMode: Bool, showsColorDot: Bool) {
-        let updateBlock = {
+        let updateBlock = { [weak self] in
+            guard let self = self else { return }
+            let dotVisible = showsColorDot || (style == .dot && color != nil)
+            // 在主线程上与最新状态比较，避免后台调用读到未生效的旧值而漏掉重绘
+            let appearanceChanged = self.viewModel.iconColor != color ||
+                self.viewModel.colorStyle != style ||
+                self.viewModel.isMinimalMode != isMinimalMode ||
+                self.viewModel.showsColorDot != dotVisible
+
             self.viewModel.iconColor = color
             self.viewModel.colorStyle = style
             self.viewModel.isMinimalMode = isMinimalMode
-            self.viewModel.showsColorDot = showsColorDot || (style == .dot && color != nil)
+            self.viewModel.showsColorDot = dotVisible
             self.isMinimalMode = isMinimalMode
-            self.showsColorDot = showsColorDot || (style == .dot && color != nil)
+            self.showsColorDot = dotVisible
+
+            self.invalidateIntrinsicContentSize()
+            self.hostingView?.invalidateIntrinsicContentSize()
+            self.needsLayout = true
+
+            // 仅颜色/圆点变化时菜单栏（尤其副屏的菜单栏副本）不会自动重绘，需在 SwiftUI 提交后强制刷新
+            if appearanceChanged {
+                DispatchQueue.main.async { [weak self] in
+                    self?.hostingView?.needsDisplay = true
+                    self?.needsDisplay = true
+                    self?.displayIfNeeded()
+                }
+            }
         }
 
         if Thread.isMainThread {
             updateBlock()
         } else {
-            DispatchQueue.main.async {
-                updateBlock()
-            }
+            DispatchQueue.main.async(execute: updateBlock)
         }
-
-        invalidateIntrinsicContentSize()
-        hostingView?.invalidateIntrinsicContentSize()
-        needsLayout = true
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
