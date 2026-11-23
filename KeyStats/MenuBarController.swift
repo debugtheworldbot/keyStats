@@ -14,6 +14,8 @@ class MenuBarController {
     private var contextMenu: NSMenu?
     private var popover: NSPopover!
     private var eventMonitor: Any?
+    private var menuBarUpdateScheduled = false
+    private let menuBarUpdateInterval: DispatchTimeInterval = .milliseconds(250)
     private let dynamicIconColorStyleKey = "dynamicIconColorStyle"
 
     init() {
@@ -152,12 +154,20 @@ class MenuBarController {
     }
 
     @objc private func updateMenuBarText() {
-        if Thread.isMainThread {
-            updateMenuBarAppearance()
-        } else {
+        guard Thread.isMainThread else {
             DispatchQueue.main.async { [weak self] in
-                self?.updateMenuBarAppearance()
+                self?.updateMenuBarText()
             }
+            return
+        }
+
+        // 在一次刷新中读取这一批输入后的最新计数。
+        guard !menuBarUpdateScheduled else { return }
+        menuBarUpdateScheduled = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + menuBarUpdateInterval) { [weak self] in
+            guard let self = self else { return }
+            self.menuBarUpdateScheduled = false
+            self.updateMenuBarAppearance()
         }
     }
 
@@ -180,7 +190,10 @@ class MenuBarController {
                                        showsColorDot: minimalMode &&
                                            StatsManager.shared.enableDynamicIconColor &&
                                            StatsManager.shared.currentInputRatePerSecond > 0)
-            statusItem.length = statusView.intrinsicContentSize.width
+            let width = statusView.preferredWidth
+            if statusItem.length != width {
+                statusItem.length = width
+            }
         } else if let button = statusItem.button {
             button.attributedTitle = makeStatusTitle(keysText: parts.keys, clicksText: parts.clicks)
             button.contentTintColor = style == .icon ? tintColor : nil
@@ -335,21 +348,11 @@ private struct MenuBarValueText: View {
     let weight: Font.Weight
 
     var body: some View {
-        Group {
-            if #available(macOS 14.0, *) {
-                Text(text)
-                    .font(.system(size: 10, weight: weight))
-                    .monospacedDigit()
-                    .foregroundStyle(Color(nsColor: .labelColor))
-                    .contentTransition(.numericText())
-            } else {
-                Text(text)
-                    .font(.system(size: 10, weight: weight))
-                    .monospacedDigit()
-                    .foregroundStyle(Color(nsColor: .labelColor))
-            }
-        }
-        .animation(.default, value: text)
+        // 菜单栏计数会随输入频繁变化，直接更新文字以避免逐帧重绘。
+        Text(text)
+            .font(.system(size: 10, weight: weight))
+            .monospacedDigit()
+            .foregroundStyle(Color(nsColor: .labelColor))
     }
 }
 
@@ -359,7 +362,6 @@ class MenuBarStatusView: NSView {
     private var currentKeysText: String = "0"
     private var currentClicksText: String = "0"
     private var isMinimalMode = false
-    private var showsColorDot = false
 
     var onClick: (() -> Void)?
     var onRightClick: (() -> Void)?
@@ -390,7 +392,7 @@ class MenuBarStatusView: NSView {
         self.hostingView = hostingView
     }
 
-    override var intrinsicContentSize: NSSize {
+    fileprivate var preferredWidth: CGFloat {
         let hasText = !currentKeysText.isEmpty || !currentClicksText.isEmpty
         let horizontalPadding: CGFloat = isMinimalMode ? 6 : (hasText ? 12 : 8)
         let iconWidth: CGFloat = isMinimalMode ? 0 : 18
@@ -400,33 +402,40 @@ class MenuBarStatusView: NSView {
             Self.valueWidth(for: currentKeysText, weight: .semibold),
             Self.valueWidth(for: currentClicksText, weight: .medium)
         )
-        let width = ceil(horizontalPadding + leadingVisualWidth + iconTextSpacing + textWidth + 1)
+        return ceil(horizontalPadding + leadingVisualWidth + iconTextSpacing + textWidth + 1)
+    }
 
-        if let hostingView = hostingView {
-            return NSSize(width: width, height: max(hostingView.fittingSize.height, 20))
-        }
-        return NSSize(width: width, height: 20)
+    override var intrinsicContentSize: NSSize {
+        let height = max(hostingView?.fittingSize.height ?? 20, 20)
+        return NSSize(width: preferredWidth, height: height)
     }
 
     func update(keysText: String, clicksText: String) {
-        let updateBlock = {
-            self.currentKeysText = keysText
-            self.currentClicksText = clicksText
-            self.viewModel.keysText = keysText
-            self.viewModel.clicksText = clicksText
+        let updateBlock = { [weak self] in
+            guard let self = self else { return }
+            let keysChanged = self.currentKeysText != keysText
+            let clicksChanged = self.currentClicksText != clicksText
+            guard keysChanged || clicksChanged else { return }
+
+            if keysChanged {
+                self.currentKeysText = keysText
+                self.viewModel.keysText = keysText
+            }
+            if clicksChanged {
+                self.currentClicksText = clicksText
+                self.viewModel.clicksText = clicksText
+            }
+
+            self.invalidateIntrinsicContentSize()
+            self.hostingView?.invalidateIntrinsicContentSize()
+            self.needsLayout = true
         }
 
         if Thread.isMainThread {
             updateBlock()
         } else {
-            DispatchQueue.main.async {
-                updateBlock()
-            }
+            DispatchQueue.main.async(execute: updateBlock)
         }
-
-        invalidateIntrinsicContentSize()
-        hostingView?.invalidateIntrinsicContentSize()
-        needsLayout = true
     }
 
     private static func valueWidth(for text: String, weight: NSFont.Weight) -> CGFloat {
@@ -444,25 +453,23 @@ class MenuBarStatusView: NSView {
                 self.viewModel.colorStyle != style ||
                 self.viewModel.isMinimalMode != isMinimalMode ||
                 self.viewModel.showsColorDot != dotVisible
+            guard appearanceChanged else { return }
 
             self.viewModel.iconColor = color
             self.viewModel.colorStyle = style
             self.viewModel.isMinimalMode = isMinimalMode
             self.viewModel.showsColorDot = dotVisible
             self.isMinimalMode = isMinimalMode
-            self.showsColorDot = dotVisible
 
             self.invalidateIntrinsicContentSize()
             self.hostingView?.invalidateIntrinsicContentSize()
             self.needsLayout = true
 
             // 仅颜色/圆点变化时菜单栏（尤其副屏的菜单栏副本）不会自动重绘，需在 SwiftUI 提交后强制刷新
-            if appearanceChanged {
-                DispatchQueue.main.async { [weak self] in
-                    self?.hostingView?.needsDisplay = true
-                    self?.needsDisplay = true
-                    self?.displayIfNeeded()
-                }
+            DispatchQueue.main.async { [weak self] in
+                self?.hostingView?.needsDisplay = true
+                self?.needsDisplay = true
+                self?.displayIfNeeded()
             }
         }
 
