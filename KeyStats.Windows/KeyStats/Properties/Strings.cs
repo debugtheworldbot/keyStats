@@ -82,6 +82,8 @@ public static class Strings
     public static string Settings_NotificationsDesc => Get(nameof(Settings_NotificationsDesc));
     public static string Settings_DistanceCalibration => Get(nameof(Settings_DistanceCalibration));
     public static string Settings_DistanceCalibrationDesc => Get(nameof(Settings_DistanceCalibrationDesc));
+    public static string Settings_IgnoreBlockedKeyboardEvents => Get(nameof(Settings_IgnoreBlockedKeyboardEvents));
+    public static string Settings_IgnoreBlockedKeyboardEventsDesc => Get(nameof(Settings_IgnoreBlockedKeyboardEventsDesc));
     public static string Settings_VersionFormat => Get(nameof(Settings_VersionFormat));
     public static string Settings_OpenGitHubFailedMessage => Get(nameof(Settings_OpenGitHubFailedMessage));
     public static string Settings_Sync => Get(nameof(Settings_Sync));

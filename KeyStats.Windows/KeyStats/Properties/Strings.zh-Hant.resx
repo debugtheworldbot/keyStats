@@ -136,6 +136,8 @@
   <data name="Settings_NotificationsDesc" xml:space="preserve"><value>設定按鍵/點擊門檻通知</value></data>
   <data name="Settings_DistanceCalibration" xml:space="preserve"><value>距離校準</value></data>
   <data name="Settings_DistanceCalibrationDesc" xml:space="preserve"><value>校準滑鼠移動距離係數</value></data>
+  <data name="Settings_IgnoreBlockedKeyboardEvents" xml:space="preserve"><value>忽略被攔截的按鍵</value></data>
+  <data name="Settings_IgnoreBlockedKeyboardEventsDesc" xml:space="preserve"><value>略過 Kanata 等改鍵工具攔截的原按鍵，統計映射後的按鍵。</value></data>
   <data name="Settings_VersionFormat" xml:space="preserve"><value>目前版本 {0}</value></data>
   <data name="Settings_OpenGitHubFailedMessage" xml:space="preserve"><value>無法開啟 GitHub 頁面。</value></data>
 

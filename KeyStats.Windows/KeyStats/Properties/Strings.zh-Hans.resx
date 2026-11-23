@@ -136,6 +136,8 @@
   <data name="Settings_NotificationsDesc" xml:space="preserve"><value>设置按键/点击阈值通知</value></data>
   <data name="Settings_DistanceCalibration" xml:space="preserve"><value>距离校准</value></data>
   <data name="Settings_DistanceCalibrationDesc" xml:space="preserve"><value>校准鼠标移动距离系数</value></data>
+  <data name="Settings_IgnoreBlockedKeyboardEvents" xml:space="preserve"><value>忽略被拦截的按键</value></data>
+  <data name="Settings_IgnoreBlockedKeyboardEventsDesc" xml:space="preserve"><value>跳过 Kanata 等改键工具拦截的原按键，统计映射后的按键。</value></data>
   <data name="Settings_VersionFormat" xml:space="preserve"><value>当前版本 {0}</value></data>
   <data name="Settings_OpenGitHubFailedMessage" xml:space="preserve"><value>无法打开 GitHub 页面。</value></data>
 

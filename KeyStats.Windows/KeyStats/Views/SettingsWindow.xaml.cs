@@ -36,12 +36,18 @@ public partial class SettingsWindow : Window
         ApplyWindowBackdrop();
         LoadFloatingStatsControls();
         LoadHeatmapColorSchemeControls();
+        IgnoreBlockedKeyboardEventsCheckBox.IsChecked = StatsManager.Instance.Settings.IgnoreBlockedKeyboardEvents;
         if (App.CurrentApp?.SyncCoordinator != null)
         {
             App.CurrentApp.SyncCoordinator.StatusChanged += OnSyncStatusChanged;
         }
         RefreshSyncStatus();
         App.CurrentApp?.TrackPageView("settings");
+    }
+
+    private void IgnoreBlockedKeyboardEvents_Click(object sender, RoutedEventArgs e)
+    {
+        StatsManager.Instance.UpdateIgnoreBlockedKeyboardEvents(IgnoreBlockedKeyboardEventsCheckBox.IsChecked == true);
     }
 
     private void OnClosed(object? sender, System.EventArgs e)
