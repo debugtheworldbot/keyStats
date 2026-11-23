@@ -275,8 +275,6 @@ struct MenuBarStatusSwiftUIView: View {
                             .renderingMode(.template)
                             .frame(width: 18, height: 18, alignment: .center)
                             .foregroundStyle(iconTint)
-                            // 仅颜色变化时菜单栏不会重绘，按颜色重建图标以强制刷新
-                            .id(iconTintIdentity)
                     }
 
                     if let dotColor = dotColor {
@@ -312,11 +310,6 @@ struct MenuBarStatusSwiftUIView: View {
         .padding(.horizontal, horizontalPadding)
         .padding(.vertical, 2)
         .frame(minHeight: 20, alignment: .center)
-    }
-
-    private var iconTintIdentity: String {
-        guard viewModel.colorStyle == .icon, let color = viewModel.iconColor else { return "default" }
-        return color.description
     }
 
     private var iconTint: Color {
@@ -463,7 +456,7 @@ class MenuBarStatusView: NSView {
             self.hostingView?.invalidateIntrinsicContentSize()
             self.needsLayout = true
 
-            // 仅颜色/圆点变化时菜单栏不会自动重绘，需在 SwiftUI 提交后强制刷新
+            // 仅颜色/圆点变化时菜单栏（尤其副屏的菜单栏副本）不会自动重绘，需在 SwiftUI 提交后强制刷新
             if appearanceChanged {
                 DispatchQueue.main.async { [weak self] in
                     self?.hostingView?.needsDisplay = true
