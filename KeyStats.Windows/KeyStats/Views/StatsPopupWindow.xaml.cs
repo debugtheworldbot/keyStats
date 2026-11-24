@@ -266,6 +266,12 @@ public partial class StatsPopupWindow : Window
         App.CurrentApp?.TrackClick("open_key_history");
         App.CurrentApp?.ShowKeyHistoryWindow();
     }
+
+    private void OpenYearReview_Click(object sender, RoutedEventArgs e)
+    {
+        App.CurrentApp?.TrackClick("open_year_review");
+        App.CurrentApp?.ShowYearReviewWindow();
+    }
     
     private void SlideOut()
     {

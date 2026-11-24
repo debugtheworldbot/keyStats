@@ -43,6 +43,9 @@
 		A1000032 /* StatsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000032 /* StatsModels.swift */; };
 		A1000033 /* KPSDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000033 /* KPSDetailView.swift */; };
 		A1000034 /* UpdateCheckCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000034 /* UpdateCheckCoordinator.swift */; };
+		D1000001 /* YearReviewModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000001 /* YearReviewModels.swift */; };
+		D1000002 /* YearReviewWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000002 /* YearReviewWindowController.swift */; };
+		D1000003 /* AchievementManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000003 /* AchievementManager.swift */; };
 		B1000001 /* SyncModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001 /* SyncModels.swift */; };
 		B1000002 /* SyncCrypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002 /* SyncCrypto.swift */; };
 		B1000003 /* SyncStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000003 /* SyncStorage.swift */; };
@@ -112,6 +115,9 @@
 		A2000027 /* MouseDistanceCalibrationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MouseDistanceCalibrationViewController.swift; sourceTree = "<group>"; };
 		A2000028 /* MouseDistanceCalibrationWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MouseDistanceCalibrationWindowController.swift; sourceTree = "<group>"; };
 		A2000029 /* UpdateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateManager.swift; sourceTree = "<group>"; };
+		D2000001 /* YearReviewModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YearReviewModels.swift; sourceTree = "<group>"; };
+		D2000002 /* YearReviewWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YearReviewWindowController.swift; sourceTree = "<group>"; };
+		D2000003 /* AchievementManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementManager.swift; sourceTree = "<group>"; };
 		A2000030 /* KeyboardHeatmapWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardHeatmapWindowController.swift; sourceTree = "<group>"; };
 		A2000031 /* KeyboardHeatmapViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardHeatmapViewController.swift; sourceTree = "<group>"; };
 		A2000032 /* StatsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsModels.swift; sourceTree = "<group>"; };
@@ -202,6 +208,9 @@
 				A2000025 /* AppStatsViewController.swift */,
 				A2000030 /* KeyboardHeatmapWindowController.swift */,
 				A2000031 /* KeyboardHeatmapViewController.swift */,
+				D2000001 /* YearReviewModels.swift */,
+				D2000002 /* YearReviewWindowController.swift */,
+				D2000003 /* AchievementManager.swift */,
 				A2000008 /* MainWindowController.swift */,
 				A2000009 /* MainWindowViewController.swift */,
 				A2000016 /* HoverIconButton.swift */,
@@ -413,6 +422,9 @@
 				A1000034 /* UpdateCheckCoordinator.swift in Sources */,
 				A1000030 /* KeyboardHeatmapWindowController.swift in Sources */,
 				A1000031 /* KeyboardHeatmapViewController.swift in Sources */,
+				D1000001 /* YearReviewModels.swift in Sources */,
+				D1000002 /* YearReviewWindowController.swift in Sources */,
+				D1000003 /* AchievementManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

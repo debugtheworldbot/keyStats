@@ -210,6 +210,7 @@ public class StatsManager : IDisposable
 
             EnsureCurrentDay();
             CurrentStats.KeyPresses++;
+            CurrentStats.RecordHourlyKeyPress(DateTime.Now.Hour);
             if (!string.IsNullOrEmpty(keyName))
             {
                 if (!CurrentStats.KeyPressCounts.ContainsKey(keyName))
@@ -235,6 +236,7 @@ public class StatsManager : IDisposable
 
             EnsureCurrentDay();
             CurrentStats.LeftClicks++;
+            CurrentStats.RecordHourlyClick(DateTime.Now.Hour);
             UpdateAppStats(appName, displayName, stats => stats.RecordLeftClick());
         }
 
@@ -252,6 +254,7 @@ public class StatsManager : IDisposable
 
             EnsureCurrentDay();
             CurrentStats.RightClicks++;
+            CurrentStats.RecordHourlyClick(DateTime.Now.Hour);
             UpdateAppStats(appName, displayName, stats => stats.RecordRightClick());
         }
 
@@ -269,6 +272,7 @@ public class StatsManager : IDisposable
 
             EnsureCurrentDay();
             CurrentStats.MiddleClicks++;
+            CurrentStats.RecordHourlyClick(DateTime.Now.Hour);
             UpdateAppStats(appName, displayName, stats => stats.RecordMiddleClick());
         }
 
@@ -286,6 +290,7 @@ public class StatsManager : IDisposable
 
             EnsureCurrentDay();
             CurrentStats.SideBackClicks++;
+            CurrentStats.RecordHourlyClick(DateTime.Now.Hour);
             UpdateAppStats(appName, displayName, stats => stats.RecordSideBackClick());
         }
 
@@ -303,6 +308,7 @@ public class StatsManager : IDisposable
 
             EnsureCurrentDay();
             CurrentStats.SideForwardClicks++;
+            CurrentStats.RecordHourlyClick(DateTime.Now.Hour);
             UpdateAppStats(appName, displayName, stats => stats.RecordSideForwardClick());
         }
 
@@ -664,7 +670,9 @@ public class StatsManager : IDisposable
             PeakKPS = CurrentStats.PeakKPS,
             PeakCPS = CurrentStats.PeakCPS,
             KeyPressCounts = new Dictionary<string, int>(CurrentStats.KeyPressCounts),
-            AppStats = CurrentStats.AppStats.ToDictionary(k => k.Key, v => new AppStats(v.Value))
+            AppStats = CurrentStats.AppStats.ToDictionary(k => k.Key, v => new AppStats(v.Value)),
+            HourlyKeyPresses = DailyStats.NormalizeHourly(CurrentStats.HourlyKeyPresses),
+            HourlyClicks = DailyStats.NormalizeHourly(CurrentStats.HourlyClicks)
         };
         History[key] = statsCopy;
     }
@@ -967,7 +975,9 @@ public class StatsManager : IDisposable
             PeakKPS = source.PeakKPS,
             PeakCPS = source.PeakCPS,
             KeyPressCounts = new Dictionary<string, int>(source.KeyPressCounts),
-            AppStats = source.AppStats.ToDictionary(k => k.Key, v => new AppStats(v.Value))
+            AppStats = source.AppStats.ToDictionary(k => k.Key, v => new AppStats(v.Value)),
+            HourlyKeyPresses = DailyStats.NormalizeHourly(source.HourlyKeyPresses),
+            HourlyClicks = DailyStats.NormalizeHourly(source.HourlyClicks)
         };
     }
 
@@ -1056,7 +1066,9 @@ public class StatsManager : IDisposable
             ScrollDistance = SanitizeDistance(source?.ScrollDistance ?? 0),
             PeakKPS = Math.Max(0, source?.PeakKPS ?? 0),
             PeakCPS = Math.Max(0, source?.PeakCPS ?? 0),
-            AppStats = appStats
+            AppStats = appStats,
+            HourlyKeyPresses = DailyStats.NormalizeHourly(source?.HourlyKeyPresses),
+            HourlyClicks = DailyStats.NormalizeHourly(source?.HourlyClicks)
         };
     }
 
@@ -1131,7 +1143,9 @@ public class StatsManager : IDisposable
             PeakKPS = Math.Max(normalizedExisting.PeakKPS, normalizedIncoming.PeakKPS),
             PeakCPS = Math.Max(normalizedExisting.PeakCPS, normalizedIncoming.PeakCPS),
             KeyPressCounts = keyPressCounts,
-            AppStats = appStats
+            AppStats = appStats,
+            HourlyKeyPresses = DailyStats.SumHourly(normalizedExisting.HourlyKeyPresses, normalizedIncoming.HourlyKeyPresses),
+            HourlyClicks = DailyStats.SumHourly(normalizedExisting.HourlyClicks, normalizedIncoming.HourlyClicks)
         };
     }
 
@@ -2045,7 +2059,7 @@ public class StatsManager : IDisposable
         NotifyStatsUpdate();
     }
 
-    private double GetMetersPerPixel()
+    public double GetMetersPerPixel()
     {
         var metersPerPixel = Settings.MouseMetersPerPixel;
         if (double.IsNaN(metersPerPixel) || double.IsInfinity(metersPerPixel) || metersPerPixel <= 0)

@@ -63,6 +63,18 @@
             </StackPanel>
         </Border>
 
+        <!-- Achievement notifications -->
+        <Border Style="{DynamicResource CardBorder}" Margin="0,0,0,8" Padding="14,12">
+            <StackPanel>
+                <CheckBox x:Name="AchievementCheckBox" Content="{x:Static p:Strings.NotifSettings_AchievementEnable}"
+                          FontSize="13" FontWeight="SemiBold"
+                          Foreground="{DynamicResource TextPrimaryBrush}"
+                          Checked="OnAchievementSettingChanged" Unchecked="OnAchievementSettingChanged"/>
+                <TextBlock Text="{x:Static p:Strings.NotifSettings_AchievementDesc}" FontSize="12"
+                           Foreground="{DynamicResource TextSecondaryBrush}" Margin="22,4,0,0" TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+
         <!-- Hint -->
         <TextBlock Text="{x:Static p:Strings.NotifSettings_Hint}"
                    Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11"
