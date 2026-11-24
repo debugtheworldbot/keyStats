@@ -41,17 +41,22 @@ class MenuBarController {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         let statusView = MenuBarStatusView()
-        statusView.onClick = { [weak self] in
-            self?.togglePopover()
-        }
-        statusView.onRightClick = { [weak self] in
-            self?.showContextMenu()
-        }
         if let button = statusItem.button {
+            // AppKit sizes the button from its native content, even when SwiftUI draws the visible content.
+            button.image = NSImage(size: NSSize(width: 1, height: NSStatusBar.system.thickness), flipped: false) { _ in true }
             statusView.frame = button.bounds
             statusView.autoresizingMask = [.width, .height]
             button.addSubview(statusView)
+            button.target = self
+            button.action = #selector(handleStatusItemClick)
+            button.sendAction(on: [.leftMouseDown, .rightMouseDown])
         } else {
+            statusView.onClick = { [weak self] in
+                self?.togglePopover()
+            }
+            statusView.onRightClick = { [weak self] in
+                self?.showContextMenu()
+            }
             statusItem.view = statusView
         }
         self.statusView = statusView
@@ -109,7 +114,16 @@ class MenuBarController {
 
     // MARK: - 操作
 
-    @objc private func togglePopover() {
+    @objc private func handleStatusItemClick() {
+        let event = NSApp.currentEvent
+        if event?.type == .rightMouseDown || event?.modifierFlags.contains(.control) == true {
+            showContextMenu()
+        } else {
+            togglePopover()
+        }
+    }
+
+    private func togglePopover() {
         if popover.isShown {
             closePopover()
         } else {
@@ -503,7 +517,7 @@ class MenuBarStatusView: NSView {
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
-        return self
+        return onClick != nil || onRightClick != nil ? self : nil
     }
 
     override func mouseDown(with event: NSEvent) {
