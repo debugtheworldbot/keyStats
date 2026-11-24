@@ -250,6 +250,7 @@ class MenuBarController {
 final class MenuBarStatusViewModel: ObservableObject {
     @Published var keysText: String = "0"
     @Published var clicksText: String = "0"
+    var animatesCountChanges = false
     @Published var iconColor: NSColor?
     @Published var colorStyle: DynamicIconColorStyle = .icon
     @Published var isMinimalMode: Bool = false
@@ -303,11 +304,13 @@ struct MenuBarStatusSwiftUIView: View {
             if hasText {
                 VStack(alignment: .leading, spacing: 0) {
                     if !viewModel.keysText.isEmpty {
-                        MenuBarValueText(text: viewModel.keysText, weight: .semibold)
+                        MenuBarValueText(text: viewModel.keysText, weight: .semibold,
+                                         animatesChanges: viewModel.animatesCountChanges)
                     }
 
                     if !viewModel.clicksText.isEmpty {
-                        MenuBarValueText(text: viewModel.clicksText, weight: .medium)
+                        MenuBarValueText(text: viewModel.clicksText, weight: .medium,
+                                         animatesChanges: viewModel.animatesCountChanges)
                     }
                 }
                 .overlay(alignment: .topLeading) {
@@ -346,9 +349,20 @@ struct MenuBarStatusSwiftUIView: View {
 private struct MenuBarValueText: View {
     let text: String
     let weight: Font.Weight
+    let animatesChanges: Bool
 
     var body: some View {
-        // 菜单栏计数会随输入频繁变化，直接更新文字以避免逐帧重绘。
+        Group {
+            if #available(macOS 14.0, *) {
+                styledText.contentTransition(.numericText())
+            } else {
+                styledText
+            }
+        }
+        .animation(animatesChanges ? .default : nil, value: text)
+    }
+
+    private var styledText: some View {
         Text(text)
             .font(.system(size: 10, weight: weight))
             .monospacedDigit()
@@ -357,11 +371,14 @@ private struct MenuBarValueText: View {
 }
 
 class MenuBarStatusView: NSView {
+    private static let countAnimationIdleInterval: TimeInterval = 0.6
+
     private let viewModel = MenuBarStatusViewModel()
     private var hostingView: NSHostingView<MenuBarStatusSwiftUIView>?
     private var currentKeysText: String = "0"
     private var currentClicksText: String = "0"
     private var isMinimalMode = false
+    private var lastCountChangeTime: TimeInterval = -.infinity
 
     var onClick: (() -> Void)?
     var onRightClick: (() -> Void)?
@@ -416,6 +433,11 @@ class MenuBarStatusView: NSView {
             let keysChanged = self.currentKeysText != keysText
             let clicksChanged = self.currentClicksText != clicksText
             guard keysChanged || clicksChanged else { return }
+
+            // 停顿后的第一次变化沿用原来的过渡，连续变化直接更新，避免频繁逐帧重绘。
+            let now = ProcessInfo.processInfo.systemUptime
+            self.viewModel.animatesCountChanges = now - self.lastCountChangeTime >= Self.countAnimationIdleInterval
+            self.lastCountChangeTime = now
 
             if keysChanged {
                 self.currentKeysText = keysText
