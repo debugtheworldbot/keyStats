@@ -39,13 +39,24 @@ class MenuBarController {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         let statusView = MenuBarStatusView()
-        statusView.onClick = { [weak self] in
-            self?.togglePopover()
+        if let button = statusItem.button {
+            // AppKit sizes the button from its native content, even when SwiftUI draws the visible content.
+            button.image = NSImage(size: NSSize(width: 1, height: NSStatusBar.system.thickness), flipped: false) { _ in true }
+            statusView.frame = button.bounds
+            statusView.autoresizingMask = [.width, .height]
+            button.addSubview(statusView)
+            button.target = self
+            button.action = #selector(handleStatusItemClick)
+            button.sendAction(on: [.leftMouseDown, .rightMouseDown])
+        } else {
+            statusView.onClick = { [weak self] in
+                self?.togglePopover()
+            }
+            statusView.onRightClick = { [weak self] in
+                self?.showContextMenu()
+            }
+            statusItem.view = statusView
         }
-        statusView.onRightClick = { [weak self] in
-            self?.showContextMenu()
-        }
-        statusItem.view = statusView
         self.statusView = statusView
         updateMenuBarAppearance()
     }
@@ -101,7 +112,16 @@ class MenuBarController {
 
     // MARK: - 操作
 
-    @objc private func togglePopover() {
+    @objc private func handleStatusItemClick() {
+        let event = NSApp.currentEvent
+        if event?.type == .rightMouseDown || event?.modifierFlags.contains(.control) == true {
+            showContextMenu()
+        } else {
+            togglePopover()
+        }
+    }
+
+    private func togglePopover() {
         if popover.isShown {
             closePopover()
         } else {
@@ -151,7 +171,7 @@ class MenuBarController {
         popover.performClose(nil)
     }
 
-    @objc private func updateMenuBarText() {
+    private func updateMenuBarText() {
         if Thread.isMainThread {
             updateMenuBarAppearance()
         } else {
@@ -180,12 +200,18 @@ class MenuBarController {
                                        showsColorDot: minimalMode &&
                                            StatsManager.shared.enableDynamicIconColor &&
                                            StatsManager.shared.currentInputRatePerSecond > 0)
-            statusItem.length = statusView.intrinsicContentSize.width
+            updateStatusItemWidth(statusView.preferredWidth)
         } else if let button = statusItem.button {
             button.attributedTitle = makeStatusTitle(keysText: parts.keys, clicksText: parts.clicks)
             button.contentTintColor = style == .icon ? tintColor : nil
         }
 
+    }
+
+    private func updateStatusItemWidth(_ width: CGFloat) {
+        if statusItem.length != width {
+            statusItem.length = width
+        }
     }
 
     private func makeStatusTitle(keysText: String, clicksText: String) -> NSAttributedString {
@@ -337,29 +363,26 @@ private struct MenuBarValueText: View {
     var body: some View {
         Group {
             if #available(macOS 14.0, *) {
-                Text(text)
-                    .font(.system(size: 10, weight: weight))
-                    .monospacedDigit()
-                    .foregroundStyle(Color(nsColor: .labelColor))
-                    .contentTransition(.numericText())
+                styledText.contentTransition(.numericText())
             } else {
-                Text(text)
-                    .font(.system(size: 10, weight: weight))
-                    .monospacedDigit()
-                    .foregroundStyle(Color(nsColor: .labelColor))
+                styledText
             }
         }
         .animation(.default, value: text)
+    }
+
+    private var styledText: some View {
+        Text(text)
+            .font(.system(size: 10, weight: weight))
+            .monospacedDigit()
+            .foregroundStyle(Color(nsColor: .labelColor))
     }
 }
 
 class MenuBarStatusView: NSView {
     private let viewModel = MenuBarStatusViewModel()
     private var hostingView: NSHostingView<MenuBarStatusSwiftUIView>?
-    private var currentKeysText: String = "0"
-    private var currentClicksText: String = "0"
     private var isMinimalMode = false
-    private var showsColorDot = false
 
     var onClick: (() -> Void)?
     var onRightClick: (() -> Void)?
@@ -377,6 +400,8 @@ class MenuBarStatusView: NSView {
     private func setupUI() {
         let rootView = MenuBarStatusSwiftUIView(viewModel: viewModel)
         let hostingView = NSHostingView(rootView: rootView)
+        // The status item owns the width and the button owns the height.
+        hostingView.sizingOptions = []
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(hostingView)
 
@@ -390,43 +415,31 @@ class MenuBarStatusView: NSView {
         self.hostingView = hostingView
     }
 
-    override var intrinsicContentSize: NSSize {
-        let hasText = !currentKeysText.isEmpty || !currentClicksText.isEmpty
+    fileprivate var preferredWidth: CGFloat {
+        let hasText = !viewModel.keysText.isEmpty || !viewModel.clicksText.isEmpty
         let horizontalPadding: CGFloat = isMinimalMode ? 6 : (hasText ? 12 : 8)
         let iconWidth: CGFloat = isMinimalMode ? 0 : 18
         let leadingVisualWidth = iconWidth
         let iconTextSpacing: CGFloat = leadingVisualWidth > 0 && hasText ? 4 : 0
         let textWidth = max(
-            Self.valueWidth(for: currentKeysText, weight: .semibold),
-            Self.valueWidth(for: currentClicksText, weight: .medium)
+            Self.valueWidth(for: viewModel.keysText, weight: .semibold),
+            Self.valueWidth(for: viewModel.clicksText, weight: .medium)
         )
-        let width = ceil(horizontalPadding + leadingVisualWidth + iconTextSpacing + textWidth + 1)
-
-        if let hostingView = hostingView {
-            return NSSize(width: width, height: max(hostingView.fittingSize.height, 20))
-        }
-        return NSSize(width: width, height: 20)
+        return ceil(horizontalPadding + leadingVisualWidth + iconTextSpacing + textWidth + 1)
     }
 
-    func update(keysText: String, clicksText: String) {
-        let updateBlock = {
-            self.currentKeysText = keysText
-            self.currentClicksText = clicksText
-            self.viewModel.keysText = keysText
-            self.viewModel.clicksText = clicksText
-        }
+    override var intrinsicContentSize: NSSize {
+        let height = max(hostingView?.fittingSize.height ?? 20, 20)
+        return NSSize(width: preferredWidth, height: height)
+    }
 
-        if Thread.isMainThread {
-            updateBlock()
-        } else {
-            DispatchQueue.main.async {
-                updateBlock()
-            }
+    fileprivate func update(keysText: String, clicksText: String) {
+        if viewModel.keysText != keysText {
+            viewModel.keysText = keysText
         }
-
-        invalidateIntrinsicContentSize()
-        hostingView?.invalidateIntrinsicContentSize()
-        needsLayout = true
+        if viewModel.clicksText != clicksText {
+            viewModel.clicksText = clicksText
+        }
     }
 
     private static func valueWidth(for text: String, weight: NSFont.Weight) -> CGFloat {
@@ -444,25 +457,23 @@ class MenuBarStatusView: NSView {
                 self.viewModel.colorStyle != style ||
                 self.viewModel.isMinimalMode != isMinimalMode ||
                 self.viewModel.showsColorDot != dotVisible
+            guard appearanceChanged else { return }
 
             self.viewModel.iconColor = color
             self.viewModel.colorStyle = style
             self.viewModel.isMinimalMode = isMinimalMode
             self.viewModel.showsColorDot = dotVisible
             self.isMinimalMode = isMinimalMode
-            self.showsColorDot = dotVisible
 
             self.invalidateIntrinsicContentSize()
             self.hostingView?.invalidateIntrinsicContentSize()
             self.needsLayout = true
 
             // 仅颜色/圆点变化时菜单栏（尤其副屏的菜单栏副本）不会自动重绘，需在 SwiftUI 提交后强制刷新
-            if appearanceChanged {
-                DispatchQueue.main.async { [weak self] in
-                    self?.hostingView?.needsDisplay = true
-                    self?.needsDisplay = true
-                    self?.displayIfNeeded()
-                }
+            DispatchQueue.main.async { [weak self] in
+                self?.hostingView?.needsDisplay = true
+                self?.needsDisplay = true
+                self?.displayIfNeeded()
             }
         }
 
@@ -474,7 +485,7 @@ class MenuBarStatusView: NSView {
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
-        return self
+        return onClick != nil || onRightClick != nil ? self : nil
     }
 
     override func mouseDown(with event: NSEvent) {
