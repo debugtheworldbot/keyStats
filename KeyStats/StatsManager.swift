@@ -142,7 +142,12 @@ class StatsManager {
     private var inputRateStartTime: Date?
     private(set) var currentInputRatePerSecond: Double = 0
     private(set) var currentIconTintColor: NSColor?
-    var menuBarUpdateHandler: (() -> Void)?
+    enum MenuBarUpdate {
+        case refresh
+        case mouseClick
+    }
+
+    var menuBarUpdateHandler: ((MenuBarUpdate) -> Void)?
     private var statsUpdateHandlers: [UUID: () -> Void] = [:]
     private var remoteCacheObserver: NSObjectProtocol?
 
@@ -417,7 +422,7 @@ class StatsManager {
         statsStateLock.unlock()
         registerInputEvent()
         recordClickForPeakCPS()
-        notifyMenuBarUpdate()
+        notifyMenuBarUpdate(.mouseClick)
         notifyStatsUpdate()
         notifyClickThresholdIfNeeded()
     }
@@ -435,7 +440,7 @@ class StatsManager {
         statsStateLock.unlock()
         registerInputEvent()
         recordClickForPeakCPS()
-        notifyMenuBarUpdate()
+        notifyMenuBarUpdate(.mouseClick)
         notifyStatsUpdate()
         notifyClickThresholdIfNeeded()
     }
@@ -453,7 +458,7 @@ class StatsManager {
         statsStateLock.unlock()
         registerInputEvent()
         recordClickForPeakCPS()
-        notifyMenuBarUpdate()
+        notifyMenuBarUpdate(.mouseClick)
         notifyStatsUpdate()
         notifyClickThresholdIfNeeded()
     }
@@ -471,7 +476,7 @@ class StatsManager {
         statsStateLock.unlock()
         registerInputEvent()
         recordClickForPeakCPS()
-        notifyMenuBarUpdate()
+        notifyMenuBarUpdate(.mouseClick)
         notifyStatsUpdate()
         notifyClickThresholdIfNeeded()
     }
@@ -1198,10 +1203,10 @@ class StatsManager {
         statsUpdateHandlers[token] = nil
     }
 
-    private func notifyMenuBarUpdate() {
+    private func notifyMenuBarUpdate(_ update: MenuBarUpdate = .refresh) {
         guard menuBarUpdateHandler != nil else { return }
         DispatchQueue.main.async { [weak self] in
-            self?.menuBarUpdateHandler?()
+            self?.menuBarUpdateHandler?(update)
         }
     }
 
@@ -1358,8 +1363,12 @@ class StatsManager {
     func getMenuBarTextParts() -> (keys: String, clicks: String) {
         let stats = displayCurrentStats()
         let keys = showKeyPressesInMenuBar ? formatMenuBarNumber(stats.keyPresses) : ""
-        let clicks = showMouseClicksInMenuBar ? formatMenuBarNumber(stats.totalClicks) : ""
+        let clicks = showMouseClicksInMenuBar ? String(stats.totalClicks) : ""
         return (keys, clicks)
+    }
+
+    func getMenuBarClicksText() -> String {
+        String(displayCurrentStats().totalClicks)
     }
     
     /// 菜单栏紧凑显示（最多三位有效数字）

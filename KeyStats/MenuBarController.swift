@@ -23,8 +23,8 @@ class MenuBarController {
         setupContextMenu()
         setupPopover()
         setupEventMonitor()
-        StatsManager.shared.menuBarUpdateHandler = { [weak self] in
-            self?.updateMenuBarText()
+        StatsManager.shared.menuBarUpdateHandler = { [weak self] update in
+            self?.updateMenuBarText(update)
         }
     }
 
@@ -47,7 +47,13 @@ class MenuBarController {
         statusView.onRightClick = { [weak self] in
             self?.showContextMenu()
         }
-        statusItem.view = statusView
+        if let button = statusItem.button {
+            statusView.frame = button.bounds
+            statusView.autoresizingMask = [.width, .height]
+            button.addSubview(statusView)
+        } else {
+            statusItem.view = statusView
+        }
         self.statusView = statusView
         updateMenuBarAppearance()
     }
@@ -153,12 +159,18 @@ class MenuBarController {
         popover.performClose(nil)
     }
 
-    @objc private func updateMenuBarText() {
+    private func updateMenuBarText(_ update: StatsManager.MenuBarUpdate) {
         guard Thread.isMainThread else {
             DispatchQueue.main.async { [weak self] in
-                self?.updateMenuBarText()
+                self?.updateMenuBarText(update)
             }
             return
+        }
+
+        if update == .mouseClick, let statusView = statusView,
+           StatsManager.shared.showMouseClicksInMenuBar,
+           statusView.updateClicksText(StatsManager.shared.getMenuBarClicksText()) {
+            updateStatusItemWidth(statusView.preferredWidth)
         }
 
         // 在一次刷新中读取这一批输入后的最新计数。
@@ -190,15 +202,18 @@ class MenuBarController {
                                        showsColorDot: minimalMode &&
                                            StatsManager.shared.enableDynamicIconColor &&
                                            StatsManager.shared.currentInputRatePerSecond > 0)
-            let width = statusView.preferredWidth
-            if statusItem.length != width {
-                statusItem.length = width
-            }
+            updateStatusItemWidth(statusView.preferredWidth)
         } else if let button = statusItem.button {
             button.attributedTitle = makeStatusTitle(keysText: parts.keys, clicksText: parts.clicks)
             button.contentTintColor = style == .icon ? tintColor : nil
         }
 
+    }
+
+    private func updateStatusItemWidth(_ width: CGFloat) {
+        if statusItem.length != width {
+            statusItem.length = width
+        }
     }
 
     private func makeStatusTitle(keysText: String, clicksText: String) -> NSAttributedString {
@@ -250,7 +265,7 @@ class MenuBarController {
 final class MenuBarStatusViewModel: ObservableObject {
     @Published var keysText: String = "0"
     @Published var clicksText: String = "0"
-    var animatesCountChanges = false
+    var animatesKeyChanges = false
     @Published var iconColor: NSColor?
     @Published var colorStyle: DynamicIconColorStyle = .icon
     @Published var isMinimalMode: Bool = false
@@ -305,12 +320,12 @@ struct MenuBarStatusSwiftUIView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     if !viewModel.keysText.isEmpty {
                         MenuBarValueText(text: viewModel.keysText, weight: .semibold,
-                                         animatesChanges: viewModel.animatesCountChanges)
+                                         animatesChanges: viewModel.animatesKeyChanges)
                     }
 
                     if !viewModel.clicksText.isEmpty {
                         MenuBarValueText(text: viewModel.clicksText, weight: .medium,
-                                         animatesChanges: viewModel.animatesCountChanges)
+                                         animatesChanges: true)
                     }
                 }
                 .overlay(alignment: .topLeading) {
@@ -375,10 +390,8 @@ class MenuBarStatusView: NSView {
 
     private let viewModel = MenuBarStatusViewModel()
     private var hostingView: NSHostingView<MenuBarStatusSwiftUIView>?
-    private var currentKeysText: String = "0"
-    private var currentClicksText: String = "0"
     private var isMinimalMode = false
-    private var lastCountChangeTime: TimeInterval = -.infinity
+    private var lastKeyChangeTime: TimeInterval = -.infinity
 
     var onClick: (() -> Void)?
     var onRightClick: (() -> Void)?
@@ -396,6 +409,8 @@ class MenuBarStatusView: NSView {
     private func setupUI() {
         let rootView = MenuBarStatusSwiftUIView(viewModel: viewModel)
         let hostingView = NSHostingView(rootView: rootView)
+        // The status item owns the width and the button owns the height.
+        hostingView.sizingOptions = []
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(hostingView)
 
@@ -410,14 +425,14 @@ class MenuBarStatusView: NSView {
     }
 
     fileprivate var preferredWidth: CGFloat {
-        let hasText = !currentKeysText.isEmpty || !currentClicksText.isEmpty
+        let hasText = !viewModel.keysText.isEmpty || !viewModel.clicksText.isEmpty
         let horizontalPadding: CGFloat = isMinimalMode ? 6 : (hasText ? 12 : 8)
         let iconWidth: CGFloat = isMinimalMode ? 0 : 18
         let leadingVisualWidth = iconWidth
         let iconTextSpacing: CGFloat = leadingVisualWidth > 0 && hasText ? 4 : 0
         let textWidth = max(
-            Self.valueWidth(for: currentKeysText, weight: .semibold),
-            Self.valueWidth(for: currentClicksText, weight: .medium)
+            Self.valueWidth(for: viewModel.keysText, weight: .semibold),
+            Self.valueWidth(for: viewModel.clicksText, weight: .medium)
         )
         return ceil(horizontalPadding + leadingVisualWidth + iconTextSpacing + textWidth + 1)
     }
@@ -427,37 +442,22 @@ class MenuBarStatusView: NSView {
         return NSSize(width: preferredWidth, height: height)
     }
 
-    func update(keysText: String, clicksText: String) {
-        let updateBlock = { [weak self] in
-            guard let self = self else { return }
-            let keysChanged = self.currentKeysText != keysText
-            let clicksChanged = self.currentClicksText != clicksText
-            guard keysChanged || clicksChanged else { return }
+    fileprivate func update(keysText: String, clicksText: String) {
+        updateClicksText(clicksText)
+        guard viewModel.keysText != keysText else { return }
 
-            // 停顿后的第一次变化沿用原来的过渡，连续变化直接更新，避免频繁逐帧重绘。
-            let now = ProcessInfo.processInfo.systemUptime
-            self.viewModel.animatesCountChanges = now - self.lastCountChangeTime >= Self.countAnimationIdleInterval
-            self.lastCountChangeTime = now
+        // 连续按键仍合并刷新，停顿后的第一次变化沿用原过渡。
+        let now = ProcessInfo.processInfo.systemUptime
+        viewModel.animatesKeyChanges = now - lastKeyChangeTime >= Self.countAnimationIdleInterval
+        lastKeyChangeTime = now
+        viewModel.keysText = keysText
+    }
 
-            if keysChanged {
-                self.currentKeysText = keysText
-                self.viewModel.keysText = keysText
-            }
-            if clicksChanged {
-                self.currentClicksText = clicksText
-                self.viewModel.clicksText = clicksText
-            }
-
-            self.invalidateIntrinsicContentSize()
-            self.hostingView?.invalidateIntrinsicContentSize()
-            self.needsLayout = true
-        }
-
-        if Thread.isMainThread {
-            updateBlock()
-        } else {
-            DispatchQueue.main.async(execute: updateBlock)
-        }
+    @discardableResult
+    fileprivate func updateClicksText(_ clicksText: String) -> Bool {
+        guard viewModel.clicksText != clicksText else { return false }
+        viewModel.clicksText = clicksText
+        return true
     }
 
     private static func valueWidth(for text: String, weight: NSFont.Weight) -> CGFloat {

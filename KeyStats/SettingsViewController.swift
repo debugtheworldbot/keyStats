@@ -1154,12 +1154,12 @@ final class SettingsViewController: NSViewController, NSTextFieldDelegate {
         if StatsManager.shared.minimalMenuBarMode {
             UserDefaults.standard.set(DynamicIconColorStyle.dot.rawValue, forKey: dynamicIconColorStyleKey)
             updateDynamicIconColorStyleSelection()
-            StatsManager.shared.menuBarUpdateHandler?()
+            StatsManager.shared.menuBarUpdateHandler?(.refresh)
             return
         }
         guard let rawValue = dynamicIconColorStylePopUp.selectedItem?.representedObject as? String else { return }
         UserDefaults.standard.set(rawValue, forKey: dynamicIconColorStyleKey)
-        StatsManager.shared.menuBarUpdateHandler?()
+        StatsManager.shared.menuBarUpdateHandler?(.refresh)
     }
 
     @objc private func heatmapColorSchemeChanged() {
