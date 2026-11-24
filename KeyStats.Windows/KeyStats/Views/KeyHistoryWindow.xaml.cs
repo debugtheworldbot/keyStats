@@ -15,6 +15,8 @@ public partial class KeyHistoryWindow : Window
         _viewModel = (KeyHistoryViewModel)DataContext;
         Loaded += OnLoaded;
         Closed += OnClosed;
+        IsVisibleChanged += (_, _) => UpdateRefreshState();
+        StateChanged += (_, _) => UpdateRefreshState();
         ThemeManager.Instance.ThemeChanged += OnThemeChanged;
     }
 
@@ -22,6 +24,11 @@ public partial class KeyHistoryWindow : Window
     {
         ApplyWindowBackdrop();
         App.CurrentApp?.TrackPageView("key_history");
+    }
+
+    private void UpdateRefreshState()
+    {
+        _viewModel.SetActive(IsVisible && WindowState != WindowState.Minimized);
     }
 
     private void OnThemeChanged()

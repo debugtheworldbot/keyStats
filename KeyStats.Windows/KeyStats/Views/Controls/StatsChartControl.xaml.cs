@@ -80,6 +80,9 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
     private double _plotTop;
     private double _plotWidth;
     private double _plotHeight;
+    private bool _isActive;
+    private INotifyCollectionChanged? _chartCollection;
+    private INotifyCollectionChanged? _localChartCollection;
 
     public StatsChartControl()
     {
@@ -91,7 +94,45 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
         ChartCanvas.MouseMove += OnCanvasMouseMove;
         ChartCanvas.MouseLeave += OnCanvasMouseLeave;
 
+        Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
+        IsVisibleChanged += (_, _) => DrawChart();
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        if (_isActive) return;
+        _isActive = true;
         ThemeManager.Instance.ThemeChanged += OnThemeChanged;
+        SubscribeToCollections();
+        OnThemeChanged();
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        _isActive = false;
+        ThemeManager.Instance.ThemeChanged -= OnThemeChanged;
+        UnsubscribeFromCollections();
+    }
+
+    private void SubscribeToCollections()
+    {
+        _chartCollection = ChartData as INotifyCollectionChanged;
+        _localChartCollection = LocalChartData as INotifyCollectionChanged;
+        if (_chartCollection != null)
+            _chartCollection.CollectionChanged += OnChartDataCollectionChanged;
+        if (_localChartCollection != null && !ReferenceEquals(_chartCollection, _localChartCollection))
+            _localChartCollection.CollectionChanged += OnChartDataCollectionChanged;
+    }
+
+    private void UnsubscribeFromCollections()
+    {
+        if (_chartCollection != null)
+            _chartCollection.CollectionChanged -= OnChartDataCollectionChanged;
+        if (_localChartCollection != null && !ReferenceEquals(_chartCollection, _localChartCollection))
+            _localChartCollection.CollectionChanged -= OnChartDataCollectionChanged;
+        _chartCollection = null;
+        _localChartCollection = null;
     }
 
     private void OnThemeChanged()
@@ -136,18 +177,8 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
     {
         if (d is StatsChartControl control)
         {
-            // Unsubscribe from the old collection's change events
-            if (e.OldValue is INotifyCollectionChanged oldCollection)
-            {
-                oldCollection.CollectionChanged -= control.OnChartDataCollectionChanged;
-            }
-
-            // Subscribe to the new collection's change events
-            if (e.NewValue is INotifyCollectionChanged newCollection)
-            {
-                newCollection.CollectionChanged += control.OnChartDataCollectionChanged;
-            }
-
+            control.UnsubscribeFromCollections();
+            if (control._isActive) control.SubscribeToCollections();
             control.DrawChart();
         }
     }
@@ -173,6 +204,7 @@ public partial class StatsChartControl : System.Windows.Controls.UserControl
 
     private void DrawChart()
     {
+        if (!_isActive || !IsVisible) return;
         ChartCanvas.Children.Clear();
         _dataPoints.Clear();
         _localDataPoints = null;
